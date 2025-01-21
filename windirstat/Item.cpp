@@ -472,7 +472,7 @@ void CItem::UpdateStatsFromDisk()
 {
     if (IsType(IT_DIRECTORY | IT_FILE))
     {
-        FileFindEnhanced finder;
+        FinderBasic finder;
         if (finder.FindFile(GetFolderPath(),IsType(ITF_ROOTITEM) ? std::wstring() : GetName(), GetAttributes()))
         {
             SetLastChange(finder.GetLastWriteTime());
@@ -833,7 +833,7 @@ std::wstring CItem::GetPath() const
 
 std::wstring CItem::GetPathLong() const
 {
-    return FileFindEnhanced::MakeLongPathCompatible(GetPath());
+    return FinderBasic::MakeLongPathCompatible(GetPath());
 }
 
 std::wstring CItem::GetOwner(const bool force) const
@@ -989,7 +989,7 @@ void CItem::ScanItems(BlockingQueue<CItem*> * queue)
 
         if (item->IsType(IT_DRIVE | IT_DIRECTORY))
         {
-            FileFindEnhanced finder;
+            FinderBasic finder;
             for (BOOL b = finder.FindFile(item->GetPath(), L"", item->GetAttributes()); b; b = finder.FindNextFile())
             {
                 if (finder.IsDots())
@@ -1338,7 +1338,7 @@ std::wstring CItem::UpwardGetPathWithoutBackslash() const
     return path;
 }
 
-CItem* CItem::AddDirectory(const FileFindEnhanced& finder)
+CItem* CItem::AddDirectory(const FinderBasic& finder)
 {
     const bool follow = !finder.IsProtectedReparsePoint() &&
         CDirStatApp::Get()->IsFollowingAllowed(finder.GetFilePathLong(), finder.GetAttributes());
@@ -1351,7 +1351,7 @@ CItem* CItem::AddDirectory(const FileFindEnhanced& finder)
     return child;
 }
 
-CItem* CItem::AddFile(const FileFindEnhanced& finder)
+CItem* CItem::AddFile(const FinderBasic& finder)
 {
     const auto & child = new CItem(IT_FILE, finder.GetFileName());
     child->SetSizePhysical(finder.GetFileSizePhysical());
