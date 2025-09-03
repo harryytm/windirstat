@@ -508,6 +508,7 @@ void CMainFrame::UpdateProgress()
     m_ProgressPos = m_WorkingItem->GetProgressPos();
     m_Pacman.Drive();
 
+    std::wstring finderType;
     std::wstring titlePrefix;
     std::wstring suspended;
 
@@ -524,7 +525,8 @@ void CMainFrame::UpdateProgress()
         const int pos = min(static_cast<int>((m_ProgressPos * 100ull) / m_ProgressRange), 100);
         m_Progress.SetPos(pos);
 
-        titlePrefix = std::to_wstring(pos) + L"% " + suspended;
+        finderType = COptions::UseFastScanEngine ? L"Enhanced Scanning" : L"Scanning"; // prototype, will add to lang file
+        titlePrefix = finderType + L" " + std::to_wstring(pos) + L"% " + suspended;
         if (m_TaskbarList && m_TaskbarButtonState != TBPF_PAUSED)
         {
             if (pos == 100)
