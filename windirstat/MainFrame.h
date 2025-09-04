@@ -179,6 +179,7 @@ protected:
     std::pair<CMenu*, int> LocateNamedMenu(const CMenu* menu, const std::wstring& subMenuText) const;
 
     void SetLogicalFocus(LOGICAL_FOCUS lf);
+    void SetActiveFileView(const int viewIndex) const;
     LOGICAL_FOCUS GetLogicalFocus() const;
     void MoveFocus(LOGICAL_FOCUS logicalFocus);
     void UpdatePaneText();
@@ -233,6 +234,10 @@ protected:
     afx_msg void OnViewTreeMapUseLogical();
     afx_msg void OnUpdateViewShowFileTypes(CCmdUI* pCmdUI);
     afx_msg void OnViewShowFileTypes();
+    void OnViewAllFiles();
+    void OnViewLargestFiles();
+    void OnViewDuplicateFiles();
+    void OnViewSearchResults();
     afx_msg void OnConfigure();
     afx_msg void OnDestroy();
     afx_msg LRESULT OnTaskButtonCreated(WPARAM, LPARAM);
@@ -241,4 +246,5 @@ protected:
 public:
     static CMainFrame* Get() { return s_Singleton; }
     BOOL LoadFrame(UINT nIDResource, DWORD dwDefaultStyle = WS_OVERLAPPEDWINDOW | FWS_ADDTOTITLE, CWnd* pParentWnd = NULL, CCreateContext* pContext = NULL) override;
+    void SetActiveFileViewToSearch();
 };

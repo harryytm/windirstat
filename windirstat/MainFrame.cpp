@@ -364,6 +364,10 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWndEx)
     ON_WM_SIZE()
     ON_WM_SYSCOLORCHANGE()
     ON_WM_TIMER()
+    ON_COMMAND(ID_VIEW_ALL_FILES, &CMainFrame::OnViewAllFiles)
+    ON_COMMAND(ID_VIEW_LARGEST_FILES, &CMainFrame::OnViewLargestFiles)
+    ON_COMMAND(ID_VIEW_DUPLICATE_FILES, &CMainFrame::OnViewDuplicateFiles)
+    ON_COMMAND(ID_VIEW_SEARCH_RESULTS, &CMainFrame::OnViewSearchResults)
 END_MESSAGE_MAP()
 
 constexpr auto ID_STATUSPANE_IDLE_INDEX = 0;
@@ -1193,6 +1197,26 @@ void CMainFrame::OnViewShowFileTypes()
     }
 }
 
+void CMainFrame::OnViewAllFiles()
+{
+    SetActiveFileView(GetFileTabbedView()->m_FileTreeViewIndex);
+}
+
+void CMainFrame::OnViewLargestFiles()
+{
+    SetActiveFileView(GetFileTabbedView()->m_FileTopViewIndex);
+}
+
+void CMainFrame::OnViewDuplicateFiles()
+{
+    SetActiveFileView(GetFileTabbedView()->m_FileDupeViewIndex);
+}
+
+void CMainFrame::OnViewSearchResults()
+{
+    SetActiveFileView(GetFileTabbedView()->m_FileSearchViewIndex);
+}
+
 void CMainFrame::OnConfigure()
 {
     COptionsPropertySheet sheet;
@@ -1241,4 +1265,18 @@ BOOL CMainFrame::LoadFrame(const UINT nIDResource, const DWORD dwDefaultStyle, C
     SetTitle(Localization::Lookup(IDS_APP_TITLE).c_str());
 
     return TRUE;
+}
+
+void CMainFrame::SetActiveFileView(const int viewIndex) const
+{
+    const auto tabbedView = GetFileTabbedView();
+    if (tabbedView)
+    {
+        tabbedView->SetActiveView(viewIndex);
+    }
+}
+
+void CMainFrame::SetActiveFileViewToSearch()
+{
+    SetActiveFileView(GetFileTabbedView()->m_FileSearchViewIndex);
 }
