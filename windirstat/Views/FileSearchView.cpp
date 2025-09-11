@@ -66,6 +66,9 @@ void CFileSearchView::OnSize(const UINT nType, const int cx, const int cy)
 
 int CFileSearchView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
 {
+    std::vector<int> minWidths = { 100, 70, 70, 100 };
+    m_Control.SetMinColumnWidths(minWidths);
+
     if (CView::OnCreate(lpCreateStruct) == -1)
     {
         return -1;

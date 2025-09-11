@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <regex>
 #include <map>
+#include <sstream>
 
 #pragma comment(lib,"powrprof.lib")
 #pragma comment(lib,"ntdll.lib")
@@ -976,4 +977,20 @@ bool CompressFileAllowed(const std::wstring& filePath, const CompressionAlgorith
     compressionModern[volumeName.data()] = isNTFS && IsWindows10OrGreater();
 
     return compressionMap.at(volumeName);
+}
+
+std::vector<int> ParseInts(const CString& str)
+{
+    std::vector<int> result;
+    std::wstringstream ss(str.GetString());
+    std::wstring token;
+    while (std::getline(ss, token, L',')) {
+        try {
+            result.push_back(std::stoi(token));
+        }
+        catch (...) {
+            // We ignore any parsing errors and return the vector we have so far.
+        }
+    }
+    return result;
 }

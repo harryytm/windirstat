@@ -177,13 +177,17 @@ bool CExtensionListControl::GetAscendingDefault(const int subitem)
 // in this extra method. The counterpart is OnDestroy().
 void CExtensionListControl::Initialize()
 {
+    // Tested minimum column width values for English
+    std::vector<int> minWidths = {130,70,260,75,70,55}; 
+    SetMinColumnWidths(minWidths);
+
     // Columns should be in the order of definition in order for sort to work
-    InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_EXTENSION).c_str(), LVCFMT_LEFT, 60, COL_EXT_EXTENSION);
-    InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_COLOR).c_str(), LVCFMT_LEFT, 40, COL_EXT_COLOR);
-    InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_DESCRIPTION).c_str(), LVCFMT_LEFT, 170, COL_EXT_DESCRIPTION);
-    InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_BYTES).c_str(), LVCFMT_RIGHT, 60, COL_EXT_BYTES);
-    InsertColumn(CHAR_MAX, (L"% " + Localization::Lookup(IDS_COL_BYTES)).c_str(), LVCFMT_RIGHT, 50, COL_EXT_BYTESPERCENT);
-    InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_FILES).c_str(), LVCFMT_RIGHT, 50, COL_EXT_FILES);
+    InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_EXTENSION).c_str(), LVCFMT_LEFT, minWidths[0], COL_EXT_EXTENSION);
+    InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_COLOR).c_str(), LVCFMT_LEFT, minWidths[1], COL_EXT_COLOR);
+    InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_DESCRIPTION).c_str(), LVCFMT_LEFT, minWidths[2], COL_EXT_DESCRIPTION);
+    InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_BYTES).c_str(), LVCFMT_RIGHT, minWidths[3], COL_EXT_BYTES);
+    InsertColumn(CHAR_MAX, (L"% " + Localization::Lookup(IDS_COL_BYTES)).c_str(), LVCFMT_RIGHT, minWidths[4], COL_EXT_BYTESPERCENT);
+    InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_FILES).c_str(), LVCFMT_RIGHT, minWidths[5], COL_EXT_FILES);
 
     SetSorting(COL_EXT_BYTES, GetAscendingDefault(COL_EXT_BYTES));
 

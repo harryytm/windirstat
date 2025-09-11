@@ -21,7 +21,9 @@
 #include "stdafx.h"
 
 #include <string>
+#include <vector>
 #include <functional>
+#include <afx.h>
 
 constexpr auto CONTENT_MENU_MINCMD = 0x1ul;
 constexpr auto CONTENT_MENU_MAXCMD = 0x7FFFul;
@@ -99,3 +101,4 @@ std::wstring GetNameFromSid(PSID sid);
 
 bool CompressFile(const std::wstring& filePath, CompressionAlgorithm algorithm);
 bool CompressFileAllowed(const std::wstring& filePath, CompressionAlgorithm algorithm);
+std::vector<int> ParseInts(const CString& str);

@@ -587,6 +587,20 @@ BOOL COwnerDrawnListControl::OnEraseBkgnd(CDC* pDC)
     return true;
 }
 
+void COwnerDrawnListControl::SetMinColumnWidths(const std::vector<int>& widths)
+{
+    m_minColumnWidths = widths;
+}
+
+int COwnerDrawnListControl::GetMinColumnWidth(const int subitem)
+{
+    if (subitem >= 0 && subitem < m_minColumnWidths.size())
+    {
+        return m_minColumnWidths[subitem];
+    }
+    return 300;
+}
+
 void COwnerDrawnListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
 {
     const int column = reinterpret_cast<LPNMHEADER>(pNMHDR)->iItem;
@@ -597,7 +611,9 @@ void COwnerDrawnListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResul
     {
         width = max(width, GetSubItemWidth(GetItem(i), subitem));
     }
-    SetColumnWidth(column, width + 5);
+    const int minWidth = GetMinColumnWidth(subitem);
+    //MessageBox((L"subitem: " + std::to_wstring(subitem) + L", minWidth: " + std::to_wstring(minWidth)).c_str(), L"GetMinColumnWidth() Debug");
+    SetColumnWidth(column, max(width + 5, minWidth));
 
     *pResult = FALSE;
 }
