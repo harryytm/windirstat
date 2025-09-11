@@ -118,5 +118,6 @@ protected:
     DECLARE_MESSAGE_MAP()
     afx_msg BOOL OnEraseBkgnd(CDC* pDC);
     afx_msg void OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult);
+    static int GetMinColumnWidth(const int subitem);
     afx_msg void OnHdnItemchanging(NMHDR* pNMHDR, LRESULT* pResult);
 };

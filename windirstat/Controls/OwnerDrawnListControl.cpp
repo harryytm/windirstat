@@ -23,6 +23,24 @@
 #include "OwnerDrawnListControl.h"
 
 #include <algorithm>
+#include <Item.h>
+#include <map>
+
+// A static map to store the minimum widths for each column.
+// Static ensures it's initialized only once.
+static const std::map<int, int> s_minColumnWidths = {
+    {COL_NAME, 260},
+    {COL_SUBTREEPERCENTAGE, 135},
+    {COL_PERCENTAGE, 90},
+    {COL_SIZE_PHYSICAL, 90},
+    {COL_SIZE_LOGICAL, 90},
+    {COL_ITEMS, 65},
+    {COL_FILES, 65},
+    {COL_FOLDERS, 65},
+    {COL_LASTCHANGE, 105},
+    {COL_ATTRIBUTES, 75},
+    {COL_OWNER, 150}
+};
 
 namespace
 {
@@ -587,6 +605,21 @@ BOOL COwnerDrawnListControl::OnEraseBkgnd(CDC* pDC)
     return true;
 }
 
+int COwnerDrawnListControl::GetMinColumnWidth(const int subitem)
+{
+    // Use a map lookup to find the minimum width.
+    // The .find() method is used to safely check for the key's existence.
+    const auto it = s_minColumnWidths.find(subitem);
+    if (it != s_minColumnWidths.end())
+    {
+        // If the column ID is in the map, return the associated width.
+        return it->second;
+    }
+
+    // If the column ID is not found in the map, return a default minimum width.
+    return 65;
+}
+
 void COwnerDrawnListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
 {
     const int column = reinterpret_cast<LPNMHEADER>(pNMHDR)->iItem;
@@ -597,7 +630,7 @@ void COwnerDrawnListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResul
     {
         width = max(width, GetSubItemWidth(GetItem(i), subitem));
     }
-    SetColumnWidth(column, width + 5);
+    SetColumnWidth(column, max(width + 5, GetMinColumnWidth(subitem)));
 
     *pResult = FALSE;
 }
