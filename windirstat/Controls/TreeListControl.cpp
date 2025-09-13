@@ -26,6 +26,22 @@
 
 #include <algorithm>
 #include <ranges>
+#include <map>
+
+// A static map to store the minimum widths for each column.
+const std::map<int, int> CTreeListControl::s_minColumnWidths = {
+    {COL_NAME, 260},
+    {COL_SUBTREEPERCENTAGE, 135},
+    {COL_PERCENTAGE, 90},
+    {COL_SIZE_PHYSICAL, 90},
+    {COL_SIZE_LOGICAL, 90},
+    {COL_ITEMS, 65},
+    {COL_FILES, 65},
+    {COL_FOLDERS, 65},
+    {COL_LASTCHANGE, 105},
+    {COL_ATTRIBUTES, 75},
+    {COL_OWNER, 150}
+};
 
 namespace
 {
@@ -932,4 +948,19 @@ void CTreeListControl::OnContextMenu(CWnd* /*pWnd*/, const CPoint pt)
     tp.rcExclude.bottom -= overlap;
 
     sub->TrackPopupMenuEx(TPM_LEFTALIGN | TPM_LEFTBUTTON, pt.x, pt.y, AfxGetMainWnd(), &tp);
+}
+
+int CTreeListControl::GetMinColumnWidth(const int subitem)
+{
+    // The compiler can now find the s_minColumnWidths map because
+    // it is a static member of this class.
+    const auto it = s_minColumnWidths.find(subitem);
+    if (it != s_minColumnWidths.end())
+    {
+        return it->second;
+    }
+
+    // If the column ID is not found in the map,
+    // we fall back to the base class's default implementation.
+    return COwnerDrawnListControl::GetMinColumnWidth(subitem);
 }

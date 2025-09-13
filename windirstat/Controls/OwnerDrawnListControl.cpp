@@ -24,23 +24,6 @@
 
 #include <algorithm>
 #include <Item.h>
-#include <map>
-
-// A static map to store the minimum widths for each column.
-// Static ensures it's initialized only once.
-static const std::map<int, int> s_minColumnWidths = {
-    {COL_NAME, 260},
-    {COL_SUBTREEPERCENTAGE, 135},
-    {COL_PERCENTAGE, 90},
-    {COL_SIZE_PHYSICAL, 90},
-    {COL_SIZE_LOGICAL, 90},
-    {COL_ITEMS, 65},
-    {COL_FILES, 65},
-    {COL_FOLDERS, 65},
-    {COL_LASTCHANGE, 105},
-    {COL_ATTRIBUTES, 75},
-    {COL_OWNER, 150}
-};
 
 namespace
 {
@@ -604,7 +587,7 @@ BOOL COwnerDrawnListControl::OnEraseBkgnd(CDC* pDC)
     
     return true;
 }
-
+/*
 int COwnerDrawnListControl::GetMinColumnWidth(const int subitem)
 {
     // Use a map lookup to find the minimum width.
@@ -620,6 +603,7 @@ int COwnerDrawnListControl::GetMinColumnWidth(const int subitem)
     return 65;
 }
 
+*/
 void COwnerDrawnListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
 {
     const int column = reinterpret_cast<LPNMHEADER>(pNMHDR)->iItem;

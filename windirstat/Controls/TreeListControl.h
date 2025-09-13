@@ -23,6 +23,7 @@
 
 #include <vector>
 #include <memory>
+#include <map>
 
 class CFileTreeView;
 class CTreeListItem;
@@ -169,4 +170,8 @@ protected:
     afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
     afx_msg void OnLvnItemChangingList(NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+    int GetMinColumnWidth(const int subitem) override;
+
+private:
+    static const std::map<int, int> s_minColumnWidths;
 };
