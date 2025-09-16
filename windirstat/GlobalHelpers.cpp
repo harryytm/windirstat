@@ -979,18 +979,27 @@ bool CompressFileAllowed(const std::wstring& filePath, const CompressionAlgorith
     return compressionMap.at(volumeName);
 }
 
-std::vector<int> ParseInts(const CString& str)
+void ParseInts(const std::wstring& str, std::vector<int>& result)
 {
-    std::vector<int> result;
-    std::wstringstream ss(str.GetString());
-    std::wstring token;
-    while (std::getline(ss, token, L',')) {
-        try {
-            result.push_back(std::stoi(token));
+    // Clear any previous data from the result vector
+    result.clear();
+
+    std::wstringstream ss(str);
+    std::wstring item;
+
+    // Read the stream until the end, with the comma as the delimiter
+    while (std::getline(ss, item, L','))
+    {
+        try
+        {
+            // Convert the string token to an integer and add it to the vector
+            result.push_back(std::stoi(item));
         }
-        catch (...) {
-            // We ignore any parsing errors and return the vector we have so far.
+        catch (const std::exception&)
+        {
+            // Handle cases where the string is "NULL" or not a valid number.
+            // Push back a zero to maintain the correct column count.
+            result.push_back(0);
         }
     }
-    return result;
 }
