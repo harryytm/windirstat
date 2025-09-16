@@ -100,4 +100,4 @@ std::wstring GetNameFromSid(PSID sid);
 
 bool CompressFile(const std::wstring& filePath, CompressionAlgorithm algorithm);
 bool CompressFileAllowed(const std::wstring& filePath, CompressionAlgorithm algorithm);
-std::vector<int> ParseInts(const CString& str);
+void ParseInts(const std::wstring& str, std::vector<int>& result);
