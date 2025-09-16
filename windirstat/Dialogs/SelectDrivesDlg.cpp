@@ -463,7 +463,9 @@ BOOL CSelectDrivesDlg::OnInitDialog()
     m_List.SetExtendedStyle(m_List.GetExtendedStyle() | LVS_EX_HEADERDRAGDROP);
 
     // Tested minimum column width for English
-    std::vector<int> minWidths = { 130, 65, 65, 100, 75 };
+    //std::vector<int> minWidths = { 130, 65, 65, 100, 75 };
+    std::vector<int> minWidths;
+    ParseInts(Localization::Lookup(IDS_MIN_COL_WIDTH_DRIVES_VIEW), minWidths);
     m_List.SetMinColumnWidths(minWidths);
 
     m_List.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_NAME).c_str(), LVCFMT_LEFT, minWidths[0], COL_DRIVES_NAME);
