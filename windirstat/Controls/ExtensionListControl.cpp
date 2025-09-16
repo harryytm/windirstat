@@ -177,8 +177,6 @@ bool CExtensionListControl::GetAscendingDefault(const int subitem)
 // in this extra method. The counterpart is OnDestroy().
 void CExtensionListControl::Initialize()
 {
-    // Tested minimum column width values for English
-    //std::vector<int> minWidths = {80,60,180,75,65,55};
     std::vector<int> minWidths;
     ParseInts(Localization::Lookup(IDS_MIN_COL_WIDTH_EXTENSION_VIEW), minWidths);
     SetMinColumnWidths(minWidths);

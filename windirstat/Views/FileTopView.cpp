@@ -66,8 +66,6 @@ void CFileTopView::OnSize(const UINT nType, const int cx, const int cy)
 
 int CFileTopView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
 {
-    // Tested minimum column widths for English
-    //std::vector<int> minWidths = { 380, 90, 90, 150 };
     std::vector<int> minWidths;
     ParseInts(Localization::Lookup(IDS_MIN_COL_WIDTH_TOP_VIEW), minWidths);
     m_Control.SetMinColumnWidths(minWidths);
