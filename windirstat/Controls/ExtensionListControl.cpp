@@ -178,7 +178,7 @@ bool CExtensionListControl::GetAscendingDefault(const int subitem)
 void CExtensionListControl::Initialize()
 {
     // Tested minimum column width values for English
-    std::vector<int> minWidths = {130,70,260,75,70,55}; 
+    std::vector<int> minWidths = {80,60,180,75,65,55};
     SetMinColumnWidths(minWidths);
 
     // Columns should be in the order of definition in order for sort to work
