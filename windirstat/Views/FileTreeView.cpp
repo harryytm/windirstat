@@ -67,7 +67,8 @@ void CFileTreeView::OnSize(const UINT nType, const int cx, const int cy)
 
 void CFileTreeView::CreateColumns(const bool all)
 {
-    std::vector<int> minWidths = { 260, 135, 90, NULL, 90, 90, 65, 65, 65, 105, 75, 150 };
+    // Tested minimum column widths for English
+    std::vector<int> minWidths = { 380, 135, 90, NULL, 90, 90, 65, 65, 65, 105, 75, 150 };
     m_Control.SetMinColumnWidths(minWidths);
 
     if (all)

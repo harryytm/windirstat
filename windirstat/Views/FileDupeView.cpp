@@ -66,7 +66,8 @@ void CFileDupeView::OnSize(const UINT nType, const int cx, const int cy)
 
 int CFileDupeView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
 {
-    std::vector<int> minWidths = { 100, 50, 90, 90, 105 };
+    // Tested minimum column width values for English
+    std::vector<int> minWidths = { 380, 50, 90, 90, 105 };
     m_Control.SetMinColumnWidths(minWidths);
 
     if (CView::OnCreate(lpCreateStruct) == -1)
