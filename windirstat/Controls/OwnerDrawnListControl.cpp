@@ -598,21 +598,60 @@ int COwnerDrawnListControl::GetMinColumnWidth(const int subitem)
     {
         return m_minColumnWidths[subitem];
     }
-    return 300;
+    return 10;
+}
+
+// This function calculates the pixel width of the header text for a given column.
+// It returns 0 if it is unable to get the width.
+int COwnerDrawnListControl::GetHeaderWidth(const int column)
+{
+    CHeaderCtrl* pHeaderCtrl = const_cast<CHeaderCtrl*>(GetHeaderCtrl());
+    if (!pHeaderCtrl)
+    {
+        return 0;
+    }
+
+    CDC* pDC = pHeaderCtrl->GetDC();
+    if (!pDC)
+    {
+        return 0;
+    }
+
+    TCHAR szHeaderText[256];
+    ZeroMemory(&szHeaderText, sizeof(szHeaderText));
+
+    HDITEM hdItem = { 0 };
+    hdItem.mask = HDI_TEXT;
+    hdItem.pszText = szHeaderText;
+    hdItem.cchTextMax = _countof(szHeaderText);
+
+    pHeaderCtrl->GetItem(column, &hdItem);
+
+    if (hdItem.cchTextMax > 0)
+    {
+        szHeaderText[_countof(szHeaderText) - 1] = 0;
+    }
+    CSize headerSize =
+        pDC->GetTextExtent(szHeaderText, static_cast<int>(_tcslen(szHeaderText)));
+    pHeaderCtrl->ReleaseDC(pDC);
+
+    return headerSize.cx;
 }
 
 void COwnerDrawnListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
 {
     const int column = reinterpret_cast<LPNMHEADER>(pNMHDR)->iItem;
     const int subitem = ColumnToSubItem(column);
+    const int hdrWidth = GetHeaderWidth(column);
+    const int minWidth = GetMinColumnWidth(subitem);
+    //MessageBox((L"subitem: " + std::to_wstring(subitem) + L", minWidth: " + std::to_wstring(minWidth)).c_str(), L"GetMinColumnWidth() Debug");
 
     int width = 10;
     for (int i = 0, itemMax = GetItemCount(); i < itemMax; i++)
     {
         width = max(width, GetSubItemWidth(GetItem(i), subitem));
     }
-    const int minWidth = GetMinColumnWidth(subitem);
-    //MessageBox((L"subitem: " + std::to_wstring(subitem) + L", minWidth: " + std::to_wstring(minWidth)).c_str(), L"GetMinColumnWidth() Debug");
+    width = max(width, hdrWidth);
     SetColumnWidth(column, max(width + 5, minWidth));
 
     *pResult = FALSE;

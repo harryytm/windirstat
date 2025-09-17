@@ -118,6 +118,7 @@ protected:
     bool m_ShowFullRowSelect = false;  // Whether to draw full row selection
     std::vector<int> m_minColumnWidths;// Stores the minimum column widths
     int GetMinColumnWidth(int subitem);
+    int GetHeaderWidth(const int column);
 
     DECLARE_MESSAGE_MAP()
     afx_msg BOOL OnEraseBkgnd(CDC* pDC);
