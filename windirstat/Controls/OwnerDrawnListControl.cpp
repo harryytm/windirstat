@@ -530,6 +530,20 @@ int COwnerDrawnListControl::GetSubItemWidth(COwnerDrawnListItem* item, const int
     return rc.Width();
 }
 
+void COwnerDrawnListControl::SetMinColumnWidths(const std::vector<int>& widths)
+{
+    m_minColumnWidths = widths;
+}
+
+int COwnerDrawnListControl::GetMinColumnWidth(const int subitem)
+{
+    if (subitem >= 0 && subitem < m_minColumnWidths.size())
+    {
+        return m_minColumnWidths[subitem];
+    }
+    return 10;
+}
+
 #pragma warning(push)
 #pragma warning(disable:26454)
 BEGIN_MESSAGE_MAP(COwnerDrawnListControl, CSortingListControl)
@@ -585,20 +599,6 @@ BOOL COwnerDrawnListControl::OnEraseBkgnd(CDC* pDC)
     pDC->FillSolidRect(fillLeft, bgcolor);
     
     return true;
-}
-
-void COwnerDrawnListControl::SetMinColumnWidths(const std::vector<int>& widths)
-{
-    m_minColumnWidths = widths;
-}
-
-int COwnerDrawnListControl::GetMinColumnWidth(const int subitem)
-{
-    if (subitem >= 0 && subitem < m_minColumnWidths.size())
-    {
-        return m_minColumnWidths[subitem];
-    }
-    return 10;
 }
 
 // This function calculates the pixel width of the header text for a given column.
