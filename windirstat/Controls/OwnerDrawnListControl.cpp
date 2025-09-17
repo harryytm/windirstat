@@ -644,7 +644,6 @@ void COwnerDrawnListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResul
     const int subitem = ColumnToSubItem(column);
     const int hdrWidth = GetHeaderWidth(column);
     const int minWidth = GetMinColumnWidth(subitem);
-    //MessageBox((L"subitem: " + std::to_wstring(subitem) + L", minWidth: " + std::to_wstring(minWidth)).c_str(), L"GetMinColumnWidth() Debug");
 
     int width = 10;
     for (int i = 0, itemMax = GetItemCount(); i < itemMax; i++)
