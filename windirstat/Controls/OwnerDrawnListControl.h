@@ -19,6 +19,7 @@
 #pragma once
 
 #include <vector>
+#include <afxcmn.h>
 
 #include "SortingListControl.h"
 
@@ -101,6 +102,7 @@ public:
 
     bool HasFocus() const;
     bool IsShowSelectionAlways() const;
+    void SetMinColumnWidths(const std::vector<int>& widths);
 
 protected:
     void InitializeColors();
@@ -114,9 +116,13 @@ protected:
     bool m_ShowGrid = false;           // Whether to draw a grid
     bool m_ShowStripes = false;        // Whether to show stripes
     bool m_ShowFullRowSelect = false;  // Whether to draw full row selection
+    std::vector<int> m_minColumnWidths;
+    int GetMinColumnWidth(int subitem);
+    int GetHeaderWidth(const int column);
 
     DECLARE_MESSAGE_MAP()
     afx_msg BOOL OnEraseBkgnd(CDC* pDC);
     afx_msg void OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult);
+    //static int GetMinColumnWidth(const int subitem);
     afx_msg void OnHdnItemchanging(NMHDR* pNMHDR, LRESULT* pResult);
 };

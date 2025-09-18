@@ -508,7 +508,7 @@ bool COwnerDrawnListControl::IsShowSelectionAlways() const
 int COwnerDrawnListControl::GetSubItemWidth(COwnerDrawnListItem* item, const int subitem)
 {
     CClientDC dc(this);
-    CRect rc(0, 0, 1000, 1000);
+    CRect rc(0, 0, 3380, 20);
 
     int width;
     int dummy = rc.left;
@@ -528,6 +528,69 @@ int COwnerDrawnListControl::GetSubItemWidth(COwnerDrawnListItem* item, const int
 
     rc.InflateRect(TEXT_X_MARGIN, 0);
     return rc.Width();
+}
+
+/// <summary>
+/// Sets the minimum allowed widths for each column in the list control.
+/// </summary>
+/// <param name="widths">A vector containing the minimum width for each column.</param>
+void COwnerDrawnListControl::SetMinColumnWidths(const std::vector<int>& widths)
+{
+    m_minColumnWidths = widths;
+}
+
+/// <summary>
+/// Gets the minimum allowed width for a specific column.
+/// </summary>
+/// <param name="subitem">The zero-based index of the column to query.</param>
+/// <returns>The minimum width for the specified column, or 10 if the index is invalid.</returns>
+int COwnerDrawnListControl::GetMinColumnWidth(const int subitem)
+{
+    if (subitem >= 0 && subitem < m_minColumnWidths.size())
+    {
+        return m_minColumnWidths[subitem];
+    }
+    return 10;
+}
+
+/// <summary>
+/// Calculates the width of a specified header column based on its text content.
+/// </summary>
+/// <param name="column">The zero-based index of the column whose header width is to be calculated.</param>
+/// <returns>The calculated width, in pixels, of the header text. Returns 0 if the header control or device context cannot be obtained.</returns>
+int COwnerDrawnListControl::GetHeaderWidth(const int column)
+{
+    CHeaderCtrl* pHeaderCtrl = const_cast<CHeaderCtrl*>(GetHeaderCtrl());
+    if (!pHeaderCtrl)
+    {
+        return 0;
+    }
+
+    CDC* pDC = pHeaderCtrl->GetDC();
+    if (!pDC)
+    {
+        return 0;
+    }
+
+    TCHAR szHeaderText[256];
+    ZeroMemory(&szHeaderText, sizeof(szHeaderText));
+
+    HDITEM hdItem = { 0 };
+    hdItem.mask = HDI_TEXT;
+    hdItem.pszText = szHeaderText;
+    hdItem.cchTextMax = _countof(szHeaderText);
+
+    pHeaderCtrl->GetItem(column, &hdItem);
+
+    if (hdItem.cchTextMax > 0)
+    {
+        szHeaderText[_countof(szHeaderText) - 1] = 0;
+    }
+    CSize headerSize =
+        pDC->GetTextExtent(szHeaderText, static_cast<int>(_tcslen(szHeaderText)));
+    pHeaderCtrl->ReleaseDC(pDC);
+
+    return headerSize.cx;
 }
 
 #pragma warning(push)
@@ -591,13 +654,16 @@ void COwnerDrawnListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResul
 {
     const int column = reinterpret_cast<LPNMHEADER>(pNMHDR)->iItem;
     const int subitem = ColumnToSubItem(column);
+    const int hdrWidth = GetHeaderWidth(column);
+    const int minWidth = GetMinColumnWidth(subitem);
 
     int width = 10;
     for (int i = 0, itemMax = GetItemCount(); i < itemMax; i++)
     {
         width = max(width, GetSubItemWidth(GetItem(i), subitem));
     }
-    SetColumnWidth(column, width + 5);
+    width = max(width, hdrWidth);
+    SetColumnWidth(column, max(width + 3, minWidth));
 
     *pResult = FALSE;
 }
