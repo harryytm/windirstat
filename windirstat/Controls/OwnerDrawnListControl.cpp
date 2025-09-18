@@ -21,6 +21,7 @@
 #include "TreeMap.h"    // CColorSpace
 #include "SelectObject.h"
 #include "OwnerDrawnListControl.h"
+#include <Vsstyle.h>
 
 #include <algorithm>
 
@@ -553,23 +554,32 @@ int COwnerDrawnListControl::GetMinColumnWidth(const int subitem)
     return 10;
 }
 
-// This function calculates the pixel width of the header text for a given column.
-// It returns 0 if it is unable to get the width.
+/// <summary>
+/// Calculates the total width of a specified column header, including the text and appropriate padding.
+/// </summary>
+/// <remarks>
+/// This function measures the width of the header's text and adds padding to it. The padding
+/// is calculated differently based on whether Windows themes are currently active. If a theme is
+/// available, the padding is determined by querying the theme data for the standard header part size.
+/// If no theme is active, a default padding of 16 pixels is used as a fallback.
+/// </remarks>
+/// <param name="column">The 0-based index of the column for which to calculate the width.</param>
+/// <returns>The calculated width of the column header in pixels, or 0 if the header control is not
+/// available or the column data cannot be retrieved.</returns>
 int COwnerDrawnListControl::GetHeaderWidth(const int column)
 {
-    CHeaderCtrl* pHeaderCtrl = const_cast<CHeaderCtrl*>(GetHeaderCtrl());
+    CHeaderCtrl* pHeaderCtrl = GetHeaderCtrl();
     if (!pHeaderCtrl)
     {
         return 0;
     }
 
-    CDC* pDC = pHeaderCtrl->GetDC();
-    if (!pDC)
-    {
-        return 0;
-    }
+    CClientDC dc(pHeaderCtrl);
+    CFont* pOldFont = dc.SelectObject(pHeaderCtrl->GetFont());
 
     TCHAR szHeaderText[256];
+
+    // Zero-initialize the buffer to guarantee null termination.
     ZeroMemory(&szHeaderText, sizeof(szHeaderText));
 
     HDITEM hdItem = { 0 };
@@ -577,17 +587,38 @@ int COwnerDrawnListControl::GetHeaderWidth(const int column)
     hdItem.pszText = szHeaderText;
     hdItem.cchTextMax = _countof(szHeaderText);
 
-    pHeaderCtrl->GetItem(column, &hdItem);
-
-    if (hdItem.cchTextMax > 0)
+    if (!pHeaderCtrl->GetItem(column, &hdItem))
     {
-        szHeaderText[_countof(szHeaderText) - 1] = 0;
+        dc.SelectObject(pOldFont);
+        return 0;
     }
-    CSize headerSize =
-        pDC->GetTextExtent(szHeaderText, static_cast<int>(_tcslen(szHeaderText)));
-    pHeaderCtrl->ReleaseDC(pDC);
 
-    return headerSize.cx;
+    // Explicitly null-terminate the string to satisfy the static analyzer.
+    szHeaderText[_countof(szHeaderText) - 1] = _T('\0');
+
+    CSize headerSize = dc.GetTextExtent(szHeaderText);
+    int totalWidth = 0;
+
+    HTHEME hTheme = ::OpenThemeData(pHeaderCtrl->GetSafeHwnd(), _T("HEADER"));
+    if (hTheme)
+    {
+        CSize sizeTheme;
+        ::GetThemePartSize(hTheme, dc.GetSafeHdc(), HP_HEADERITEM, HIS_NORMAL, NULL, TS_TRUE, &sizeTheme);
+
+        int themePadding = sizeTheme.cx - headerSize.cx;
+        totalWidth = headerSize.cx + (themePadding > 0 ? themePadding : 16);
+
+        ::CloseThemeData(hTheme);
+    }
+    else
+    {
+        // Fallback for systems without themes.
+        totalWidth = headerSize.cx + 16;
+    }
+
+    dc.SelectObject(pOldFont);
+
+    return totalWidth;
 }
 
 #pragma warning(push)
