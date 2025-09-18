@@ -508,7 +508,7 @@ bool COwnerDrawnListControl::IsShowSelectionAlways() const
 int COwnerDrawnListControl::GetSubItemWidth(COwnerDrawnListItem* item, const int subitem)
 {
     CClientDC dc(this);
-    CRect rc(0, 0, 1000, 1000);
+    CRect rc(0, 0, 3380, 20);
 
     int width;
     int dummy = rc.left;
@@ -651,7 +651,7 @@ void COwnerDrawnListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResul
         width = max(width, GetSubItemWidth(GetItem(i), subitem));
     }
     width = max(width, hdrWidth);
-    SetColumnWidth(column, max(width + 5, minWidth));
+    SetColumnWidth(column, max(width + 3, minWidth));
 
     *pResult = FALSE;
 }
