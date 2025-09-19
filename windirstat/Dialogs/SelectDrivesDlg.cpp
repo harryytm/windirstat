@@ -463,7 +463,7 @@ BOOL CSelectDrivesDlg::OnInitDialog()
     m_List.SetExtendedStyle(m_List.GetExtendedStyle() | LVS_EX_HEADERDRAGDROP);
 
     std::vector<int> minWidths;
-    ParseInts(Localization::Lookup(IDS_MIN_COL_WIDTH_DRIVES_VIEW), minWidths);
+    ParseInts(Localization::Lookup(IDS_COL_MIN_WIDTH_DRIVES_VIEW), minWidths);
     m_List.SetMinColumnWidths(minWidths);
 
     m_List.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_NAME).c_str(), LVCFMT_LEFT, minWidths[0], COL_DRIVES_NAME);
