@@ -530,11 +530,20 @@ int COwnerDrawnListControl::GetSubItemWidth(COwnerDrawnListItem* item, const int
     return rc.Width();
 }
 
+/// <summary>
+/// Sets the minimum allowed widths for each column in the list control.
+/// </summary>
+/// <param name="widths">A vector containing the minimum width for each column.</param>
 void COwnerDrawnListControl::SetMinColumnWidths(const std::vector<int>& widths)
 {
     m_minColumnWidths = widths;
 }
 
+/// <summary>
+/// Gets the minimum allowed width for a specific column.
+/// </summary>
+/// <param name="subitem">The zero-based index of the column to query.</param>
+/// <returns>The minimum width for the specified column, or 10 if the index is invalid.</returns>
 int COwnerDrawnListControl::GetMinColumnWidth(const int subitem)
 {
     if (subitem >= 0 && subitem < m_minColumnWidths.size())
