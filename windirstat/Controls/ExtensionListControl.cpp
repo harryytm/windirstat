@@ -178,7 +178,7 @@ bool CExtensionListControl::GetAscendingDefault(const int subitem)
 void CExtensionListControl::Initialize()
 {
     std::vector<int> minWidths;
-    ParseInts(Localization::Lookup(IDS_MIN_COL_WIDTH_EXTENSION_VIEW), minWidths);
+    ParseInts(Localization::Lookup(IDS_COL_MIN_WIDTH_EXTENSION_VIEW), minWidths);
     SetMinColumnWidths(minWidths);
 
     // Columns should be in the order of definition in order for sort to work
