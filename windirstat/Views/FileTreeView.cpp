@@ -68,7 +68,7 @@ void CFileTreeView::OnSize(const UINT nType, const int cx, const int cy)
 void CFileTreeView::CreateColumns(const bool all)
 {
     std::vector<int> minWidths;
-    ParseInts(Localization::Lookup(IDS_MIN_COL_WIDTH_TREE_VIEW).c_str(), minWidths);
+    ParseInts(Localization::Lookup(IDS_COL_MIN_WIDTH_TREE_VIEW).c_str(), minWidths);
     m_Control.SetMinColumnWidths(minWidths);
 
     if (all)

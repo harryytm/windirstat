@@ -67,7 +67,7 @@ void CFileTopView::OnSize(const UINT nType, const int cx, const int cy)
 int CFileTopView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
 {
     std::vector<int> minWidths;
-    ParseInts(Localization::Lookup(IDS_MIN_COL_WIDTH_TOP_VIEW), minWidths);
+    ParseInts(Localization::Lookup(IDS_COL_MIN_WIDTH_TOP_VIEW), minWidths);
     m_Control.SetMinColumnWidths(minWidths);
 
     if (CView::OnCreate(lpCreateStruct) == -1)

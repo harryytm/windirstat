@@ -67,7 +67,7 @@ void CFileDupeView::OnSize(const UINT nType, const int cx, const int cy)
 int CFileDupeView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
 {
     std::vector<int> minWidths;
-    ParseInts(Localization::Lookup(IDS_MIN_COL_WIDTH_DUPE_VIEW).c_str(), minWidths);
+    ParseInts(Localization::Lookup(IDS_COL_MIN_WIDTH_DUPE_VIEW).c_str(), minWidths);
     m_Control.SetMinColumnWidths(minWidths);
 
     if (CView::OnCreate(lpCreateStruct) == -1)
