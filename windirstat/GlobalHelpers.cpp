@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <regex>
 #include <map>
+#include <sstream>
 
 #pragma comment(lib,"powrprof.lib")
 #pragma comment(lib,"ntdll.lib")
@@ -976,4 +977,44 @@ bool CompressFileAllowed(const std::wstring& filePath, const CompressionAlgorith
     compressionModern[volumeName.data()] = isNTFS && IsWindows10OrGreater();
 
     return compressionMap.at(volumeName);
+}
+
+void ParseInts(const std::wstring& str, std::vector<int>& result)
+{
+    // Clear any previous data from the result vector
+    result.clear();
+
+    std::wstringstream ss(str);
+    std::wstring item;
+
+    // Read the stream until the end, with the comma as the delimiter
+    while (std::getline(ss, item, L','))
+    {
+        try
+        {
+            // Convert the string token to an integer and add it to the vector
+            result.push_back(std::stoi(item));
+        }
+        catch (const std::exception&)
+        {
+            // Handle cases where the string is "NULL" or not a valid number.
+            // Push back a zero to maintain the correct column count.
+            result.push_back(0);
+        }
+    }
+}
+
+const std::vector<int>& GetCommonMinWidths()
+{
+    // The static keyword ensures this variable is created and initialized only once.
+    static std::vector<int> commonColumnMinWidths;
+
+    // This check ensures we only parse the string on the first call.
+    if (commonColumnMinWidths.empty())
+    {
+        ParseInts(Localization::Lookup(IDS_COL_MIN_WIDTH_COMMON).c_str(), commonColumnMinWidths);
+    }
+
+    // Return a const reference to the single instance.
+    return commonColumnMinWidths;
 }

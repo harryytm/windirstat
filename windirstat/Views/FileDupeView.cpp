@@ -66,6 +66,16 @@ void CFileDupeView::OnSize(const UINT nType, const int cx, const int cy)
 
 int CFileDupeView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
 {
+    const auto& commonMinWidth = GetCommonMinWidths();
+    std::vector<int> minWidths;
+    minWidths.reserve(5);
+    minWidths.push_back(commonMinWidth[ColumnWidths::NAME]);
+    minWidths.push_back(commonMinWidth[ColumnWidths::ITEMS]);
+    minWidths.push_back(commonMinWidth[ColumnWidths::PHYSICAL_SIZE]);
+    minWidths.push_back(commonMinWidth[ColumnWidths::LOGICAL_SIZE]);
+    minWidths.push_back(commonMinWidth[ColumnWidths::LAST_CHANGED]);
+    m_Control.SetMinColumnWidths(minWidths);
+
     if (CView::OnCreate(lpCreateStruct) == -1)
     {
         return -1;
@@ -80,11 +90,11 @@ int CFileDupeView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
 
     // Columns should be in enumeration order so initial sort will work
     const std::wstring hashName = Localization::Lookup(IDS_COL_HASH) + L" / " + Localization::Lookup(IDS_COL_NAME);
-    m_Control.InsertColumn(CHAR_MAX, hashName.c_str(), LVCFMT_LEFT, 500, COL_ITEMDUP_NAME);
-    m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_ITEMS).c_str(), LVCFMT_RIGHT, 70, COL_ITEMDUP_ITEMS);
-    m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_SIZE_PHYSICAL).c_str(), LVCFMT_RIGHT, 80, COL_ITEMDUP_SIZE_PHYSICAL);
-    m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_SIZE_LOGICAL).c_str(), LVCFMT_RIGHT, 80, COL_ITEMDUP_SIZE_LOGICAL);
-    m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_LASTCHANGE).c_str(), LVCFMT_LEFT, 120, COL_ITEMDUP_LASTCHANGE);
+    m_Control.InsertColumn(CHAR_MAX, hashName.c_str(), LVCFMT_LEFT, minWidths[0], COL_ITEMDUP_NAME);
+    m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_ITEMS).c_str(), LVCFMT_RIGHT, minWidths[1], COL_ITEMDUP_ITEMS);
+    m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_SIZE_PHYSICAL).c_str(), LVCFMT_RIGHT, minWidths[2], COL_ITEMDUP_SIZE_PHYSICAL);
+    m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_SIZE_LOGICAL).c_str(), LVCFMT_RIGHT, minWidths[3], COL_ITEMDUP_SIZE_LOGICAL);
+    m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_LASTCHANGE).c_str(), LVCFMT_LEFT, minWidths[4], COL_ITEMDUP_LASTCHANGE);
     m_Control.SetSorting(COL_ITEMDUP_SIZE_PHYSICAL, false);
 
     m_Control.OnColumnsInserted();

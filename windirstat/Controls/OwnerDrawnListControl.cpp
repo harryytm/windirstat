@@ -21,6 +21,7 @@
 #include "TreeMap.h"    // CColorSpace
 #include "SelectObject.h"
 #include "OwnerDrawnListControl.h"
+#include <Vsstyle.h>
 
 #include <algorithm>
 
@@ -508,7 +509,7 @@ bool COwnerDrawnListControl::IsShowSelectionAlways() const
 int COwnerDrawnListControl::GetSubItemWidth(COwnerDrawnListItem* item, const int subitem)
 {
     CClientDC dc(this);
-    CRect rc(0, 0, 1000, 1000);
+    CRect rc(0, 0, 3500, 20);
 
     int width;
     int dummy = rc.left;
@@ -528,6 +529,81 @@ int COwnerDrawnListControl::GetSubItemWidth(COwnerDrawnListItem* item, const int
 
     rc.InflateRect(TEXT_X_MARGIN, 0);
     return rc.Width();
+}
+
+// Sets the minimum allowed widths for each column in the list control.
+void COwnerDrawnListControl::SetMinColumnWidths(const std::vector<int>& widths)
+{
+    m_minColumnWidths = widths;
+}
+
+//Gets the minimum allowed width for a specific column.
+int COwnerDrawnListControl::GetMinColumnWidth(const int subitem)
+{
+    if (subitem >= 0 && subitem < m_minColumnWidths.size())
+    {
+        return m_minColumnWidths[subitem];
+    }
+    return 10;
+}
+
+// Calculates the total display width of a specific column header.
+// This function accounts for the header text, font, and theme-based padding.
+int COwnerDrawnListControl::GetHeaderWidth(const int column)
+{
+    CHeaderCtrl* pHeaderCtrl = GetHeaderCtrl();
+
+    if (!pHeaderCtrl)
+    {
+        return 0;
+    }
+
+    CClientDC dc(pHeaderCtrl);
+    CFont* pOldFont = dc.SelectObject(pHeaderCtrl->GetFont());
+
+    TCHAR szHeaderText[256];
+
+    // Zero-initialize the buffer to guarantee null termination.
+    ZeroMemory(&szHeaderText, sizeof(szHeaderText));
+
+    HDITEM hdItem = { 0 };
+    hdItem.mask = HDI_TEXT;
+    hdItem.pszText = szHeaderText;
+    hdItem.cchTextMax = _countof(szHeaderText);
+
+    if (!pHeaderCtrl->GetItem(column, &hdItem))
+    {
+        dc.SelectObject(pOldFont);
+        return 0;
+    }
+
+    // Explicitly null-terminate the string to satisfy the static analyzer.
+    szHeaderText[_countof(szHeaderText) - 1] = _T('\0');
+
+    const int padding = 10; // padding adjuestment
+    int totalWidth;
+
+    HTHEME hTheme = ::OpenThemeData(pHeaderCtrl->GetSafeHwnd(), _T("HEADER"));
+
+    if (hTheme)
+    {
+        CRect rectThemeText;
+        // Use GetThemeTextExtent to get the total width of the text within the theme part.
+        // This function correctly accounts for all padding, borders, and margins.
+        ::GetThemeTextExtent(hTheme, dc.GetSafeHdc(), HP_HEADERITEM, HIS_NORMAL, szHeaderText,
+            static_cast<int>(_tcslen(szHeaderText)), DT_SINGLELINE, NULL, &rectThemeText);
+        totalWidth = rectThemeText.Width() + padding;
+        ::CloseThemeData(hTheme);
+    }
+    else
+    {
+        // Fallback for systems without themes.
+        const CSize headerSize = dc.GetTextExtent(szHeaderText);
+        totalWidth = headerSize.cx + padding;
+    }
+
+    dc.SelectObject(pOldFont);
+    return totalWidth;
 }
 
 #pragma warning(push)
@@ -591,13 +667,18 @@ void COwnerDrawnListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResul
 {
     const int column = reinterpret_cast<LPNMHEADER>(pNMHDR)->iItem;
     const int subitem = ColumnToSubItem(column);
+    const int hdrWidth = GetHeaderWidth(column);
+    const int minWidth = GetMinColumnWidth(subitem);
+    const int padding = 3;
 
     int width = 10;
     for (int i = 0, itemMax = GetItemCount(); i < itemMax; i++)
     {
         width = max(width, GetSubItemWidth(GetItem(i), subitem));
     }
-    SetColumnWidth(column, width + 5);
+    width = max(width, hdrWidth);
+    width = max(width + padding, minWidth);
+    SetColumnWidth(column, width);
 
     *pResult = FALSE;
 }
