@@ -79,6 +79,7 @@ class CDirStatDoc final : public CDocument
 {
 public:
     static CDirStatDoc* GetDocument();
+    bool Search();
     void RefreshAll() { OnRefreshAll(); }
 
 protected:
@@ -199,7 +200,7 @@ protected:
     afx_msg void OnCleanupDeleteToBin();
     afx_msg void OnCleanupDelete();
     afx_msg void OnCleanupEmptyFolder();
-    afx_msg void OnSearch();
+    afx_msg void OnSearch() { Search(); }
     afx_msg void OnUpdateUserDefinedCleanup(CCmdUI* pCmdUI);
     afx_msg void OnUserDefinedCleanup(UINT id);
     afx_msg void OnTreeMapSelectParent();

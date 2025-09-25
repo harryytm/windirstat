@@ -24,6 +24,7 @@
 #include "FileTreeView.h"
 #include "Localization.h"
 #include "MainFrame.h"
+static bool searched=false;
 
 IMPLEMENT_DYNCREATE(CFileTabbedView, CTabView)
 
@@ -101,6 +102,35 @@ LRESULT CFileTabbedView::OnChangeActiveTab(WPARAM wp, LPARAM lp)
         // Duplicate view can take awhile to populate so show wait cursor
         CWaitCursor wc;
         CFileDupeControl::Get()->SortItems();
+    }
+    else if (wp == static_cast<WPARAM>(m_FileSearchViewIndex))
+    {
+        int searchResultCount = CFileSearchControl::Get()->GetSearchResultsCount();
+        if (searchResultCount == 0 && searched == true)
+        {
+            searched = false;
+            const std::wstring message = L"No result.";
+
+            AfxMessageBox(message.c_str(), MB_OK | MB_ICONINFORMATION);
+            return TRUE;
+        }
+        else
+        {
+            searched = false; // required always reset to false
+        }
+
+        if (searchResultCount == 0 && searched == false)
+        {
+            searched = true;
+            const bool searchReturn = pDoc->Search();;
+            if (!searchReturn)
+            {
+                searched = false;
+                return TRUE;
+            }
+        }
+
+        if (searchResultCount == 0) return TRUE;
     }
 
     return CTabView::OnChangeActiveTab(wp, lp);

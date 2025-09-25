@@ -104,14 +104,15 @@ void SearchDlg::OnBnClickedOk()
     COptions::SearchCase = (FALSE != m_SearchCase);
     COptions::SearchRegex = (FALSE != m_SearchRegex);
 
+    // Call OnOK() first to close the dialog immediately.
+    CDialogEx::OnOK();
+
     // Process search request
     CFileSearchControl::Get()->ProcessSearch(CDirStatDoc::GetDocument()->GetRootItem());
 
     // Switch focus to search results
     const auto tabbedView = CMainFrame::Get()->GetFileTabbedView();
     tabbedView->SetActiveSearchView();
-
-    CDialogEx::OnOK();
 }
 
 void SearchDlg::OnChangeSearchTerm()

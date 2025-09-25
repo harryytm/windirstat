@@ -35,6 +35,8 @@ public:
     static std::wregex ComputeSearchRegex(const std::wstring& searchTerm, bool searchCase, bool useRegex);
     void ProcessSearch(CItem* item);
     void RemoveItem(CItem* items);
+    void ClearItem() { m_ItemTracker.clear(); }
+    size_t GetSearchResultsCount() { return m_ItemTracker.size(); }
 
 protected:
 

@@ -74,6 +74,12 @@ CDirStatDoc* CDirStatDoc::GetDocument()
     return _theDocument;
 }
 
+bool CDirStatDoc::Search()
+{
+    SearchDlg search;
+    return (search.DoModal() == IDOK);
+}
+
 // Encodes a selection from the CSelectDrivesDlg into a string which can be routed as a pseudo
 // document "path" through MFC and finally arrives in OnOpenDocument().
 //
@@ -1283,12 +1289,6 @@ void CDirStatDoc::OnCleanupEmptyFolder()
     RefreshItem(selectedItems);
 }
 
-void CDirStatDoc::OnSearch()
-{
-    SearchDlg search;
-    search.DoModal();
-}
-
 void CDirStatDoc::OnDisableHibernateFile()
 {
     DisableHibernate();
@@ -1567,6 +1567,7 @@ void CDirStatDoc::StartScanningEngine(std::vector<CItem*> items)
             CFileDupeControl::Get()->RemoveItem(item);
             CFileTopControl::Get()->RemoveItem(item);
             CFileSearchControl::Get()->RemoveItem(item);
+            CFileSearchControl::Get()->ClearItem();
 
             // Record current visual arrangement to reapply afterward
             if (item->IsVisible())
