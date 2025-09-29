@@ -1002,6 +1002,8 @@ void CDirStatDoc::OnRefreshSelected()
 
 void CDirStatDoc::OnRefreshAll()
 {
+    const auto tabbedView = CMainFrame::Get()->GetFileTabbedView();
+    tabbedView->SetActiveFileTreeView();
     OnOpenDocument(GetDocument()->GetPathName().GetString());
 }
 
