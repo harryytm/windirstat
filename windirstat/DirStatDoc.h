@@ -79,6 +79,7 @@ class CDirStatDoc final : public CDocument
 {
 public:
     static CDirStatDoc* GetDocument();
+    void RefreshAll() { OnRefreshAll(); }
 
 protected:
     CDirStatDoc(); // Created by MFC only

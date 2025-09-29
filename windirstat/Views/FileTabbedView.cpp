@@ -59,13 +59,43 @@ BOOL CFileTabbedView::OnEraseBkgnd(CDC* /*pDC*/)
 
 LRESULT CFileTabbedView::OnChangeActiveTab(WPARAM wp, LPARAM lp)
 {
-    if (wp == static_cast<WPARAM>(m_FileDupeViewIndex))
+    // Decleare commonly used variables
+    CDirStatDoc * const pDoc = CDirStatDoc::GetDocument();
+    const WPARAM fileTreeTabViewIndex = static_cast<WPARAM>(m_FileTreeViewIndex);
+    const WPARAM fileDupeTabViewIndex = static_cast<WPARAM>(m_FileDupeViewIndex);
+
+    // Check if CFileTabbedView is initialized.
+    if (fileTreeTabViewIndex == -1)
+        return FALSE; // Return FALSE to let OnCreate finish initializing view pointers.
+
+    // If any tab other than the file tree view is being selected and there
+    // are no scan targets, open the Select Drives dialog.
+    if (wp != fileTreeTabViewIndex && !pDoc->HasRootItem())
     {
-        // Alert the message they are not actually scanning for duplicates
+        CDirStatApp::Get()->FileOpen();
+        return TRUE;
+    }
+
+    // If the duplicate view is being selected and duplicate scanning is
+    // disabled, prompt the user to enable it and rescan
+    if (wp == fileDupeTabViewIndex)
+    {
         if (!COptions::ScanForDuplicates)
         {
-            AfxMessageBox(Localization::Lookup(IDS_DUPLICATES_DISABLED).c_str(), MB_OK | MB_ICONHAND);
-            return TRUE;
+            const std::wstring msg =
+                Localization::Lookup(IDS_DUPLICATES_DISABLED) +
+                L"\n" + Localization::Lookup(IDS_ENABLE_FEATURE_PROMPT) +
+                L"\n\n" + Localization::Lookup(IDS_REFRESH_ALL_WARNING);
+
+            if (AfxMessageBox(msg.c_str(), MB_YESNO | MB_ICONQUESTION) == IDYES)
+            {
+                COptions::ScanForDuplicates = true;
+                pDoc->RefreshAll();
+            }
+            else
+            {
+                return TRUE; // return TRUE to prevent the tab change
+            }
         }
 
         // Duplicate view can take awhile to populate so show wait cursor

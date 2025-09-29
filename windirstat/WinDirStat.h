@@ -56,6 +56,7 @@ public:
     CIconHandler* GetIconHandler();
 
     static void LaunchHelp();
+    void FileOpen() { OnFileOpen(); }
     void RestartApplication(bool resetPreferences = false);
 
     static std::tuple<ULONGLONG, ULONGLONG> GetFreeDiskSpace(const std::wstring& pszRootPath);
