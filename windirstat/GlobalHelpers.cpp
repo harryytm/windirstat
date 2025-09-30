@@ -1003,3 +1003,18 @@ void ParseInts(const std::wstring& str, std::vector<int>& result)
         }
     }
 }
+
+const std::vector<int>& GetCommonMinWidths()
+{
+    // The static keyword ensures this variable is created and initialized only once.
+    static std::vector<int> commonColumnMinWidths;
+
+    // This check ensures we only parse the string on the first call.
+    if (commonColumnMinWidths.empty())
+    {
+        ParseInts(Localization::Lookup(IDS_COL_MIN_WIDTH_COMMON).c_str(), commonColumnMinWidths);
+    }
+
+    // Return a const reference to the single instance.
+    return commonColumnMinWidths;
+}
