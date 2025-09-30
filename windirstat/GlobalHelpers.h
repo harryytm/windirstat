@@ -24,6 +24,23 @@
 #include <vector>
 #include <functional>
 
+// This namespace provides constants for the indices of shared columns,
+// ensuring a clear and maintainable mapping from name to position.
+namespace ColumnWidths
+{
+    constexpr size_t NAME = 0;
+    constexpr size_t SUBTREE_PERCENTAGE = 1;
+    constexpr size_t PERCENTAGE = 2;
+    constexpr size_t PHYSICAL_SIZE = 3;
+    constexpr size_t LOGICAL_SIZE = 4;
+    constexpr size_t ITEMS = 5;
+    constexpr size_t FILES = 6;
+    constexpr size_t FOLDERS = 7;
+    constexpr size_t LAST_CHANGED = 8;
+    constexpr size_t ATTRIBUTES = 9;
+    constexpr size_t OWNER = 10;
+}
+
 constexpr auto CONTENT_MENU_MINCMD = 0x1ul;
 constexpr auto CONTENT_MENU_MAXCMD = 0x7FFFul;
 IContextMenu* GetContextMenu(HWND hwnd, const std::vector<std::wstring>& paths);
@@ -101,3 +118,4 @@ std::wstring GetNameFromSid(PSID sid);
 bool CompressFile(const std::wstring& filePath, CompressionAlgorithm algorithm);
 bool CompressFileAllowed(const std::wstring& filePath, CompressionAlgorithm algorithm);
 void ParseInts(const std::wstring& str, std::vector<int>& result);
+const std::vector<int>& GetCommonMinWidths();

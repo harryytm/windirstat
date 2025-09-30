@@ -67,8 +67,21 @@ void CFileTreeView::OnSize(const UINT nType, const int cx, const int cy)
 
 void CFileTreeView::CreateColumns(const bool all)
 {
+    const auto& commonMinWidth = GetCommonMinWidths();
     std::vector<int> minWidths;
-    ParseInts(Localization::Lookup(IDS_COL_MIN_WIDTH_TREE_VIEW).c_str(), minWidths);
+    minWidths.reserve(12);
+    minWidths.push_back(commonMinWidth[ColumnWidths::NAME]);
+    minWidths.push_back(commonMinWidth[ColumnWidths::SUBTREE_PERCENTAGE]);
+    minWidths.push_back(commonMinWidth[ColumnWidths::PERCENTAGE]);
+    minWidths.push_back(0); // Placeholder for COL_OPTIONAL_START
+    minWidths.push_back(commonMinWidth[ColumnWidths::PHYSICAL_SIZE]);
+    minWidths.push_back(commonMinWidth[ColumnWidths::LOGICAL_SIZE]);
+    minWidths.push_back(commonMinWidth[ColumnWidths::ITEMS]);
+    minWidths.push_back(commonMinWidth[ColumnWidths::FILES]);
+    minWidths.push_back(commonMinWidth[ColumnWidths::FOLDERS]);
+    minWidths.push_back(commonMinWidth[ColumnWidths::LAST_CHANGED]);
+    minWidths.push_back(commonMinWidth[ColumnWidths::ATTRIBUTES]);
+    minWidths.push_back(commonMinWidth[ColumnWidths::OWNER]);
     m_Control.SetMinColumnWidths(minWidths);
 
     if (all)
