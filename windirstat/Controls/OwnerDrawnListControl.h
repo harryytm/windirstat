@@ -19,6 +19,7 @@
 #pragma once
 
 #include <vector>
+#include <afxcmn.h>
 
 #include "SortingListControl.h"
 
