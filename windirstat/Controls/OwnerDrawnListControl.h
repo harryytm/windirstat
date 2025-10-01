@@ -101,6 +101,7 @@ public:
 
     bool HasFocus() const;
     bool IsShowSelectionAlways() const;
+    void SetMinColumnWidths(const std::vector<int>& widths);
 
 protected:
     void InitializeColors();
@@ -114,6 +115,8 @@ protected:
     bool m_ShowGrid = false;           // Whether to draw a grid
     bool m_ShowStripes = false;        // Whether to show stripes
     bool m_ShowFullRowSelect = false;  // Whether to draw full row selection
+    std::vector<int> m_minColumnWidths;// Stores the minimum column widths
+    int GetMinColumnWidth(int subitem);
     int GetHeaderWidth(const int column);
 
     DECLARE_MESSAGE_MAP()

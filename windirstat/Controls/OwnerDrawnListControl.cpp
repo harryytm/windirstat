@@ -531,6 +531,20 @@ int COwnerDrawnListControl::GetSubItemWidth(COwnerDrawnListItem* item, const int
     return rc.Width();
 }
 
+void COwnerDrawnListControl::SetMinColumnWidths(const std::vector<int>& widths)
+{
+    m_minColumnWidths = widths;
+}
+
+int COwnerDrawnListControl::GetMinColumnWidth(const int subitem)
+{
+    if (subitem >= 0 && subitem < m_minColumnWidths.size())
+    {
+        return m_minColumnWidths[subitem];
+    }
+    return 10;
+}
+
 // Calculates the total display width of a specific column header.
 int COwnerDrawnListControl::GetHeaderWidth(const int column)
 {
