@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <afx.h>
 
 // This namespace provides constants for the indices of shared columns,
 // ensuring a clear and maintainable mapping from name to position.
