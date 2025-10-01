@@ -67,12 +67,15 @@ void CFileTreeView::OnSize(const UINT nType, const int cx, const int cy)
 
 void CFileTreeView::CreateColumns(const bool all)
 {
+    std::vector<int> minWidths = { 260, 135, 90, NULL, 90, 90, 65, 65, 65, 105, 75, 150 };
+    m_Control.SetMinColumnWidths(minWidths);
+
     if (all)
     {
         // Columns should be in enumeration order so initial sort will work
-        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_NAME).c_str(), LVCFMT_LEFT, 250, COL_NAME);
-        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_SUBTREEPERCENTAGE).c_str(), LVCFMT_RIGHT, CItem::GetSubtreePercentageWidth() + 30, COL_SUBTREEPERCENTAGE);
-        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_PERCENTAGE).c_str(), LVCFMT_RIGHT, 90, COL_PERCENTAGE);
+        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_NAME).c_str(), LVCFMT_LEFT, minWidths[0], COL_NAME);
+        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_SUBTREEPERCENTAGE).c_str(), LVCFMT_RIGHT, max(CItem::GetSubtreePercentageWidth() + 30,minWidths[1]), COL_SUBTREEPERCENTAGE);
+        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_PERCENTAGE).c_str(), LVCFMT_RIGHT, minWidths[2], COL_PERCENTAGE);
     }
 
     // reset sort and remove optional columns
@@ -82,21 +85,21 @@ void CFileTreeView::CreateColumns(const bool all)
 
     // add optional columns based on settings
     if (COptions::ShowColumnSizePhysical)
-        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_SIZE_PHYSICAL).c_str(), LVCFMT_RIGHT, 90, COL_SIZE_PHYSICAL);
+        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_SIZE_PHYSICAL).c_str(), LVCFMT_RIGHT, minWidths[4], COL_SIZE_PHYSICAL);
     if (COptions::ShowColumnSizeLogical)
-        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_SIZE_LOGICAL).c_str(), LVCFMT_RIGHT, 90, COL_SIZE_LOGICAL);
+        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_SIZE_LOGICAL).c_str(), LVCFMT_RIGHT, minWidths[5], COL_SIZE_LOGICAL);
     if (COptions::ShowColumnItems)
-        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_ITEMS).c_str(), LVCFMT_RIGHT, 90, COL_ITEMS);
+        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_ITEMS).c_str(), LVCFMT_RIGHT, minWidths[6], COL_ITEMS);
     if (COptions::ShowColumnFiles)
-        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_FILES).c_str(), LVCFMT_RIGHT, 90, COL_FILES);
+        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_FILES).c_str(), LVCFMT_RIGHT, minWidths[7], COL_FILES);
     if (COptions::ShowColumnFolders)
-        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_FOLDERS).c_str(), LVCFMT_RIGHT, 90, COL_FOLDERS);
+        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_FOLDERS).c_str(), LVCFMT_RIGHT, minWidths[8], COL_FOLDERS);
     if (COptions::ShowColumnLastChange)
-        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_LASTCHANGE).c_str(), LVCFMT_LEFT, 120, COL_LASTCHANGE);
+        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_LASTCHANGE).c_str(), LVCFMT_LEFT, minWidths[9], COL_LASTCHANGE);
     if (COptions::ShowColumnAttributes)
-        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_ATTRIBUTES).c_str(), LVCFMT_LEFT, 90, COL_ATTRIBUTES);
+        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_ATTRIBUTES).c_str(), LVCFMT_LEFT, minWidths[10], COL_ATTRIBUTES);
     if (COptions::ShowColumnOwner)
-        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_OWNER).c_str(), LVCFMT_LEFT, 200, COL_OWNER);
+        m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_OWNER).c_str(), LVCFMT_LEFT, minWidths[11], COL_OWNER);
 
     m_Control.OnColumnsInserted();
     

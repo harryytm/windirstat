@@ -643,6 +643,7 @@ void COwnerDrawnListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResul
     const int column = reinterpret_cast<LPNMHEADER>(pNMHDR)->iItem;
     const int subitem = ColumnToSubItem(column);
     const int hdrWidth = GetHeaderWidth(column);
+    const int minWidth = GetMinColumnWidth(subitem);
     const int padding = 3;
 
     int width = 10;
@@ -650,7 +651,8 @@ void COwnerDrawnListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResul
     {
         width = max(width, GetSubItemWidth(GetItem(i), subitem));
     }
-    width = max(width + padding, hdrWidth);
+    width = max(width, hdrWidth);
+    width = max(width + padding, minWidth);
     SetColumnWidth(column, width);
 
     *pResult = FALSE;
