@@ -66,6 +66,9 @@ void CFileTopView::OnSize(const UINT nType, const int cx, const int cy)
 
 int CFileTopView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
 {
+    std::vector<int> minWidths = { 500, 90, 90, 120 };
+    m_Control.SetMinColumnWidths(minWidths);
+
     if (CView::OnCreate(lpCreateStruct) == -1)
     {
         return -1;
@@ -79,10 +82,10 @@ int CFileTopView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
     m_Control.ShowFullRowSelection(COptions::ListFullRowSelection);
 
     // Columns should be in enumeration order so initial sort will work
-    m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_NAME).c_str(), LVCFMT_LEFT, 500, COL_ITEMTOP_NAME);
-    m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_SIZE_PHYSICAL).c_str(), LVCFMT_RIGHT, 90, COL_ITEMTOP_SIZE_PHYSICAL);
-    m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_SIZE_LOGICAL).c_str(), LVCFMT_RIGHT, 90, COL_ITEMTOP_SIZE_LOGICAL);
-    m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_LASTCHANGE).c_str(), LVCFMT_LEFT, 120, COL_ITEMTOP_LASTCHANGE);
+    m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_NAME).c_str(), LVCFMT_LEFT, minWidths[0], COL_ITEMTOP_NAME);
+    m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_SIZE_PHYSICAL).c_str(), LVCFMT_RIGHT, minWidths[1], COL_ITEMTOP_SIZE_PHYSICAL);
+    m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_SIZE_LOGICAL).c_str(), LVCFMT_RIGHT, minWidths[2], COL_ITEMTOP_SIZE_LOGICAL);
+    m_Control.InsertColumn(CHAR_MAX, Localization::Lookup(IDS_COL_LASTCHANGE).c_str(), LVCFMT_LEFT, minWidths[3], COL_ITEMTOP_LASTCHANGE);
     m_Control.SetSorting(COL_ITEMTOP_SIZE_PHYSICAL, false);
 
     m_Control.OnColumnsInserted();
