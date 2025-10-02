@@ -21,6 +21,7 @@
 #include "TreeMap.h"    // CColorSpace
 #include "SelectObject.h"
 #include "OwnerDrawnListControl.h"
+#include <Vsstyle.h>
 
 #include <algorithm>
 
@@ -530,23 +531,22 @@ int COwnerDrawnListControl::GetSubItemWidth(COwnerDrawnListItem* item, const int
     return rc.Width();
 }
 
-// This function calculates the pixel width of the header text for a given column.
-// It returns 0 if it is unable to get the width.
+// Calculates the total display width of a specific column header.
 int COwnerDrawnListControl::GetHeaderWidth(const int column)
 {
-    CHeaderCtrl* pHeaderCtrl = const_cast<CHeaderCtrl*>(GetHeaderCtrl());
+    CHeaderCtrl* pHeaderCtrl = GetHeaderCtrl();
+
     if (!pHeaderCtrl)
     {
         return 0;
     }
 
-    CDC* pDC = pHeaderCtrl->GetDC();
-    if (!pDC)
-    {
-        return 0;
-    }
+    CClientDC dc(pHeaderCtrl);
+    CFont* pOldFont = dc.SelectObject(pHeaderCtrl->GetFont());
 
     TCHAR szHeaderText[256];
+
+    // Zero-initialize the buffer.
     ZeroMemory(&szHeaderText, sizeof(szHeaderText));
 
     HDITEM hdItem = { 0 };
@@ -554,17 +554,40 @@ int COwnerDrawnListControl::GetHeaderWidth(const int column)
     hdItem.pszText = szHeaderText;
     hdItem.cchTextMax = _countof(szHeaderText);
 
-    pHeaderCtrl->GetItem(column, &hdItem);
-
-    if (hdItem.cchTextMax > 0)
+    if (!pHeaderCtrl->GetItem(column, &hdItem))
     {
-        szHeaderText[_countof(szHeaderText) - 1] = 0;
+        dc.SelectObject(pOldFont);
+        return 0;
     }
-    CSize headerSize =
-        pDC->GetTextExtent(szHeaderText, static_cast<int>(_tcslen(szHeaderText)));
-    pHeaderCtrl->ReleaseDC(pDC);
 
-    return headerSize.cx;
+    // Explicitly null-terminate the string.
+    szHeaderText[_countof(szHeaderText) - 1] = _T('\0');
+
+    const int padding = 9; // Padding adjustment.
+    int totalWidth;
+
+    HTHEME hTheme = ::OpenThemeData(pHeaderCtrl->GetSafeHwnd(), _T("HEADER"));
+
+    if (hTheme)
+    {
+        CRect rectThemeText;
+        // GetThemeTextExtent accounts for theme-specific padding and margins.
+        ::GetThemeTextExtent(hTheme, dc.GetSafeHdc(), HP_HEADERITEM, HIS_NORMAL, szHeaderText,
+            static_cast<int>(_tcslen(szHeaderText)), DT_SINGLELINE, NULL, &rectThemeText);
+
+        totalWidth = rectThemeText.Width() + padding;
+        ::CloseThemeData(hTheme);
+    }
+    else
+    {
+        // Fallback for systems without themes.
+        const CSize headerSize = dc.GetTextExtent(szHeaderText);
+        totalWidth = headerSize.cx + padding;
+    }
+
+    // Restore the original font to the DC.
+    dc.SelectObject(pOldFont);
+    return totalWidth;
 }
 
 #pragma warning(push)
