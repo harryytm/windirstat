@@ -530,6 +530,43 @@ int COwnerDrawnListControl::GetSubItemWidth(COwnerDrawnListItem* item, const int
     return rc.Width();
 }
 
+// This function calculates the pixel width of the header text for a given column.
+// It returns 0 if it is unable to get the width.
+int COwnerDrawnListControl::GetHeaderWidth(const int column)
+{
+    CHeaderCtrl* pHeaderCtrl = const_cast<CHeaderCtrl*>(GetHeaderCtrl());
+    if (!pHeaderCtrl)
+    {
+        return 0;
+    }
+
+    CDC* pDC = pHeaderCtrl->GetDC();
+    if (!pDC)
+    {
+        return 0;
+    }
+
+    TCHAR szHeaderText[256];
+    ZeroMemory(&szHeaderText, sizeof(szHeaderText));
+
+    HDITEM hdItem = { 0 };
+    hdItem.mask = HDI_TEXT;
+    hdItem.pszText = szHeaderText;
+    hdItem.cchTextMax = _countof(szHeaderText);
+
+    pHeaderCtrl->GetItem(column, &hdItem);
+
+    if (hdItem.cchTextMax > 0)
+    {
+        szHeaderText[_countof(szHeaderText) - 1] = 0;
+    }
+    CSize headerSize =
+        pDC->GetTextExtent(szHeaderText, static_cast<int>(_tcslen(szHeaderText)));
+    pHeaderCtrl->ReleaseDC(pDC);
+
+    return headerSize.cx;
+}
+
 #pragma warning(push)
 #pragma warning(disable:26454)
 BEGIN_MESSAGE_MAP(COwnerDrawnListControl, CSortingListControl)
