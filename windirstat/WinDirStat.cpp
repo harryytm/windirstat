@@ -27,6 +27,7 @@
 #include "Localization.h"
 #include "PageFiltering.h"
 #include "SmartPointer.h"
+#include "Item.h"
 
 CIconHandler* GetIconHandler()
 {
