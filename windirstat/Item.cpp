@@ -1411,6 +1411,7 @@ std::wstring CItem::UpwardGetPathWithoutBackslash() const
     }
 
     while (!path.empty() && path.back() == L'\\') path.pop_back();
+    VTRACE(L"pathParts: Peak {}, Current {}", CDirStatApp::Get()->GetMaxPathPartsSize(), pathParts.size());
     return path;
 }
 
