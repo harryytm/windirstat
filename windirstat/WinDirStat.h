@@ -24,6 +24,7 @@
 #include "IconHandler.h"
 #include "Constants.h"
 #include "Tracer.h"
+#include <atomic>
 
 class CMainFrame;
 class CDirStatApp;
@@ -60,8 +61,8 @@ public:
 
     static std::tuple<ULONGLONG, ULONGLONG> GetFreeDiskSpace(const std::wstring& pszRootPath);
     static CDirStatApp* Get() { return &_singleton; }
-    size_t GetMaxPathPartsSize() const { return s_maxPathPartsSize; }
-    void SetMaxPathPartsSize(size_t size) { s_maxPathPartsSize = max(s_maxPathPartsSize, size); }
+    size_t GetMaxPathPartsSize() const { return s_maxPathPartsSize.load(); }
+    void SetMaxPathPartsSize(size_t size);
     void ResetMaxPathPartsSizeCache() { s_maxPathPartsSize = s_defaultMaxPathPartsSize; }
 
 protected:
@@ -76,7 +77,7 @@ protected:
     COLORREF m_AltEncryptionColor;    // Coloring of encrypted items
     static CDirStatApp _singleton;    // Singleton application instance
     const size_t s_defaultMaxPathPartsSize = 8; // Can be defined right here
-    size_t s_maxPathPartsSize = s_defaultMaxPathPartsSize;
+    std::atomic<size_t> s_maxPathPartsSize = s_defaultMaxPathPartsSize;
 
 #ifdef VTRACE_TO_CONSOLE
     CAutoPtr<CWDSTracerConsole> m_VtraceConsole;
