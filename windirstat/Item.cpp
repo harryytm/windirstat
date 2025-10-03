@@ -1409,7 +1409,6 @@ std::wstring CItem::UpwardGetPathWithoutBackslash() const
             path.append(p->m_Name.substr(0, 2)).append(L"\\");
         }
     }
-    VTRACE(L"pathParts = {}, {}", CDirStatApp::Get()->GetMaxPathPartsSize(), pathParts.size());
     while (!path.empty() && path.back() == L'\\') path.pop_back();
     return path;
 }
