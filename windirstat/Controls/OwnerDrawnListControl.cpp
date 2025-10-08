@@ -21,7 +21,6 @@
 #include "TreeMap.h"    // CColorSpace
 #include "SelectObject.h"
 #include "OwnerDrawnListControl.h"
-#include <Vsstyle.h>
 
 #include <algorithm>
 
@@ -544,10 +543,7 @@ int COwnerDrawnListControl::GetHeaderWidth(const int column)
     CClientDC dc(pHeaderCtrl);
     CFont* pOldFont = dc.SelectObject(pHeaderCtrl->GetFont());
 
-    TCHAR szHeaderText[256];
-
-    // Zero-initialize the buffer.
-    ZeroMemory(&szHeaderText, sizeof(szHeaderText));
+    WCHAR szHeaderText[256];
 
     HDITEM hdItem = { 0 };
     hdItem.mask = HDI_TEXT;
@@ -560,30 +556,15 @@ int COwnerDrawnListControl::GetHeaderWidth(const int column)
         return 0;
     }
 
-    // Explicitly null-terminate the string.
+    // Explicitly null-terminate the string to avoid
+    // C6054 might not be zero-terminated warning
     szHeaderText[_countof(szHeaderText) - 1] = _T('\0');
 
     const int padding = 9; // Padding adjustment.
     int totalWidth;
 
-    HTHEME hTheme = ::OpenThemeData(pHeaderCtrl->GetSafeHwnd(), _T("HEADER"));
-
-    if (hTheme)
-    {
-        CRect rectThemeText;
-        // GetThemeTextExtent accounts for theme-specific padding and margins.
-        ::GetThemeTextExtent(hTheme, dc.GetSafeHdc(), HP_HEADERITEM, HIS_NORMAL, szHeaderText,
-            static_cast<int>(_tcslen(szHeaderText)), DT_SINGLELINE, NULL, &rectThemeText);
-
-        totalWidth = rectThemeText.Width() + padding;
-        ::CloseThemeData(hTheme);
-    }
-    else
-    {
-        // Fallback for systems without themes.
-        const CSize headerSize = dc.GetTextExtent(szHeaderText);
-        totalWidth = headerSize.cx + padding;
-    }
+    const CSize headerSize = dc.GetTextExtent(szHeaderText);
+    totalWidth = headerSize.cx + padding;
 
     // Restore the original font to the DC.
     dc.SelectObject(pOldFont);
