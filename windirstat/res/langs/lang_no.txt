@@ -46,7 +46,6 @@ IDS_DELETE_SYSTEM_WARNING=Sletting av filer Windows anser som systemfiler kan f�
 IDS_DELETE_TITLE=Advarsel
 IDS_DRIVE_ITEM_FREEsTOTALs={} ledig av {}
 IDS_DRIVES_ALL=Søk kun inni lok&ale stasjoner.
-IDS_DRIVES_ALL=Søk kun inni lok&ale stasjoner.
 IDS_DRIVES_FOLDER=Søk kun inni denne &mappen:
 IDS_DRIVES_SUBSET=Søk kun valgte plasser&inger:
 IDS_DRIVES_TITLE=WinDirStat - Velg søkeplasseringer
