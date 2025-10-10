@@ -1224,14 +1224,16 @@ void CItem::UpdateFreeSpaceItem()
 
     auto [total, free] = CDirStatApp::GetFreeDiskSpace(GetPath());
 
-    // Recreate name based on updated space percentage
+    // Recreate name based on updated free space and percentage
     m_Name = std::format(
-        L"{:.2}|{} - {} / {} {} ({:.1f}%)",
+        L"{:.2}|{} - {} ({:.1f}%)",
         m_Name,
         FormatVolumeNameOfRootPath(GetPath()),
-        FormatBytes(free),
-        FormatBytes(total),
-        Localization::Lookup(IDS_COL_FREE),
+        Localization::Format(
+            IDS_DRIVE_ITEM_FREEsTOTALs,
+            FormatBytes(free),
+            FormatBytes(total)
+        ),
         100.0 * static_cast<double>(free) / static_cast<double>(total)
     );
 
