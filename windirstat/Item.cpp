@@ -164,7 +164,17 @@ std::wstring CItem::GetText(const int subitem) const
     case COL_NAME:
         if (IsType(IT_DRIVE))
         {
-            return m_Name.substr(std::size(L"?:"));
+            auto [total, free] = CDirStatApp::GetFreeDiskSpace(GetPath());
+            const std::wstring driveLabel = std::format(
+                L"{:.2}|{} - {} / {} {} ({:.1f}%)",
+                m_Name,
+                FormatVolumeNameOfRootPath(GetPath()),
+                FormatBytes(free),
+                FormatBytes(total),
+                Localization::Lookup(IDS_COL_FREE),
+                100.0 * static_cast<double>(free) / static_cast<double>(total)
+            );
+            return driveLabel.substr(std::size(L"?:"));
         }
         return m_Name;
 
