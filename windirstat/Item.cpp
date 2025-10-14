@@ -1234,7 +1234,7 @@ void CItem::UpdateFreeSpaceItem()
             FormatBytes(free),
             FormatBytes(total)
         ),
-        100.0 * static_cast<double>(free) / static_cast<double>(total)
+        100.0 * free / total
     );
 
     // Update freespace item if it exists
