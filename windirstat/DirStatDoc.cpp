@@ -257,8 +257,9 @@ void CDirStatDoc::SetPathName(LPCWSTR lpszPathName, BOOL /*bAddToMRU*/)
 //
 void CDirStatDoc::SetTitlePrefix(const std::wstring& prefix) const
 {
-    static std::wstring suffix = IsElevationActive() ? L" (Administrator)" : L"";
-    std::wstring docName = std::format(L"{} {} {}", prefix, GetTitle().GetString(), suffix);
+    static std::wstring suffix = IsElevationActive() ? L"(Administrator)" : wds::strEmpty;
+    std::wstring finderType = COptions::UseFastScanEngine ? L"(Enhanced Scan) " : wds::strEmpty; // prototype, will add to lang file;
+    std::wstring docName = std::format(L"{} {} {}", prefix, GetTitle().GetString(), finderType + suffix);
     docName = TrimString(docName);
     CMainFrame::Get()->UpdateFrameTitleForDocument(docName.empty() ? nullptr : docName.c_str());
 }
