@@ -69,7 +69,7 @@ std::wstring GetLocaleString(const LCTYPE lctype, const LCID lcid)
 
 std::wstring GetLocaleLanguage(const LANGID langid)
 {
-    const std::wstring s = GetLocaleString(LOCALE_SLOCALIZEDLANGUAGENAME, langid);
+    const std::wstring s = GetLocaleString(LOCALE_SLOCALIZEDDISPLAYNAME, langid);
     const std::wstring n = GetLocaleString(LOCALE_SNATIVELANGNAME, langid);
     return s + L" (" + n + L")";
 }
@@ -975,4 +975,118 @@ bool CompressFileAllowed(const std::wstring& filePath, const CompressionAlgorith
     compressionModern[volumeName.data()] = isNTFS && IsWindows10OrGreater();
 
     return compressionMap.at(volumeName);
+}
+
+const std::vector<ACCEL>& GetAcceleratorTable()
+{
+    static std::vector<ACCEL> accelTable;
+
+    if (accelTable.empty())
+    {
+        HMODULE hInst = AfxGetResourceHandle();
+        HACCEL hAccel = LoadAccelerators(hInst, MAKEINTRESOURCE(IDR_MAINFRAME));
+
+        if (hAccel)
+        {
+            int count = CopyAcceleratorTable(hAccel, nullptr, 0);
+
+            if (count > 0)
+            {
+                accelTable.resize(count);
+                CopyAcceleratorTable(hAccel, accelTable.data(), count);
+            }
+        }
+    }
+    return accelTable;
+}
+
+std::wstring GetHotkeyString(UINT nID)
+{
+    std::wstring result;
+    result.reserve(50);
+    const std::vector<ACCEL>& accelTable = GetAcceleratorTable();
+
+    if (accelTable.empty()) return wds::strEmpty;
+
+    for (const auto& accel : accelTable)
+    {
+        if (accel.cmd == nID)
+        {
+            if (!result.empty()) result += L" or ";
+            if (accel.fVirt & FCONTROL) result += L"Ctrl+";
+            if (accel.fVirt & FSHIFT)   result += L"Shift+";
+            if (accel.fVirt & FALT)     result += L"Alt+";
+            result += (accel.fVirt & FVIRTKEY) ?
+                ResolveVirtualKeyName(accel.key) : std::wstring{ ::towupper(accel.key) };
+        }
+    }
+
+    return result;
+}
+
+bool InjectHotkeyHint(std::wstring& string, UINT nID)
+{
+    const std::wstring hotkeyHint = GetHotkeyString(nID);
+    if (!hotkeyHint.empty())
+    {
+        string += L"\t" + hotkeyHint;
+        return true;
+    }
+    return false;
+}
+
+bool InjectHotkeyHint(LPWSTR pMenuText, UINT nID)
+{
+    // NOTE: pMenuText points to the string in your m_Map cache.
+    const std::wstring hotkeyHint = GetHotkeyString(nID);
+    if (hotkeyHint.empty())
+    {
+        return false;
+    }
+
+    // Construct the exact string that would be appended (e.g., "\tCtrl+A").
+    const std::wstring hintToFind = L"\t" + hotkeyHint;
+
+    // CHECK FOR DUPLICATE: This prevents repeated modification of the m_Map string.
+    if (wcsstr(pMenuText, hintToFind.c_str()) != nullptr)
+    {
+        return false; // Bypass: Hint already present in the map string.
+    }
+
+    // APPEND HINT (This permanently modifies the string inside m_Map!)
+    //wcscat(pMenuText, hintToFind.c_str());
+    
+    return true;
+}
+
+std::wstring ResolveVirtualKeyName(UINT key)
+{
+    auto it = g_key_processing_map.find(key);
+
+    if (it != g_key_processing_map.end())
+    {
+        return it->second;
+    }
+    else if (key >= VK_F1 && key <= VK_F24)
+    {
+        return L"F" + std::to_wstring(key - VK_F1 + 1);
+    }
+    else if (key >= VK_NUMPAD0 && key <= VK_NUMPAD9)
+    {
+        return std::to_wstring(key - VK_NUMPAD0);
+    }
+    else
+    {
+        static WCHAR keyNameBuffer[256];
+        UINT scanCode = MapVirtualKeyW(key, MAPVK_VK_TO_VSC);
+
+        if (GetKeyNameTextW(scanCode << 16, keyNameBuffer, 256) > 0)
+        {
+            return std::wstring(keyNameBuffer);
+        }
+        else
+        {
+            return L"VK_" + std::to_wstring(key);
+        }
+    }
 }

@@ -115,21 +115,27 @@ bool Localization::LoadResource(const WORD language)
 
 void Localization::UpdateMenu(CMenu& menu)
 {
+    static std::wstring menuItemText;
+    menuItemText.reserve(MAX_VALUE_SIZE);
     for (int i = 0; i < menu.GetMenuItemCount(); i++)
     {
         std::array<WCHAR, MAX_VALUE_SIZE> buffer;
         MENUITEMINFOW mi{ sizeof(MENUITEMINFO) };
         mi.cch = static_cast<UINT>(buffer.size());
         mi.dwTypeData = buffer.data();
-        mi.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_SUBMENU;
+        mi.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_SUBMENU | MIIM_ID;
         menu.GetMenuItemInfoW(i, &mi, TRUE);
+
         if (mi.fType == MFT_STRING && wcsstr(mi.dwTypeData, L"ID") == mi.dwTypeData &&
             Contains(mi.dwTypeData))
         {
+            menuItemText = m_Map[mi.dwTypeData];
+            InjectHotkeyHint(menuItemText, mi.wID);
             mi.fMask = MIIM_STRING;
-            mi.dwTypeData = const_cast<LPWSTR>(m_Map[mi.dwTypeData].c_str());
+            mi.dwTypeData = const_cast<LPWSTR>(menuItemText.c_str());
             menu.SetMenuItemInfoW(i, &mi, TRUE);
         }
+
         if (IsMenu(mi.hSubMenu)) UpdateMenu(*menu.GetSubMenu(i));
     }
 }
