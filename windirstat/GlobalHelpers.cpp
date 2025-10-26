@@ -976,3 +976,119 @@ bool CompressFileAllowed(const std::wstring& filePath, const CompressionAlgorith
 
     return compressionMap.at(volumeName);
 }
+
+// --- Static Map Definition (Retained from previous conversation) ---
+static constexpr const wchar_t* NUMPAD_FLAG = L"__NUMPAD__";
+static const std::unordered_map<UINT, std::wstring> g_key_processing_map = {
+    { VK_OEM_PLUS,      L"+" },
+    { VK_OEM_MINUS,     L"-" },
+    { VK_DIVIDE,        NUMPAD_FLAG },
+    { VK_MULTIPLY,      NUMPAD_FLAG },
+    { VK_ADD,           NUMPAD_FLAG },
+    { VK_SUBTRACT,      NUMPAD_FLAG }
+};
+// --------------------------------------------------------------------------
+
+std::wstring GetHotkeyString(UINT nID)
+{
+    std::wstring result;
+    std::vector<ACCEL> accelTable;
+    HMODULE hInst = AfxGetResourceHandle();
+    HACCEL hAccel = LoadAccelerators(hInst, MAKEINTRESOURCE(IDR_MAINFRAME));
+
+    if (!hAccel) return L"";
+
+    int count = CopyAcceleratorTable(hAccel, nullptr, 0);
+
+    if (count > 0)
+    {
+        accelTable.resize(count);
+        CopyAcceleratorTable(hAccel, accelTable.data(), count);
+
+        for (const auto& accel : accelTable)
+        {
+            if (accel.cmd == nID) // Found a matching command ID.
+            {
+                if (!result.empty())
+                {
+                    result += L" or ";
+                }
+
+                std::wstring hotkeyString;
+
+                // Add modifier keys (Ctrl, Shift, Alt).
+                if (accel.fVirt & FCONTROL) hotkeyString += L"Ctrl+";
+                if (accel.fVirt & FSHIFT) hotkeyString += L"Shift+";
+                if (accel.fVirt & FALT) hotkeyString += L"Alt+";
+
+                // Resolve the key code.
+                if (accel.fVirt & FVIRTKEY)
+                {
+                    std::wstring hotkeyName;
+                    auto it = g_key_processing_map.find(accel.key);
+
+                    if (it != g_key_processing_map.end())
+                    {
+                        if (it->second == NUMPAD_FLAG)
+                        {
+                            // Numpad Logic: Requires localization + *forced* prefix check
+                            WCHAR keyNameBuffer[256];
+                            UINT scanCode = MapVirtualKeyW(accel.key, MAPVK_VK_TO_VSC);
+
+                            if (GetKeyNameTextW(scanCode << 16, keyNameBuffer, 256) > 0)
+                            {
+                                hotkeyName = keyNameBuffer;
+
+                                // Conditional "Num " prefix application for Numpad operators
+                                if (hotkeyName.size() < 3 ||
+                                    (hotkeyName.substr(0, 3) != L"Num" && hotkeyName.substr(0, 3) != L"num"))
+                                {
+                                    hotkeyName = L"Num " + hotkeyName;
+                                }
+                            }
+                            else
+                            {
+                                hotkeyName = std::to_wstring(accel.key);
+                            }
+                        }
+                        else
+                        {
+                            // Fixed String Override Logic (e.g., "+" or "-")
+                            hotkeyName = it->second;
+                        }
+                    }
+                    else // Default handling for all other VIRTKEY codes (like VK_DELETE, VK_F1, etc.)
+                    {
+                        WCHAR keyNameBuffer[256];
+                        UINT scanCode = MapVirtualKeyW(accel.key, MAPVK_VK_TO_VSC);
+
+                        if (GetKeyNameTextW(scanCode << 16, keyNameBuffer, 256) > 0)
+                        {
+                            hotkeyName = keyNameBuffer;
+
+                            if (hotkeyName.size() >= 4 &&
+                                (hotkeyName.substr(0, 4) == L"Num " || hotkeyName.substr(0, 4) == L"num "))
+                            {
+                                hotkeyName.erase(0, 4); // Strip the "Num " prefix (4 characters)
+                            }
+                        }
+                        else
+                        {
+                            hotkeyName = std::to_wstring(accel.key); // Fallback
+                        }
+                    }
+
+                    hotkeyString += hotkeyName;
+                }
+                else // Key is a character (e.g., 'E', 'C').
+                {
+                    hotkeyString += (WCHAR)towupper(accel.key);
+                }
+
+                result += hotkeyString;
+            }
+        }
+    }
+
+    return result;
+}
