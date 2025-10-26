@@ -128,21 +128,12 @@ void Localization::UpdateMenu(CMenu& menu)
             Contains(mi.dwTypeData))
         {
             std::wstring resolvedHotkeys = GetHotkeyString(mi.wID);
-            std::wstring idstr = mi.dwTypeData;
-            std::wstring message =
-                L"=======================================\n"
-                L"ID:\t" + idstr +
-                L"\nHotkey:\t" + (!resolvedHotkeys.empty() ? resolvedHotkeys : L"None") +
-                L"\n======================================="
-                ;
-            MessageBox(NULL, message.c_str(), L"GetHotkeyString Test", MB_OK | MB_ICONINFORMATION);
-
             std::wstring finalMenuItemText = m_Map[mi.dwTypeData];
-            //if (!resolvedHotkeys.empty())
-            //{
-            //    finalMenuItemText += L"\t";
-            //    finalMenuItemText += resolvedHotkeys;
-            //}
+            if (!resolvedHotkeys.empty())
+            {
+                finalMenuItemText += L"\t";
+                finalMenuItemText += resolvedHotkeys;
+            }
             mi.fMask = MIIM_STRING;
             mi.dwTypeData = const_cast<LPWSTR>(finalMenuItemText.c_str());
             menu.SetMenuItemInfoW(i, &mi, TRUE);
