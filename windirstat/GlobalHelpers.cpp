@@ -996,39 +996,6 @@ const std::unordered_map<UINT, std::wstring> g_key_processing_map = {
     //{ VK_ESCAPE,        L"Esc" },
     //{ VK_BACK,          L"Backspace" }
 };
-
-std::wstring ResolveVirtualKeyName(UINT key)
-{
-    auto it = g_key_processing_map.find(key);
-
-    if (it != g_key_processing_map.end())
-    {
-        return it->second;
-    }
-    else if (key >= VK_F1 && key <= VK_F24)
-    {
-        return L"F" + std::to_wstring(key - VK_F1 + 1);
-    }
-    else if (key >= VK_NUMPAD0 && key <= VK_NUMPAD9)
-    {
-        return std::to_wstring(key - VK_NUMPAD0);
-    }
-    else
-    {
-        static WCHAR keyNameBuffer[256];
-        UINT scanCode = MapVirtualKeyW(key, MAPVK_VK_TO_VSC);
-
-        if (GetKeyNameTextW(scanCode << 16, keyNameBuffer, 256) > 0)
-        {
-            return std::wstring(keyNameBuffer);
-        }
-        else
-        {
-            return L"VK_" + std::to_wstring(key);
-        }
-    }
-}
-
 std::wstring GetHotkeyString(UINT nID)
 {
     std::wstring result;
@@ -1075,4 +1042,36 @@ std::wstring GetHotkeyString(UINT nID)
     }
 
     return result;
+}
+
+std::wstring ResolveVirtualKeyName(UINT key)
+{
+    auto it = g_key_processing_map.find(key);
+
+    if (it != g_key_processing_map.end())
+    {
+        return it->second;
+    }
+    else if (key >= VK_F1 && key <= VK_F24)
+    {
+        return L"F" + std::to_wstring(key - VK_F1 + 1);
+    }
+    else if (key >= VK_NUMPAD0 && key <= VK_NUMPAD9)
+    {
+        return std::to_wstring(key - VK_NUMPAD0);
+    }
+    else
+    {
+        static WCHAR keyNameBuffer[256];
+        UINT scanCode = MapVirtualKeyW(key, MAPVK_VK_TO_VSC);
+
+        if (GetKeyNameTextW(scanCode << 16, keyNameBuffer, 256) > 0)
+        {
+            return std::wstring(keyNameBuffer);
+        }
+        else
+        {
+            return L"VK_" + std::to_wstring(key);
+        }
+    }
 }
