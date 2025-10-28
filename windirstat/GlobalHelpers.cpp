@@ -977,45 +977,95 @@ bool CompressFileAllowed(const std::wstring& filePath, const CompressionAlgorith
     return compressionMap.at(volumeName);
 }
 
-// Helper function declaration (needs to be defined before or in a linked file)
-// Resolves a VIRTKEY code into its display name, applying Numpad or prefix-strip logic.
-std::wstring ResolveVirtualKeyName(UINT key, bool isNumpad, WCHAR* pBuffer, int bufferSize);
+// 🚀 REQUIRED INCLUDES (Ensure these are present at the top of GlobalHelpers.cpp)
+//#include <unordered_map>
+//#include <string>
+//#include <vector>
+//#include <cctype>
+//#include <Windows.h>
+//#include <afxwin.h> 
+// You may also need your own project's header file for function declarations.
+// #include "GlobalHelpers.h" // Example
 
-// --- Static Map Definition (Retained from previous conversation) ---
-static constexpr const wchar_t* NUMPAD_FLAG = L"__NUMPAD__";
-static const std::unordered_map<UINT, std::wstring> g_key_processing_map = {
+// Note: If you have a corresponding GlobalHelpers.h, this map should be
+// declared as 'extern' there, and the 'static' keyword removed from here.
+
+// Map Definition
+const std::unordered_map<UINT, std::wstring> g_key_processing_map = {
+    // Fixed Character Overrides (like the OEM keys)
     { VK_OEM_PLUS,      L"+" },
     { VK_OEM_MINUS,     L"-" },
-    { VK_DIVIDE,        NUMPAD_FLAG },
-    { VK_MULTIPLY,      NUMPAD_FLAG },
-    { VK_ADD,           NUMPAD_FLAG },
-    { VK_SUBTRACT,      NUMPAD_FLAG }
+    // Numpad Operators (Manually prefixed for clarity)
+    { VK_DIVIDE,        L"Num /" },
+    { VK_MULTIPLY,      L"Num *" },
+    { VK_ADD,           L"Num +" },
+    { VK_SUBTRACT,      L"Num -" },
+    // Other Common Special Keys (Clean, English names)
+    { VK_DELETE,        L"Del" },
+    //{ VK_INSERT,        L"Ins" },
+    //{ VK_HOME,          L"Home" },
+    //{ VK_END,           L"End" },
+    //{ VK_PRIOR,         L"PgUp" },
+    //{ VK_NEXT,          L"PgDn" },
+    //{ VK_RETURN,        L"Enter" },
+    //{ VK_TAB,           L"Tab" },
+    //{ VK_ESCAPE,        L"Esc" },
+    //{ VK_BACK,          L"Backspace" }
 };
-// --------------------------------------------------------------------------
 
-// // Gets the accelerator hotkey string for a command ID.
+// Helper Function Definition
+std::wstring ResolveVirtualKeyName(UINT key)
+{
+    auto it = g_key_processing_map.find(key);
+
+    if (it != g_key_processing_map.end())
+    {
+        return it->second;
+    }
+    else if (key >= VK_F1 && key <= VK_F24)
+    {
+        return L"F" + std::to_wstring(key - VK_F1 + 1);
+    }
+    else if (key >= VK_NUMPAD0 && key <= VK_NUMPAD9)
+    {
+        return std::to_wstring(key - VK_NUMPAD0);
+    }
+    else
+    {
+        static WCHAR keyNameBuffer[256];
+        UINT scanCode = ::MapVirtualKeyW(key, MAPVK_VK_TO_VSC);
+
+        if (::GetKeyNameTextW(scanCode << 16, keyNameBuffer, 256) > 0)
+        {
+            return std::wstring(keyNameBuffer);
+        }
+        else
+        {
+            return L"VK_" + std::to_wstring(key);
+        }
+    }
+}
+
 std::wstring GetHotkeyString(UINT nID)
 {
-    // Reusable buffer for WinAPI calls, as requested.
-    static WCHAR keyNameBuffer[256];
-
+    // Note the use of std:: everywhere for safety
     std::wstring result;
     std::vector<ACCEL> accelTable;
-    HMODULE hInst = AfxGetResourceHandle();
-    HACCEL hAccel = LoadAccelerators(hInst, MAKEINTRESOURCE(IDR_MAINFRAME));
+    HMODULE hInst = ::AfxGetResourceHandle();
+    HACCEL hAccel = ::LoadAccelerators(hInst, MAKEINTRESOURCE(IDR_MAINFRAME));
 
     if (!hAccel) return L"";
 
-    int count = CopyAcceleratorTable(hAccel, nullptr, 0);
+    int count = ::CopyAcceleratorTable(hAccel, nullptr, 0);
 
     if (count > 0)
     {
         accelTable.resize(count);
-        CopyAcceleratorTable(hAccel, accelTable.data(), count);
+        ::CopyAcceleratorTable(hAccel, accelTable.data(), count);
 
         for (const auto& accel : accelTable)
         {
-            if (accel.cmd == nID) // Found a matching command ID.
+            if (accel.cmd == nID)
             {
                 if (!result.empty())
                 {
@@ -1024,41 +1074,18 @@ std::wstring GetHotkeyString(UINT nID)
 
                 std::wstring hotkeyString;
 
-                // Add modifier keys (Ctrl, Shift, Alt).
-                if (accel.fVirt & FCONTROL) hotkeyString += L"Ctrl+";
-                if (accel.fVirt & FSHIFT) hotkeyString += L"Shift+";
-                if (accel.fVirt & FALT) hotkeyString += L"Alt+";
+                hotkeyString += (accel.fVirt & FCONTROL) ? L"Ctrl+" : L"";
+                hotkeyString += (accel.fVirt & FSHIFT) ? L"Shift+" : L"";
+                hotkeyString += (accel.fVirt & FALT) ? L"Alt+" : L"";
 
-                // Resolve the key code.
                 if (accel.fVirt & FVIRTKEY)
                 {
-                    auto it = g_key_processing_map.find(accel.key);
-                    bool isNumpadKey = false;
-
-                    if (it != g_key_processing_map.end())
-                    {
-                        if (it->second == NUMPAD_FLAG)
-                        {
-                            isNumpadKey = true;
-                            // Continues to ResolveVirtualKeyName for Numpad logic
-                        }
-                        else
-                        {
-                            // Fixed String Override Logic (e.g., "+" or "-")
-                            hotkeyString += it->second;
-                            goto append_and_continue; // Skip the common VIRTKEY resolution block
-                        }
-                    }
-
-                    // Consolidated VIRTKEY resolution for all non-fixed-string keys
-                    hotkeyString += ResolveVirtualKeyName(accel.key, isNumpadKey, keyNameBuffer, 256);
+                    hotkeyString += ResolveVirtualKeyName(accel.key);
                 }
-                else // Key is a character (e.g., 'E', 'C').
+                else
                 {
-                    hotkeyString += (WCHAR)towupper(accel.key);
+                    hotkeyString += (WCHAR)::towupper(accel.key);
                 }
-
-            append_and_continue:; // Label for the goto
 
                 result += hotkeyString;
             }
@@ -1066,42 +1093,4 @@ std::wstring GetHotkeyString(UINT nID)
     }
 
     return result;
-}
-
-// // Resolves a VIRTKEY code into its display name, applying prefix logic.
-std::wstring ResolveVirtualKeyName(UINT key, bool isNumpad, WCHAR* pBuffer, int bufferSize)
-{
-    std::wstring hotkeyName;
-    UINT scanCode = MapVirtualKeyW(key, MAPVK_VK_TO_VSC);
-
-    if (GetKeyNameTextW(scanCode << 16, pBuffer, bufferSize) > 0)
-    {
-        hotkeyName = pBuffer;
-
-        if (isNumpad)
-        {
-            // Conditional "Num " prefix application for Numpad operators
-            // Checks if the key name is too short or doesn't already start with "Num"/"num"
-            if (hotkeyName.size() < 3 ||
-                (hotkeyName.substr(0, 3) != L"Num" && hotkeyName.substr(0, 3) != L"num"))
-            {
-                hotkeyName = L"Num " + hotkeyName;
-            }
-        }
-        else // Not Numpad, so strip any existing "Num " prefix
-        {
-            if (hotkeyName.size() >= 4 &&
-                (hotkeyName.substr(0, 4) == L"Num " || hotkeyName.substr(0, 4) == L"num "))
-            {
-                hotkeyName.erase(0, 4); // Strip the "Num " prefix (4 characters)
-            }
-        }
-    }
-    else
-    {
-        // Fallback to the raw key code if the name resolution fails
-        hotkeyName = std::to_wstring(key);
-    }
-
-    return hotkeyName;
 }
