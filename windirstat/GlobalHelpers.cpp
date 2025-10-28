@@ -977,31 +977,15 @@ bool CompressFileAllowed(const std::wstring& filePath, const CompressionAlgorith
     return compressionMap.at(volumeName);
 }
 
-// 🚀 REQUIRED INCLUDES (Ensure these are present at the top of GlobalHelpers.cpp)
-//#include <unordered_map>
-//#include <string>
-//#include <vector>
-//#include <cctype>
-//#include <Windows.h>
-//#include <afxwin.h> 
-// You may also need your own project's header file for function declarations.
-// #include "GlobalHelpers.h" // Example
-
-// Note: If you have a corresponding GlobalHelpers.h, this map should be
-// declared as 'extern' there, and the 'static' keyword removed from here.
-
-// Map Definition
 const std::unordered_map<UINT, std::wstring> g_key_processing_map = {
     // Fixed Character Overrides (like the OEM keys)
     { VK_OEM_PLUS,      L"+" },
     { VK_OEM_MINUS,     L"-" },
-    // Numpad Operators (Manually prefixed for clarity)
     { VK_DIVIDE,        L"Num /" },
     { VK_MULTIPLY,      L"Num *" },
     { VK_ADD,           L"Num +" },
     { VK_SUBTRACT,      L"Num -" },
-    // Other Common Special Keys (Clean, English names)
-    { VK_DELETE,        L"Del" },
+    { VK_DELETE,        L"Del" }//,
     //{ VK_INSERT,        L"Ins" },
     //{ VK_HOME,          L"Home" },
     //{ VK_END,           L"End" },
@@ -1013,7 +997,6 @@ const std::unordered_map<UINT, std::wstring> g_key_processing_map = {
     //{ VK_BACK,          L"Backspace" }
 };
 
-// Helper Function Definition
 std::wstring ResolveVirtualKeyName(UINT key)
 {
     auto it = g_key_processing_map.find(key);
@@ -1033,9 +1016,9 @@ std::wstring ResolveVirtualKeyName(UINT key)
     else
     {
         static WCHAR keyNameBuffer[256];
-        UINT scanCode = ::MapVirtualKeyW(key, MAPVK_VK_TO_VSC);
+        UINT scanCode = MapVirtualKeyW(key, MAPVK_VK_TO_VSC);
 
-        if (::GetKeyNameTextW(scanCode << 16, keyNameBuffer, 256) > 0)
+        if (GetKeyNameTextW(scanCode << 16, keyNameBuffer, 256) > 0)
         {
             return std::wstring(keyNameBuffer);
         }
@@ -1048,20 +1031,19 @@ std::wstring ResolveVirtualKeyName(UINT key)
 
 std::wstring GetHotkeyString(UINT nID)
 {
-    // Note the use of std:: everywhere for safety
     std::wstring result;
     std::vector<ACCEL> accelTable;
-    HMODULE hInst = ::AfxGetResourceHandle();
-    HACCEL hAccel = ::LoadAccelerators(hInst, MAKEINTRESOURCE(IDR_MAINFRAME));
+    HMODULE hInst = AfxGetResourceHandle();
+    HACCEL hAccel = LoadAccelerators(hInst, MAKEINTRESOURCE(IDR_MAINFRAME));
 
     if (!hAccel) return L"";
 
-    int count = ::CopyAcceleratorTable(hAccel, nullptr, 0);
+    int count = CopyAcceleratorTable(hAccel, nullptr, 0);
 
     if (count > 0)
     {
         accelTable.resize(count);
-        ::CopyAcceleratorTable(hAccel, accelTable.data(), count);
+        CopyAcceleratorTable(hAccel, accelTable.data(), count);
 
         for (const auto& accel : accelTable)
         {
