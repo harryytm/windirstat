@@ -37,6 +37,25 @@ using CompressionAlgorithm = enum CompressionAlgorithm {
     LZX = FILE_PROVIDER_COMPRESSION_LZX | FILE_PROVIDER_COMPRESSION_MODERN
 };
 
+const std::unordered_map<UINT, std::wstring> g_key_processing_map = {
+    { VK_OEM_PLUS,      L"+" },
+    { VK_OEM_MINUS,     L"-" },
+    { VK_DIVIDE,        L"Num /" },
+    { VK_MULTIPLY,      L"Num *" },
+    { VK_ADD,           L"Num +" },
+    { VK_SUBTRACT,      L"Num -" },
+    { VK_DELETE,        L"Delete" },
+    { VK_INSERT,        L"Insert" },
+    { VK_HOME,          L"Home" },
+    { VK_END,           L"End" },
+    { VK_PRIOR,         L"PgUp" },
+    { VK_NEXT,          L"PgDn" },
+    { VK_RETURN,        L"Enter" },
+    { VK_TAB,           L"Tab" },
+    { VK_ESCAPE,        L"Esc" },
+    { VK_BACK,          L"Backspace" }
+};
+
 // Used at runtime to distinguish between mount points and junction points since they
 // share the same reparse tag on the file system.
 constexpr DWORD IO_REPARSE_TAG_JUNCTION_POINT = ~IO_REPARSE_TAG_MOUNT_POINT;

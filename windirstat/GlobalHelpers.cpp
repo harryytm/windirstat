@@ -977,25 +977,6 @@ bool CompressFileAllowed(const std::wstring& filePath, const CompressionAlgorith
     return compressionMap.at(volumeName);
 }
 
-const std::unordered_map<UINT, std::wstring> g_key_processing_map = {
-    // Fixed Character Overrides (like the OEM keys)
-    { VK_OEM_PLUS,      L"+" },
-    { VK_OEM_MINUS,     L"-" },
-    { VK_DIVIDE,        L"Num /" },
-    { VK_MULTIPLY,      L"Num *" },
-    { VK_ADD,           L"Num +" },
-    { VK_SUBTRACT,      L"Num -" },
-    { VK_DELETE,        L"Del" }//,
-    //{ VK_INSERT,        L"Ins" },
-    //{ VK_HOME,          L"Home" },
-    //{ VK_END,           L"End" },
-    //{ VK_PRIOR,         L"PgUp" },
-    //{ VK_NEXT,          L"PgDn" },
-    //{ VK_RETURN,        L"Enter" },
-    //{ VK_TAB,           L"Tab" },
-    //{ VK_ESCAPE,        L"Esc" },
-    //{ VK_BACK,          L"Backspace" }
-};
 std::wstring GetHotkeyString(UINT nID)
 {
     std::wstring result;
