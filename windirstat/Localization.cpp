@@ -127,15 +127,9 @@ void Localization::UpdateMenu(CMenu& menu)
         if (mi.fType == MFT_STRING && wcsstr(mi.dwTypeData, L"ID") == mi.dwTypeData &&
             Contains(mi.dwTypeData))
         {
-            std::wstring resolvedHotkeys = GetHotkeyString(mi.wID);
-            std::wstring finalMenuItemText = m_Map[mi.dwTypeData];
-            if (!resolvedHotkeys.empty())
-            {
-                finalMenuItemText += L"\t";
-                finalMenuItemText += resolvedHotkeys;
-            }
+            InjectHotkeyHint(m_Map[mi.dwTypeData], mi.wID);
             mi.fMask = MIIM_STRING;
-            mi.dwTypeData = const_cast<LPWSTR>(finalMenuItemText.c_str());
+            mi.dwTypeData = const_cast<LPWSTR>(m_Map[mi.dwTypeData].c_str());
             menu.SetMenuItemInfoW(i, &mi, TRUE);
         }
 
