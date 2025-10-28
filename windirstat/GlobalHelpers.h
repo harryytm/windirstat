@@ -118,5 +118,7 @@ std::wstring GetNameFromSid(PSID sid);
 
 bool CompressFile(const std::wstring& filePath, CompressionAlgorithm algorithm);
 bool CompressFileAllowed(const std::wstring& filePath, CompressionAlgorithm algorithm);
+const std::vector<ACCEL>& GetAcceleratorTable();
 std::wstring GetHotkeyString(UINT nID);
+bool InjectHotkeyHint(std::wstring& target, UINT nID);
 std::wstring ResolveVirtualKeyName(UINT key);
