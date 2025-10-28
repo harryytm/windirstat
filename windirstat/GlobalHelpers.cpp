@@ -977,52 +977,61 @@ bool CompressFileAllowed(const std::wstring& filePath, const CompressionAlgorith
     return compressionMap.at(volumeName);
 }
 
+const std::vector<ACCEL>& GetAcceleratorTable()
+{
+    static std::vector<ACCEL> accelTable;
+
+    if (accelTable.empty())
+    {
+        HMODULE hInst = AfxGetResourceHandle();
+        HACCEL hAccel = LoadAccelerators(hInst, MAKEINTRESOURCE(IDR_MAINFRAME));
+
+        if (hAccel)
+        {
+            int count = CopyAcceleratorTable(hAccel, nullptr, 0);
+
+            if (count > 0)
+            {
+                accelTable.resize(count);
+                CopyAcceleratorTable(hAccel, accelTable.data(), count);
+            }
+        }
+    }
+    return accelTable;
+}
+
 std::wstring GetHotkeyString(UINT nID)
 {
     std::wstring result;
-    std::vector<ACCEL> accelTable;
-    HMODULE hInst = AfxGetResourceHandle();
-    HACCEL hAccel = LoadAccelerators(hInst, MAKEINTRESOURCE(IDR_MAINFRAME));
+    const std::vector<ACCEL>& accelTable = GetAcceleratorTable();
 
-    if (!hAccel) return wds::strEmpty;
+    if (accelTable.empty()) return wds::strEmpty;
 
-    int count = CopyAcceleratorTable(hAccel, nullptr, 0);
-
-    if (count > 0)
+    for (const auto& accel : accelTable)
     {
-        accelTable.resize(count);
-        CopyAcceleratorTable(hAccel, accelTable.data(), count);
-
-        for (const auto& accel : accelTable)
+        if (accel.cmd == nID)
         {
-            if (accel.cmd == nID)
-            {
-                if (!result.empty())
-                {
-                    result += L" or ";
-                }
-
-                std::wstring hotkeyString;
-
-                hotkeyString += (accel.fVirt & FCONTROL) ? L"Ctrl+" : wds::strEmpty;
-                hotkeyString += (accel.fVirt & FSHIFT) ? L"Shift+" : wds::strEmpty;
-                hotkeyString += (accel.fVirt & FALT) ? L"Alt+" : wds::strEmpty;
-
-                if (accel.fVirt & FVIRTKEY)
-                {
-                    hotkeyString += ResolveVirtualKeyName(accel.key);
-                }
-                else
-                {
-                    hotkeyString += (WCHAR)::towupper(accel.key);
-                }
-
-                result += hotkeyString;
-            }
+            if (!result.empty()) result += L" or ";
+            if (accel.fVirt & FCONTROL) result += L"Ctrl+";
+            if (accel.fVirt & FSHIFT)   result += L"Shift+";
+            if (accel.fVirt & FALT)     result += L"Alt+";
+            result += (accel.fVirt & FVIRTKEY) ?
+                ResolveVirtualKeyName(accel.key) : std::wstring{ ::towupper(accel.key) };
         }
     }
 
     return result;
+}
+
+bool InjectHotkeyHint(std::wstring& string, UINT nID)
+{
+    const std::wstring hotkeyHint = GetHotkeyString(nID);
+    if (!hotkeyHint.empty())
+    {
+        string += L"\t" + hotkeyHint;
+        return true;
+    }
+    return false;
 }
 
 std::wstring ResolveVirtualKeyName(UINT key)
