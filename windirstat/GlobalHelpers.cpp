@@ -69,7 +69,7 @@ std::wstring GetLocaleString(const LCTYPE lctype, const LCID lcid)
 
 std::wstring GetLocaleLanguage(const LANGID langid)
 {
-    const std::wstring s = GetLocaleString(LOCALE_SLOCALIZEDLANGUAGENAME, langid);
+    const std::wstring s = GetLocaleString(LOCALE_SLOCALIZEDDISPLAYNAME, langid);
     const std::wstring n = GetLocaleString(LOCALE_SNATIVELANGNAME, langid);
     return s + L" (" + n + L")";
 }
