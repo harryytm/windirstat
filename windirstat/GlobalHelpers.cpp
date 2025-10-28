@@ -984,7 +984,7 @@ std::wstring GetHotkeyString(UINT nID)
     HMODULE hInst = AfxGetResourceHandle();
     HACCEL hAccel = LoadAccelerators(hInst, MAKEINTRESOURCE(IDR_MAINFRAME));
 
-    if (!hAccel) return L"";
+    if (!hAccel) return wds::strEmpty;
 
     int count = CopyAcceleratorTable(hAccel, nullptr, 0);
 
@@ -1004,9 +1004,9 @@ std::wstring GetHotkeyString(UINT nID)
 
                 std::wstring hotkeyString;
 
-                hotkeyString += (accel.fVirt & FCONTROL) ? L"Ctrl+" : L"";
-                hotkeyString += (accel.fVirt & FSHIFT) ? L"Shift+" : L"";
-                hotkeyString += (accel.fVirt & FALT) ? L"Alt+" : L"";
+                hotkeyString += (accel.fVirt & FCONTROL) ? L"Ctrl+" : wds::strEmpty;
+                hotkeyString += (accel.fVirt & FSHIFT) ? L"Shift+" : wds::strEmpty;
+                hotkeyString += (accel.fVirt & FALT) ? L"Alt+" : wds::strEmpty;
 
                 if (accel.fVirt & FVIRTKEY)
                 {
