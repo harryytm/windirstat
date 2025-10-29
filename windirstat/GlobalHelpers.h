@@ -121,4 +121,5 @@ bool CompressFileAllowed(const std::wstring& filePath, CompressionAlgorithm algo
 const std::vector<ACCEL>& GetAcceleratorTable();
 std::wstring GetHotkeyString(UINT nID);
 bool InjectHotkeyHint(std::wstring& target, UINT nID);
+bool InjectHotkeyHint(LPWSTR pMenuText, UINT nID);
 std::wstring ResolveVirtualKeyName(UINT key);

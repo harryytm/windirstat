@@ -1035,6 +1035,30 @@ bool InjectHotkeyHint(std::wstring& string, UINT nID)
     return false;
 }
 
+bool InjectHotkeyHint(LPWSTR pMenuText, UINT nID)
+{
+    // NOTE: pMenuText points to the string in your m_Map cache.
+    const std::wstring hotkeyHint = GetHotkeyString(nID);
+    if (hotkeyHint.empty())
+    {
+        return false;
+    }
+
+    // Construct the exact string that would be appended (e.g., "\tCtrl+A").
+    const std::wstring hintToFind = L"\t" + hotkeyHint;
+
+    // CHECK FOR DUPLICATE: This prevents repeated modification of the m_Map string.
+    if (wcsstr(pMenuText, hintToFind.c_str()) != nullptr)
+    {
+        return false; // Bypass: Hint already present in the map string.
+    }
+
+    // APPEND HINT (This permanently modifies the string inside m_Map!)
+    //wcscat(pMenuText, hintToFind.c_str());
+    
+    return true;
+}
+
 std::wstring ResolveVirtualKeyName(UINT key)
 {
     auto it = g_key_processing_map.find(key);
