@@ -915,11 +915,11 @@ void CMainFrame::UpdateCleanupMenu(CMenu* menu) const
     std::wstring info;
     if (items == 1)
     {
-        info = Localization::Format(IDS_ONEITEMss, FormatBytes(bytes), wds::strEmpty);
+        info = Localization::Format(IDS_ONEITEMs, FormatBytes(bytes));
     }
     else
     {
-        info = Localization::Format(IDS_sITEMSss, FormatCount(items), FormatBytes(bytes), wds::strEmpty);
+        info = Localization::Format(IDS_sITEMSs, FormatCount(items), FormatBytes(bytes));
     }
 
     const std::wstring s = Localization::Lookup(IDS_EMPTYRECYCLEBIN) + info;
