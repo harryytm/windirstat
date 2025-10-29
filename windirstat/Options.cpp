@@ -209,7 +209,7 @@ void COptions::CompileFilters()
             }
             catch (const std::regex_error&)
             {
-                DisplayError(Localization::Lookup(IDS_PAGE_FILTERING_INVALID_FILTER) + L" " + token);
+                DisplayError(Localization::Lookup(IDS_PAGE_FILTERING_INVALID_FILTER) + wds::chrBlankSpace + token);
             }
         }
     }

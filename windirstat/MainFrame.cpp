@@ -541,7 +541,7 @@ void CMainFrame::UpdateProgress()
     else
     {
         static const std::wstring scanningString = Localization::Lookup(IDS_SCANNING);
-        titlePrefix = scanningString + L" " + suspended;
+        titlePrefix = scanningString + wds::chrBlankSpace + suspended;
     }
 
     TrimString(titlePrefix);
@@ -766,7 +766,7 @@ BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT /*lpcs*/, CCreateContext* pContex
 BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 {
     // seed initial Title bar text
-    static std::wstring title = Localization::Lookup(IDS_APP_TITLE) + (IsElevationActive() ? L" (Administrator)" : L"");
+    static std::wstring title = Localization::Lookup(IDS_APP_TITLE) + (IsElevationActive() ? L" (Administrator)" : wds::strEmpty);
     cs.style &= ~FWS_ADDTOTITLE;
     cs.lpszName = title.c_str();
 
@@ -1115,7 +1115,7 @@ void CMainFrame::UpdatePaneText()
     // Update disk usage area
     SetStatusPaneText(
         ID_STATUSPANE_DISK_INDEX,
-        (size != MAXULONG64) ? (L"      ∑  " + FormatBytes(size)) : L"",
+        (size != MAXULONG64) ? (L"      ∑  " + FormatBytes(size)) : wds::strEmpty,
         100
     );
 

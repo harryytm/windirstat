@@ -159,7 +159,7 @@ bool FinderBasic::FindNext()
 
 bool FinderBasic::FindFile(const CItem* item)
 {
-    return FindFile(item->GetPath(), L"", item->GetAttributes());
+    return FindFile(item->GetPath(), wds::strEmpty, item->GetAttributes());
 }
 
 bool FinderBasic::FindFile(const std::wstring & strFolder, const std::wstring& strName, const DWORD attr)

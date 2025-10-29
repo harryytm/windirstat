@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "Constants.h"
 #include "TreeMap.h"
 #include "Property.h"
 
@@ -37,10 +38,10 @@ enum REFRESHPOLICY : std::uint8_t
 
 struct USERDEFINEDCLEANUP
 {
-    USERDEFINEDCLEANUP() : USERDEFINEDCLEANUP(L"") {}
+    USERDEFINEDCLEANUP() : USERDEFINEDCLEANUP(wds::strEmpty) {}
     USERDEFINEDCLEANUP(const std::wstring & sEntry) :
-        Title(Setting<std::wstring>(sEntry, L"Title", L"")),
-        CommandLine(Setting<std::wstring>(sEntry, L"CommandLine", L"")),
+        Title(Setting<std::wstring>(sEntry, L"Title", wds::strEmpty)),
+        CommandLine(Setting<std::wstring>(sEntry, L"CommandLine", wds::strEmpty)),
         Enabled(Setting(sEntry, L"Enable", false)),
         VirginTitle(Setting(sEntry, L"VirginTitle", true)),
         WorksForDrives(Setting(sEntry, L"WorksForDrives", false)),

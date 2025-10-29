@@ -36,7 +36,7 @@ SearchDlg::SearchDlg(CWnd* pParent /*=nullptr*/)
     , m_SearchWholePhrase(FALSE)
     , m_SearchCase(FALSE)
     , m_SearchRegex(FALSE)
-    , m_SearchTerm(L"")
+    , m_SearchTerm(wds::strEmpty)
     , m_Layout(this, COptions::SearchWindowRect.Ptr())
 {
 

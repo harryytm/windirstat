@@ -105,7 +105,7 @@ std::wstring FormatBytes(const ULONGLONG& n)
         return FormatSizeSuffixes(n);
     }
 
-    return FormatLongLongNormal(n) + L" " + GetSpec_Bytes();
+    return FormatLongLongNormal(n) + wds::chrBlankSpace + GetSpec_Bytes();
 }
 
 std::wstring FormatSizeSuffixes(ULONGLONG n)
@@ -131,22 +131,22 @@ std::wstring FormatSizeSuffixes(ULONGLONG n)
 
     if (TiB != 0.0 || GiB == base - 1 && MiB >= half)
     {
-        return FormatDouble(TiB + GiB / base) + L" " + GetSpec_TiB();
+        return FormatDouble(TiB + GiB / base) + wds::chrBlankSpace + GetSpec_TiB();
     }
     if (GiB != 0.0 || MiB == base - 1 && KiB >= half)
     {
-        return FormatDouble(GiB + MiB / base) + L" " + GetSpec_GiB();
+        return FormatDouble(GiB + MiB / base) + wds::chrBlankSpace + GetSpec_GiB();
     }
     if (MiB != 0.0 || KiB == base - 1 && B >= half)
     {
-        return FormatDouble(MiB + KiB / base) + L" " + GetSpec_MiB();
+        return FormatDouble(MiB + KiB / base) + wds::chrBlankSpace + GetSpec_MiB();
     }
     if (KiB != 0.0)
     {
-        return FormatDouble(KiB + B / base) + L" " + GetSpec_KiB();
+        return FormatDouble(KiB + B / base) + wds::chrBlankSpace + GetSpec_KiB();
     }
 
-    return std::to_wstring(static_cast<ULONG>(B)) + L" " + GetSpec_Bytes();
+    return std::to_wstring(static_cast<ULONG>(B)) + wds::chrBlankSpace + GetSpec_Bytes();
 }
 
 std::wstring FormatCount(const ULONGLONG& n)
@@ -180,7 +180,7 @@ std::wstring FormatFileTime(const FILETIME& t)
         FileTimeToLocalFileTime(&t, &ft) == 0 ||
         FileTimeToSystemTime(&ft, &st) == 0)
     {
-        return L"";
+        return wds::strEmpty;
     }
     
     const LCID lcid = COptions::GetLocaleForFormatting();
@@ -803,7 +803,7 @@ constexpr DWORD SidGetLength(const PSID x)
 std::wstring GetNameFromSid(const PSID sid)
 {
     // return immediately if sid is null
-    if (sid == nullptr) return L"";
+    if (sid == nullptr) return wds::strEmpty;
 
     // define custom lookup function
     auto comp = [](const PSID p1, const PSID p2)

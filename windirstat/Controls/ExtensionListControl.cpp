@@ -107,7 +107,7 @@ HICON CExtensionListControl::CListItem::GetIcon()
 
 std::wstring CExtensionListControl::CListItem::GetDescription() const
 {
-    return m_Icon == nullptr ? L"" : m_Description;
+    return m_Icon == nullptr ? wds::strEmpty : m_Description;
 }
 
 std::wstring CExtensionListControl::CListItem::GetBytesPercent() const

@@ -934,7 +934,7 @@ std::wstring CItem::GetExtension() const
 {
     if (!IsType(IT_FILE)) return m_Name;
     const LPCWSTR ext = wcsrchr(m_Name.c_str(), L'.');
-    if (ext == nullptr) return L"";
+    if (ext == nullptr) return wds::strEmpty;
     std::wstring extLower = ext;
     _wcslwr_s(extLower.data(), extLower.size() + 1);
     return extLower;

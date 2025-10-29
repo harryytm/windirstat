@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "Constants.h"
 #include "stdafx.h"
 
 #include <string>
@@ -90,10 +91,10 @@ void DisplayError(const std::wstring& error);
 std::wstring TranslateError(HRESULT hr = static_cast<HRESULT>(GetLastError()));
 void DisableHibernate();
 bool IsHibernateEnabled();
-bool ShellExecuteWrapper(const std::wstring& lpFile, const std::wstring& lpParameters = L"", const std::wstring& lpVerb = L"",
-    HWND hwnd = *AfxGetMainWnd(), const std::wstring& lpDirector = L"", INT nShowCmd = SW_NORMAL);
+bool ShellExecuteWrapper(const std::wstring& lpFile, const std::wstring& lpParameters = wds::strEmpty, const std::wstring& lpVerb = wds::strEmpty,
+    HWND hwnd = *AfxGetMainWnd(), const std::wstring& lpDirector = wds::strEmpty, INT nShowCmd = SW_NORMAL);
 std::wstring GetBaseNameFromPath(const std::wstring& path);
-std::wstring GetAppFileName(const std::wstring& ext = L"");
+std::wstring GetAppFileName(const std::wstring& ext = wds::strEmpty);
 std::wstring GetAppFolder();
 std::wstring GetNameFromSid(PSID sid);
 

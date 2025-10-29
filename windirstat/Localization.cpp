@@ -55,7 +55,7 @@ bool Localization::CrackStrings(std::basic_istream<char>& stream, const unsigned
         std::wstring lineWide = bufferWide.substr(0, sz);
 
         // Parse the string after the first equals
-        SearchReplace(lineWide, L"\r", L"");
+        SearchReplace(lineWide, L"\r", wds::strEmpty);
         SearchReplace(lineWide, L"\\n", L"\n");
         SearchReplace(lineWide, L"\\t", L"\t");
         if (const auto e = lineWide.find_first_of('='); e != std::string::npos)

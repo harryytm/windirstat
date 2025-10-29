@@ -596,7 +596,7 @@ void COwnerDrawnListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResul
     // temporarily insert a false column to the finalize column does 
     // not autosize to fit the whole control width
     SetRedraw(FALSE);
-    const int falseColumn = InsertColumn(column + 1, L"");
+    const int falseColumn = InsertColumn(column + 1, wds::strEmpty);
     SetColumnWidth(column, LVSCW_AUTOSIZE_USEHEADER);
     int width = GetColumnWidth(column);
     DeleteColumn(falseColumn);

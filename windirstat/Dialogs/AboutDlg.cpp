@@ -231,7 +231,7 @@ std::wstring CAboutDlg::GetAppVersion()
         VerQueryValue(tVersionInfo.data(), L"\\", reinterpret_cast<LPVOID*>(&pVersion), &iQueriedSize) != 0)
     {
         return std::format(L"WinDirStat {}{}.{}.{} ({})\nGit Commit: {}",
-            PRODUCTION == 0 ? L"Beta " : L"",
+            PRODUCTION == 0 ? L"Beta " : wds::strEmpty,
             std::to_wstring(HIWORD(pVersion->dwFileVersionMS)),
             std::to_wstring(LOWORD(pVersion->dwFileVersionMS)),
             std::to_wstring(HIWORD(pVersion->dwFileVersionLS)),

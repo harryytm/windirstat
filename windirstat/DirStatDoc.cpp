@@ -257,7 +257,7 @@ void CDirStatDoc::SetPathName(LPCWSTR lpszPathName, BOOL /*bAddToMRU*/)
 //
 void CDirStatDoc::SetTitlePrefix(const std::wstring& prefix) const
 {
-    static std::wstring suffix = IsElevationActive() ? L" (Administrator)" : L"";
+    static std::wstring suffix = IsElevationActive() ? L" (Administrator)" : wds::strEmpty;
     std::wstring docName = std::format(L"{} {} {}", prefix, GetTitle().GetString(), suffix);
     docName = TrimString(docName);
     CMainFrame::Get()->UpdateFrameTitleForDocument(docName.empty() ? nullptr : docName.c_str());
@@ -1215,7 +1215,7 @@ void CDirStatDoc::OnCommandPromptHere()
     const std::wstring cmd = GetCOMSPEC();
     for (const auto& path : paths)
     {
-        ShellExecuteWrapper(cmd, L"", L"open", *AfxGetMainWnd(), path);
+        ShellExecuteWrapper(cmd, wds::strEmpty, L"open", *AfxGetMainWnd(), path);
     }
 }
 
@@ -1247,7 +1247,7 @@ void CDirStatDoc::OnPowerShellHere()
     // launch a command prompt for each path
     for (const auto& path : paths)
     {
-        ShellExecuteWrapper(pwsh, L"", L"open", *AfxGetMainWnd(), path);
+        ShellExecuteWrapper(pwsh, wds::strEmpty, L"open", *AfxGetMainWnd(), path);
     }
 }
 
