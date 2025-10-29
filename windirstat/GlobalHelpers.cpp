@@ -1003,6 +1003,7 @@ const std::vector<ACCEL>& GetAcceleratorTable()
 std::wstring GetHotkeyString(UINT nID)
 {
     std::wstring result;
+    result.reserve(50);
     const std::vector<ACCEL>& accelTable = GetAcceleratorTable();
 
     if (accelTable.empty()) return wds::strEmpty;
