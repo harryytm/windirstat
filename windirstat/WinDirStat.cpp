@@ -322,9 +322,6 @@ BOOL CDirStatApp::InitInstance()
     ParseCommandLine(cmdInfo);
     ProcessShellCommand(cmdInfo);
 
-    // Allow dark mode
-    DarkMode::SetupGlobalColors();
-
     CMainFrame::Get()->InitialShowWindow();
     m_pMainWnd->Invalidate();
     m_pMainWnd->UpdateWindow();
