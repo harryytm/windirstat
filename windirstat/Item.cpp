@@ -1791,7 +1791,7 @@ void CItem::UpwardDrivePacman()
 
 std::vector<BYTE> CItem::GetFileHash(ULONGLONG hashSizeLimit, BlockingQueue<CItem*>* queue)
 {
-    thread_local std::vector<BYTE> fileBuffer(1024ull * 1024ull);
+    thread_local std::vector<BYTE> fileBuffer(MiB);
     thread_local std::vector<BYTE> hashBuffer;
     thread_local std::once_flag hashInitFlag;
     thread_local SmartPointer<BCRYPT_ALG_HANDLE> hashAlgHandle(

@@ -23,6 +23,8 @@ class Localization final
 {
     static bool CrackStrings(const std::wstring& sFileData, const std::wstring& sPrefix = {});
     static void SearchReplace(std::wstring& input, const std::wstring_view& search, const std::wstring_view& replace);
+    inline static void SearchReplace(std::wstring& input, const std::wstring_view search, wchar_t replace) { SearchReplace(input, search, std::wstring_view{ &replace, 1 }); }
+    inline static void SearchReplace(std::wstring& input, wchar_t search, const std::wstring_view replace) { SearchReplace(input, std::wstring_view{ &search, 1 }, replace); }
     static void UpdateWindowText(CWnd& wnd);
 
 public:

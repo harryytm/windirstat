@@ -17,20 +17,40 @@
 
 #pragma once
 
+inline constexpr auto KiB = 1024ull;
+inline constexpr auto MiB = KiB * 1024ull;
+inline constexpr auto GiB = MiB * 1024ull;
+inline constexpr auto TiB = GiB * 1024ull;
+inline constexpr auto PiB = TiB * 1024ull;
+
 namespace wds
 {
+    // Control Characters and Strings
+    inline constexpr auto chrCR   = L'\r';
+    inline constexpr auto chrLF   = L'\n';
+    inline constexpr auto chrTab  = L'\t';
+    inline constexpr auto strCRLF = L"\r\n";
+
+    // Literal Escape Sequences
+    inline constexpr auto strEscLF   = L"\\n";
+    inline constexpr auto strEscCRLF = L"\\r\\n";
+    inline constexpr auto strEscTab  = L"\\t";
+
+    // Special values
+    inline constexpr auto szNpos          = std::wstring::npos;
+
     // String and character constants
+    inline constexpr auto strEmpty        = L"";
     inline constexpr auto chrDot          = L'.';
     inline constexpr auto chrDoubleQuote  = L'"';
     inline constexpr auto chrColon        = L':';
     inline constexpr auto chrBackslash    = L'\\';
     inline constexpr auto chrPipe         = L'|';
     inline constexpr auto chrNull         = L'\0';
-    inline constexpr auto strEmpty        = L"";
     inline constexpr auto chrBlankSpace   = L' ';
     inline constexpr auto chrStar         = L'*';
     inline constexpr auto chrEqual        = L'=';
-    inline constexpr auto szNpos          = std::wstring::npos;
+
 
     inline constexpr auto strExplorerKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer";
     inline constexpr auto strThemesKey   = L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";

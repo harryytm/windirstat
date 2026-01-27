@@ -46,9 +46,9 @@ bool Localization::CrackStrings(const std::wstring& sFileData, const std::wstrin
         if (hasPrefix && !line.starts_with(prefix)) continue;
 
         // Parse the string after the first equals
-        SearchReplace(line, L"\r", wds::strEmpty);
-        SearchReplace(line, L"\\n", L"\n");
-        SearchReplace(line, L"\\t", L"\t");
+        SearchReplace(line, wds::chrCR, wds::strEmpty);
+        SearchReplace(line, wds::strEscLF, wds::chrLF);
+        SearchReplace(line, wds::strEscTab, wds::chrTab);
         if (const auto e = line.find_first_of(wds::chrEqual); e != wds::szNpos)
         {
             // Strip the prefix if any and add to map
@@ -73,9 +73,9 @@ std::set<LANGID> Localization::GetLanguageList()
     while (std::getline(is, line))
     {
         // Convert to wide strings
-        SearchReplace(line, L"\r", wds::strEmpty);
+        SearchReplace(line, wds::chrCR, wds::strEmpty);
         auto linePos = line.find_first_of(wds::chrColon);
-        if (linePos == std::wstring::npos) continue;
+        if (linePos == wds::szNpos) continue;
         uniqueLangs.emplace(line.substr(0, linePos));
     }
 
@@ -136,7 +136,7 @@ void Localization::UpdateMenu(CMenu& menu)
             if (mi.wID != std::bit_cast<UINT>(-1))
             {
                 const std::wstring accel = GetAcceleratorString(mi.wID);
-                if (!accel.empty()) menuText += L"\t" + accel;
+                if (!accel.empty()) menuText += wds::chrTab + accel;
             }
             
             // Set the item text
@@ -198,7 +198,7 @@ void Localization::UpdateDialogs(CWnd& wnd)
 bool Localization::LoadExternalLanguage(const LCTYPE lcttype, const LCID lcid)
 {
     const std::wstring name = L"lang_" + GetLocaleString(lcttype, lcid) + L".txt";
-    const std::wstring langFolder = GetAppFolder() + L"\\";
+    const std::wstring langFolder = GetAppFolder() + wds::chrBackslash;
 
     return FinderBasic::DoesFileExist(langFolder, name) && LoadFile(langFolder + name);
 }
@@ -224,7 +224,7 @@ std::wstring Localization::ConvertToWideString(const std::string_view & sv)
         static_cast<int>(sv.size()), nullptr, 0);
     if (required <= 0) return {};
 
-    std::wstring out(required, L'\0');
+    std::wstring out(required, wds::chrNull);
     if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, sv.data(),
         static_cast<int>(sv.size()), out.data(), required) <= 0) return {};
 
