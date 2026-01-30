@@ -1719,11 +1719,11 @@ std::wstring CItem::UpwardGetPathWithoutBackslash() const
     {
         if (const auto & pathPart = *it; pathPart->IsTypeOrFlag(IT_DIRECTORY))
         {
-            path.append(pathPart->m_name.get(), pathPart->m_nameLen).append(L"\\");
+            path.append(pathPart->m_name.get(), pathPart->m_nameLen).append(1, wds::chrBackslash);
         }
         else if (pathPart->IsTypeOrFlag(IT_DRIVE))
         {
-            path.append(pathPart->m_name.get(), 2).append(L"\\");
+            path.append(pathPart->m_name.get(), 2).append(1, wds::chrBackslash);
         }
         else if (!pathPart->IsTypeOrFlag(IT_MYCOMPUTER))
         {
@@ -1732,7 +1732,7 @@ std::wstring CItem::UpwardGetPathWithoutBackslash() const
     }
 
     // Remove trailing backslashes
-    if (const auto pos = path.find_last_not_of(L'\\'); pos != std::wstring::npos)
+    if (const auto pos = path.find_last_not_of(wds::chrBackslash); pos != std::wstring::npos)
     {
         path.erase(pos + 1);
     }
@@ -1790,7 +1790,7 @@ void CItem::UpwardDrivePacman()
 
 std::vector<BYTE> CItem::GetFileHash(ULONGLONG hashSizeLimit, BlockingQueue<CItem*>* queue)
 {
-    thread_local std::vector<BYTE> fileBuffer(1024ull * 1024ull);
+    thread_local std::vector<BYTE> fileBuffer(MiB);
     thread_local std::vector<BYTE> hashBuffer;
     thread_local std::once_flag hashInitFlag;
     thread_local SmartPointer<BCRYPT_ALG_HANDLE> hashAlgHandle(

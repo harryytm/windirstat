@@ -242,7 +242,7 @@ public:
 
         // Normalize string for parsing
         std::wstring param{ pszParam };
-        TrimString(param, wds::chrDoubleQuote);
+        TrimString(param, wds::chrDblQuote);
         TrimString(param, wds::chrBackslash, true);
 
         // If we have a pending flag, this non-flag param is its value

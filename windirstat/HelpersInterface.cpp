@@ -103,20 +103,15 @@ std::wstring FormatBytes(const ULONGLONG n) noexcept
 
 std::wstring FormatSizeSuffixes(const ULONGLONG n) noexcept
 {
-    constexpr ULONGLONG K = 1024;
-    constexpr ULONGLONG M = K * K;
-    constexpr ULONGLONG G = M * K;
-    constexpr ULONGLONG T = G * K;
-
     static constexpr struct {
         ULONGLONG bytes;
         ULONGLONG threshold;
         const std::wstring& (*suffix)();
     } units[] = {
-        {T, T - (G / 2), GetSpec_TiB},
-        {G, G - (M / 2), GetSpec_GiB},
-        {M, M - (K / 2), GetSpec_MiB},
-        {K, K,           GetSpec_KiB},
+        {TiB, TiB - (GiB / 2), GetSpec_TiB},
+        {GiB, GiB - (MiB / 2), GetSpec_GiB},
+        {MiB, MiB - (KiB / 2), GetSpec_MiB},
+        {KiB, KiB,             GetSpec_KiB},
     };
 
     for (const auto& [bytes, threshold, suffix] : units) [[msvc::flatten]]
@@ -124,9 +119,9 @@ std::wstring FormatSizeSuffixes(const ULONGLONG n) noexcept
         if (n < threshold) continue;
         
         return FormatDouble(static_cast<double>(n)
-            / static_cast<double>(bytes)) + L" " + suffix();
+            / static_cast<double>(bytes)) + wds::chrSP + suffix();
     }
-    return std::to_wstring(n) + L" " + GetSpec_Bytes();
+    return std::to_wstring(n) + wds::chrSP + GetSpec_Bytes();
 }
 
 std::wstring FormatCount(const ULONGLONG n) noexcept

@@ -1087,7 +1087,7 @@ void CDirStatDoc::OnEditCopy()
     std::wstring paths;
     for (const auto & item : GetAllSelected())
     {
-        if (!paths.empty()) paths += L"\r\n";
+        if (!paths.empty()) paths += wds::strCRLF;
         paths += item->GetPath();
     }
 
