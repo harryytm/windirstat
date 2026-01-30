@@ -50,7 +50,6 @@ Setting<bool> COptions::ScanForDuplicates(OptionsDupeTree, L"ScanForDuplicates",
 Setting<bool> COptions::SearchWholePhrase(OptionsSearch, L"SearchWholePhrase", false);
 Setting<bool> COptions::SearchRegex(OptionsSearch, L"SearchRegex", false);
 Setting<bool> COptions::SearchCase(OptionsSearch, L"SearchCase", false);
-Setting<int> COptions::SearchMaxResults(OptionsSearch, L"SearchMaxResults", 10000, 1, 1000000);
 Setting<bool> COptions::ShowColumnAttributes(OptionsFileTree, L"ShowColumnAttributes", false);
 Setting<bool> COptions::ShowColumnFiles(OptionsFileTree, L"ShowColumnFiles", true);
 Setting<bool> COptions::ShowColumnFolders(OptionsFileTree, L"ShowColumnFolders", false);
@@ -104,6 +103,8 @@ Setting<int> COptions::FileHashAlgorithm(OptionsGeneral, L"FileHashAlgorithm",
     HASH_SHA512, HASH_MD5, HASH_SHA512);
 Setting<int> COptions::LargeFileCount(OptionsGeneral, L"LargeFileCount", 50, 0, 10000);
 Setting<int> COptions::MinimizeViewThreshold(OptionsGeneral, L"MinimizeViewThreshold", 10, 1, 10000);
+Setting<int> COptions::PathPartsReserve(OptionsGeneral, L"PathPartsReserve", 0, 0, 256);
+Setting<int> COptions::SearchMaxResults(OptionsSearch, L"SearchMaxResults", 10000, 1, 1000000);
 Setting<int> COptions::ScanningThreads(OptionsGeneral, L"ScanningThreads", 4, 1, 16);
 Setting<int> COptions::SelectDrivesRadio(OptionsDriveSelect, L"SelectDrivesRadio", 0, 0, 2);
 Setting<int> COptions::SizeProportionIndent(OptionsFileTree, L"SizeProportionIndent", 16, 0, 1000);
