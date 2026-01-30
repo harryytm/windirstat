@@ -132,7 +132,6 @@ public:
     static Setting<bool> SearchWholePhrase;
     static Setting<bool> SearchCase;
     static Setting<bool> SearchRegex;
-    static Setting<int> SearchMaxResults;
     static Setting<bool> ShowColumnAttributes;
     static Setting<bool> ShowColumnFiles;
     static Setting<bool> ShowColumnFolders;
@@ -177,6 +176,8 @@ public:
     static Setting<int> FollowReparsePointMask;
     static Setting<int> LanguageId;
     static Setting<int> LargeFileCount;
+    static Setting<int> PathPartsReserve;
+    static Setting<int> SearchMaxResults;
     static Setting<int> ScanningThreads;
     static Setting<int> SelectDrivesRadio;
     static Setting<int> FileTreeColorCount;

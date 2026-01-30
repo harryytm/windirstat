@@ -1703,6 +1703,7 @@ std::wstring CItem::UpwardGetPathWithoutBackslash() const
     // create vector of the path structure in thread scope so we can reverse it
     thread_local std::vector<const CItem*> pathParts;
     thread_local std::wstring path;
+    pathParts.reserve(COptions::PathPartsReserve); // hidden configurable setting
 
     // make sure the vector is cleared before use
     pathParts.clear();
