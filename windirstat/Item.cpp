@@ -767,6 +767,9 @@ std::wstring CItem::GetPathWithoutSlash() const
     thread_local std::vector<const CItem*> pathParts;
     thread_local std::wstring path;
 
+    // allow advanced users to tweak the pathParts reserve size
+    pathParts.reserve(COptions::PathPartsReserve);
+
     // make sure the vector is cleared before use
     pathParts.clear();
     path.clear();
