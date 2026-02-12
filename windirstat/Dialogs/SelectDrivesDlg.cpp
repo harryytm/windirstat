@@ -562,7 +562,7 @@ void CSelectDrivesDlg::UpdateButtons()
     case RADIO_TARGET_FOLDER:
         if (!m_folderName.IsEmpty())
         {
-            if (m_folderName.GetLength() >= 2 && m_folderName.Left(2) == L"\\\\")
+            if (m_folderName.GetLength() >= 2 && m_folderName.Left(2) == wds::strUncPrefix)
             {
                 enableOk = true;
             }
