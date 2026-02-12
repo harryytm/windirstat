@@ -124,27 +124,27 @@ BOOL COptionsPropertySheet::PreTranslateMessage(MSG* pMsg)
 
 bool COptionsPropertySheet::ShowSettings(const int initialPage)
 {
-    auto sheet = std::make_unique<COptionsPropertySheet>();
-    sheet->m_initialPage = initialPage; // -1 means restore last-used tab
+    COptionsPropertySheet sheet;
+    sheet.m_initialPage = initialPage; // -1 means restore last-used tab
 
-    auto general = std::make_unique<CPageGeneral>();
-    auto filtering = std::make_unique<CPageFiltering>();
-    auto treelist = std::make_unique<CPageFileTree>();
-    auto treemap = std::make_unique<CPageTreeMap>();
-    auto cleanups = std::make_unique<CPageCleanups>();
-    auto prompts = std::make_unique<CPagePrompts>();
-    auto advanced = std::make_unique<CPageAdvanced>();
+    CPageGeneral general;
+    CPageFiltering filtering;
+    CPageFileTree treelist;
+    CPageTreeMap treemap;
+    CPageCleanups cleanups;
+    CPagePrompts prompts;
+    CPageAdvanced advanced;
 
-    sheet->AddPage(general.get());
-    sheet->AddPage(filtering.get()); // index 1
-    sheet->AddPage(treelist.get());
-    sheet->AddPage(treemap.get());
-    sheet->AddPage(cleanups.get());
-    sheet->AddPage(prompts.get());
-    sheet->AddPage(advanced.get());
+    sheet.AddPage(&general);
+    sheet.AddPage(&filtering); // index 1
+    sheet.AddPage(&treelist);
+    sheet.AddPage(&treemap);
+    sheet.AddPage(&cleanups);
+    sheet.AddPage(&prompts);
+    sheet.AddPage(&advanced);
 
-    sheet->DoModal();
-    return sheet->m_restartApplication;
+    sheet.DoModal();
+    return sheet.m_restartApplication;
 }
 
 BOOL COptionsPropertySheet::OnCommand(const WPARAM wParam, const LPARAM lParam)
@@ -227,7 +227,7 @@ void CWdsSplitterWnd::StopTracking(const BOOL bAccept)
 
     if (!isVisible)
     {
-        (CMainFrame::Get()->*view.minimize)(); // Minimize the view if it is considered not visible
+        (CMainFrame::Get()->*view.minimize)(); // Minimize the view if it considered not visible
         return; // Early exit to keep the current splitter position unchanged for show views to function properly
     }
 
@@ -523,14 +523,14 @@ void CMainFrame::SuspendState(const bool suspend)
     m_scanSuspend = suspend;
     if (m_taskbarList)
     {
-        if (suspend && m_taskbarButtonState != TBPF_PAUSED)
-        {
-            m_taskbarButtonPreviousState = m_taskbarButtonState;
-            m_taskbarList->SetProgressState(*this, m_taskbarButtonState = TBPF_PAUSED);
-        }
-        else if (!suspend && m_taskbarButtonState == TBPF_PAUSED)
+        if ((m_taskbarButtonState & TBPF_PAUSED) != 0)
         {
             m_taskbarList->SetProgressState(*this, m_taskbarButtonState = m_taskbarButtonPreviousState);
+        }
+        else
+        {
+            m_taskbarButtonPreviousState = m_taskbarButtonState;
+            m_taskbarList->SetProgressState(*this, m_taskbarButtonState |= TBPF_PAUSED);
         }
     }
     CPacman::SetGlobalSuspendState(suspend);
@@ -548,7 +548,7 @@ void CMainFrame::UpdateProgress()
         CreateProgress(m_workingItem->GetProgressRange());
     }
 
-    // Exit early if we are not ready for visual updates
+    // Exit early if we not ready for visual updates
     if (!m_progressVisible || m_workingItem == nullptr || currentRoot == nullptr) return;
 
     // Update pacman graphic (does nothing if hidden)
