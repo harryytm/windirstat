@@ -229,9 +229,9 @@ CString AFXGetRegPath(LPCTSTR lpszPostFix, LPCTSTR)
 class CWinDirStatCommandLineInfo final : public CCommandLineInfo
 {
     std::wstring m_pendingFlag;
-    const std::wstring saveToFlag = L"saveto";
-    const std::wstring saveDupesToFlag = L"savedupesto";
-    const std::wstring loadFromFlag = L"loadfrom";
+    const std::wstring saveToFlag          = L"saveto";
+    const std::wstring saveDupesToFlag     = L"savedupesto";
+    const std::wstring loadFromFlag        = L"loadfrom";
     const std::wstring legacyUninstallFlag = L"legacyuninstall";
 
 public:
