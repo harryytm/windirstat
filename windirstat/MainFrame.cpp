@@ -571,7 +571,7 @@ void CMainFrame::UpdateProgress()
         const int pos = std::min(static_cast<int>((m_progressPos * 100ull) / m_progressRange), 100);
         m_progress.SetPos(pos);
 
-        titlePrefix = std::to_wstring(pos) + L"% " + suspended;
+        titlePrefix = std::format(L"{}% {}", pos, suspended);
         if (m_taskbarList && m_taskbarButtonState != TBPF_PAUSED)
         {
             if (pos == 100)
@@ -588,7 +588,7 @@ void CMainFrame::UpdateProgress()
     else
     {
         static const std::wstring scanningString = Localization::Lookup(IDS_SCANNING);
-        titlePrefix = scanningString + L" " + suspended;
+        titlePrefix = std::format(L"{} {}", scanningString, suspended);
     }
 
     TrimString(titlePrefix);
@@ -1044,7 +1044,7 @@ void CMainFrame::QueryRecycleBin(ULONGLONG& items, ULONGLONG& bytes)
     for (const std::wstring & drive : GetDriveList({DRIVE_FIXED, DRIVE_REMOVABLE, DRIVE_RAMDISK}))
     {
         SHQUERYRBINFO qbi{ .cbSize = sizeof(qbi) };
-        if (FAILED(::SHQueryRecycleBin((drive + L"\\").c_str(), &qbi)))
+        if (FAILED(::SHQueryRecycleBin(std::format(L"{}{}", drive, L"\\").c_str(), &qbi)))
         {
             continue;
         }
