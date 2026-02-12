@@ -58,12 +58,12 @@ void CDirStatApp::RestartApplication(bool resetPreferences)
     if (resetPreferences)
     {
         // Cleanup registry preferences
-        RegDeleteTree(HKEY_CURRENT_USER, L"Software\\WinDirStat");
+        RegDeleteTree(HKEY_CURRENT_USER, wds::strRegKey);
 
         // Enable portable mode by creating the file
         if (InPortableMode())
         {
-            const std::wstring ini = GetAppFileName(L"ini");
+            const std::wstring ini = GetAppFileName(wds::strCfgFileExt);
             DeleteFile(ini.c_str());
             SetPortableMode(true);
         }
@@ -170,13 +170,13 @@ std::wstring CDirStatApp::GetCurrentProcessMemoryInfo()
 
 bool CDirStatApp::InPortableMode()
 {
-    return GetFileAttributes(GetAppFileName(L"ini").c_str()) != INVALID_FILE_ATTRIBUTES;
+    return GetFileAttributes(GetAppFileName(wds::strCfgFileExt).c_str()) != INVALID_FILE_ATTRIBUTES;
 }
 
 bool CDirStatApp::SetPortableMode(const bool enable, const bool onlyOpen)
 {
     // If portable mode is Enabled, then just ensure the full path is used
-    const std::wstring ini = GetAppFileName(L"ini");
+    const std::wstring ini = GetAppFileName(wds::strCfgFileExt);
     if (ini == m_pszProfileName &&
         enable == InPortableMode())
     {
@@ -223,7 +223,7 @@ CString AFXGetRegPath(LPCTSTR lpszPostFix, LPCTSTR)
 {
     // This overrides an internal MFC function that causes CWinAppEx
     // to malfunction when operated in portable mode
-    return CString(L"Software\\WinDirStat\\WinDirStat\\") + lpszPostFix + L"\\";
+    return CString(wds::strRegPath) + lpszPostFix + wds::chrBackslash;
 }
 
 class CWinDirStatCommandLineInfo final : public CCommandLineInfo
@@ -279,7 +279,7 @@ public:
             {
                 if (!m_strFileName.IsEmpty()) m_strFileName += wds::chrPipe;
                 std::error_code ec;
-                const std::wstring fullPath = std::filesystem::absolute(paramSpilt + L"\\", ec).wstring();
+                const std::wstring fullPath = std::filesystem::absolute(paramSpilt + wds::chrBackslash, ec).wstring();
                 if (FolderExists(fullPath)) m_strFileName += fullPath.c_str();
             }
             return;
@@ -509,7 +509,7 @@ void CDirStatApp::LegacyUninstall()
             key.EnumKey(i, sidName.data(), &sidSize) == ERROR_SUCCESS;
             i++, sidSize = static_cast<DWORD>(sidName.size()))
         {
-            regKeys.push_back({ HKEY_USERS, std::wstring(sidName.data()) + L"\\" + wds::strUninstall });
+            regKeys.push_back({ HKEY_USERS, std::wstring(sidName.data()) + wds::chrBackslash + wds::strUninstall });
         }
     }
 

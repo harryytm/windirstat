@@ -31,7 +31,7 @@ static std::wstring FormatLongLongNormal(ULONGLONG n)
     const wchar_t sep = GetLocaleThousandSeparator();
     std::array<WCHAR, 32> buffer;
     size_t pos = buffer.size() - 1;
-    buffer[pos] = L'\0';
+    buffer[pos] = wds::chrNull;
 
     for (int count = 0; n > 0; ++count, n /= 10)
     {
@@ -47,7 +47,7 @@ std::wstring GetLocaleString(const LCTYPE lctype, const LCID lcid)
     const int len = ::GetLocaleInfo(lcid, lctype, nullptr, 0);
     if (len <= 0) return {};
 
-    std::wstring s(len - 1, L'\0');
+    std::wstring s(len - 1, wds::chrNull);
     ::GetLocaleInfo(lcid, lctype, s.data(), len);
     return s;
 }
@@ -192,7 +192,7 @@ std::wstring FormatHex(const std::vector<BYTE> & bytes, const bool upper) noexce
         ? L"0123456789ABCDEF"
         : L"0123456789abcdef";
 
-    std::wstring out(bytes.size() * 2, L'\0');
+    std::wstring out(bytes.size() * 2, wds::chrNull);
     for (const size_t i : std::views::iota(0u, bytes.size()))
     {
         const BYTE b = bytes[i];

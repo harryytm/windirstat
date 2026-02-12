@@ -163,8 +163,8 @@ bool FinderNtfsContext::LoadRoot(CItem* driveitem)
 {
     // Trim off excess characters
     std::wstring volumePath = driveitem->GetPathLong();
-    while (!volumePath.empty() && volumePath.back() == L'\\') volumePath.pop_back();
-    if (!volumePath.empty() && volumePath[0] != L'\\' && volumePath[0] != L'/') volumePath.insert(0, L"\\\\.\\");
+    while (!volumePath.empty() && volumePath.back() == wds::chrBackslash) volumePath.pop_back();
+    if (!volumePath.empty() && volumePath[0] != wds::chrBackslash && volumePath[0] != L'/') volumePath.insert(0, L"\\\\.\\");
 
     // Open volume handle with FILE_FLAG_OVERLAPPED for asynchronous I/O
     SmartPointer volumeHandle(CloseHandle, CreateFile(volumePath.c_str(), FILE_READ_DATA | FILE_READ_ATTRIBUTES | SYNCHRONIZE,
@@ -440,9 +440,9 @@ FILETIME FinderNtfs::GetLastWriteTime() const
 std::wstring FinderNtfs::GetFilePath() const
 {
     // Get full path to folder or file
-    std::wstring path = (m_base.back() == L'\\') ?
+    std::wstring path = (m_base.back() == wds::chrBackslash) ?
         (m_base + GetFileName()) :
-        (m_base + L"\\" + GetFileName());
+        (m_base + wds::chrBackslash + GetFileName());
 
     // Strip special dos chars
     if (path.starts_with(s_dosUNCPath)) return L"\\\\" + path.substr(s_dosUNCPath.length());
