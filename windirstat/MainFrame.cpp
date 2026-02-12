@@ -497,7 +497,7 @@ void CMainFrame::SuspendState(const bool suspend)
     m_scanSuspend = suspend;
     if (m_taskbarList)
     {
-        if (m_taskbarButtonState == TBPF_PAUSED)
+        if ((m_taskbarButtonState & TBPF_PAUSED) != 0)
         {
             m_taskbarList->SetProgressState(*this, m_taskbarButtonState = m_taskbarButtonPreviousState);
         }
