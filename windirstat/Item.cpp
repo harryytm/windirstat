@@ -40,7 +40,7 @@ CItem::CItem(const ITEMTYPE type, const std::wstring & name) : m_type(type)
     {
         // Store drive paths with a backslash
         std::wstring nameTmp = name;
-        if (nameTmp.ends_with(L":")) nameTmp.append(L"\\");
+        if (nameTmp.ends_with(wds::chrColon)) nameTmp.append({ wds::chrBackslash });
 
         // The name string on the drive is two parts separated by a pipe. For example,
         // C:\|Local Disk (C:) is the true path followed by the name description

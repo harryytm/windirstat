@@ -128,7 +128,7 @@ bool CreateShadowCopy(const std::wstring& volumePath)
 
     // Ensure volume path ends with backslash
     std::wstring volume = volumePath;
-    if (!volume.empty() && !volume.ends_with(L'\\')) volume += L'\\';
+    if (!volume.empty() && !volume.ends_with(wds::chrBackslash)) volume += wds::chrBackslash;
 
     // Attempt to do the shadow copy creation
     CComVariant vtVolume(volume.c_str());
@@ -205,7 +205,7 @@ std::wstring GetVolumeName(const std::wstring& rootPath)
 {
     std::wstring volumeName(MAX_PATH, L'\0');
     std::wstring volumePath = rootPath;
-    if (volumePath.back() != L'\\') volumePath += L'\\';
+    if (volumePath.back() != wds::chrBackslash) volumePath += wds::chrBackslash;
     GetVolumeInformation(volumePath.c_str(), volumeName.data(),
         static_cast<DWORD>(volumeName.size()), nullptr, nullptr, nullptr, nullptr, 0);
     volumeName.resize(wcslen(volumeName.data()));
@@ -473,7 +473,7 @@ bool CompressFileAllowed(const std::wstring& volumeName, const CompressionAlgori
 
     // Query volume for modern compression support based on NTFS and OS version
     compressionStandard[resolvedVolume] = isNTFS && (fileSystemFlags & FILE_FILE_COMPRESSION) != 0;
-    compressionModern[resolvedVolume] = isNTFS && IsWindows10OrGreater() && !resolvedVolume.starts_with(L"\\\\");
+    compressionModern[resolvedVolume] = isNTFS && IsWindows10OrGreater() && !resolvedVolume.starts_with(wds::strUncPrefix);
 
     return compressionMap.at(resolvedVolume);
 }
@@ -723,7 +723,7 @@ std::wstring ComputeFileHashes(const std::wstring& filePath, CProgressDlg* pProg
     }
 
     // Finalize all hashes and convert to hex strings
-    std::wstring result = filePath + L"\n\n";
+    std::wstring result = filePath + wds::strDblLF;
     for (auto& ctx : contexts)
     {
         if (BCryptFinishHash(ctx.hHash, ctx.hash.data(),
@@ -731,9 +731,9 @@ std::wstring ComputeFileHashes(const std::wstring& filePath, CProgressDlg* pProg
 
         // Add to result
         result += std::format(L"{:\u2007<7}\t{}\n",
-            std::wstring(ctx.name) + L':', FormatHex(ctx.hash));
+            std::wstring(ctx.name) + wds::chrColon, FormatHex(ctx.hash));
     }
-    if (!result.empty() && result.back() == L'\n') result.pop_back();
+    if (!result.empty() && result.back() == wds::chrLF) result.pop_back();
 
     return result;
 }
