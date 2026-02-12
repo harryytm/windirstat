@@ -982,7 +982,7 @@ void CItem::ScanItemsFinalize(CItem* item)
 std::vector<CItem*> CItem::GetItemsRecursive(const std::vector<CItem*>& initialItems, const std::function<bool(CItem*)>& task)
 {
     std::vector<CItem*> files;
-    std::vector childStack{ initialItems };
+    std::vector<CItem*> childStack = initialItems;
     while (!childStack.empty())
     {
         const auto& item = childStack.back();
