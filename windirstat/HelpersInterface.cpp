@@ -59,12 +59,12 @@ std::wstring GetLocaleLanguage(const LANGID langid)
         // Use just the language name without the full display name
         const std::wstring s = GetLocaleString(LOCALE_SENGLISHLANGUAGENAME, langid);
         const std::wstring n = GetLocaleString(LOCALE_SNATIVELANGUAGENAME, langid);
-        return s + L" - " + n;
+        return std::format(L"{} - {}", s, n);
     }
 
     const std::wstring s = GetLocaleString(LOCALE_SENGLISHDISPLAYNAME, langid);
     const std::wstring n = GetLocaleString(LOCALE_SNATIVEDISPLAYNAME, langid);
-    return s + L" - " + n;
+    return std::format(L"{} - {}", s, n);
 }
 
 wchar_t GetLocaleThousandSeparator() noexcept
@@ -98,7 +98,7 @@ std::wstring FormatBytes(const ULONGLONG n) noexcept
         return FormatSizeSuffixes(n);
     }
 
-    return FormatLongLongNormal(n) + L" " + GetSpec_Bytes();
+    return  std::format(L"{} {}", FormatLongLongNormal(n), GetSpec_Bytes());
 }
 
 std::wstring FormatSizeSuffixes(const ULONGLONG n) noexcept
@@ -122,7 +122,7 @@ std::wstring FormatSizeSuffixes(const ULONGLONG n) noexcept
         return FormatDouble(static_cast<double>(n)
             / static_cast<double>(bytes)) + L" " + suffix();
     }
-    return std::to_wstring(n) + L" " + GetSpec_Bytes();
+    return std::format(L"{} {}", std::to_wstring(n), GetSpec_Bytes());
 }
 
 std::wstring FormatCount(const ULONGLONG n) noexcept
