@@ -664,11 +664,11 @@ std::wstring ComputeFileHashes(const std::wstring& filePath)
     // Define algorithms to compute
     using AlgSet = struct { LPCWSTR id; LPCWSTR name; DWORD hashLen; };
     constexpr std::array algos = {
-        AlgSet{BCRYPT_MD5_ALGORITHM, L"MD5", 16},
-        AlgSet{BCRYPT_SHA1_ALGORITHM, L"SHA1", 20},
-        AlgSet{BCRYPT_SHA256_ALGORITHM, L"SHA256", 32},
-        AlgSet{BCRYPT_SHA384_ALGORITHM, L"SHA384", 48},
-        AlgSet{BCRYPT_SHA512_ALGORITHM, L"SHA512", 64}
+        AlgSet{BCRYPT_MD5_ALGORITHM, MD5, 16},
+        AlgSet{BCRYPT_SHA1_ALGORITHM, SHA1, 20},
+        AlgSet{BCRYPT_SHA256_ALGORITHM, SHA256, 32},
+        AlgSet{BCRYPT_SHA384_ALGORITHM, SHA384, 48},
+        AlgSet{BCRYPT_SHA512_ALGORITHM, SHA512, 64}
     };
 
     // Setup all algorithms
@@ -715,7 +715,7 @@ std::wstring ComputeFileHashes(const std::wstring& filePath)
     }
 
     // Finalize all hashes and convert to hex strings
-    std::wstring result = filePath + L"\n\n";
+    std::wstring result = filePath + wds::strDblLF;
     for (auto& ctx : contexts)
     {
         if (BCryptFinishHash(ctx.hHash, ctx.hash.data(),
@@ -723,9 +723,9 @@ std::wstring ComputeFileHashes(const std::wstring& filePath)
 
         // Add to result
         result += std::format(L"{:\u2007<7}\t{}\n",
-            std::wstring(ctx.name) + L':', FormatHex(ctx.hash));
+            std::wstring(ctx.name) + wds::chrColon, FormatHex(ctx.hash));
     }
-    if (!result.empty() && result.back() == L'\n') result.pop_back();
+    if (!result.empty() && result.back() == wds::chrLF) result.pop_back();
 
     return result;
 }
