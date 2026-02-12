@@ -19,6 +19,7 @@
 #include "FinderBasic.h"
 
 std::unordered_map<std::wstring, std::wstring> Localization::m_map;
+constexpr auto IDS_PREFIX = L"IDS_";
 
 void Localization::SearchReplace(std::wstring& input, const std::wstring_view& search, const std::wstring_view& replace)
 {
@@ -125,7 +126,7 @@ void Localization::UpdateMenu(CMenu& menu)
         CString text;
         if (menu.GetMenuString(i, text, MF_BYPOSITION) == 0) continue;
 
-        if (text.Find(L"ID") == 0 && Contains(text.GetString()))
+        if (text.Find(IDS_PREFIX) == 0 && Contains(text.GetString()))
         {
             MENUITEMINFOW mi{ .cbSize = sizeof(MENUITEMINFOW) };
             mi.fMask = MIIM_ID;
@@ -156,9 +157,9 @@ void Localization::UpdateTabControl(CMFCTabCtrl& tab)
         CString tabLabel;
         tab.GetTabLabel(i, tabLabel);
         std::wstring tabLabelStr = tabLabel.GetString();
-        if (tabLabelStr.starts_with(L"ID") && Contains(tabLabelStr))
+        if (tabLabelStr.starts_with(IDS_PREFIX) && Contains(tabLabelStr))
         {
-            tab.SetTabLabel(i, (L" " + m_map[tabLabelStr] + L" ").c_str());
+            tab.SetTabLabel(i, std::format(L" {} ", m_map[tabLabelStr]).c_str());
         }
     }
 }
@@ -197,7 +198,7 @@ void Localization::UpdateDialogs(CWnd& wnd)
 // Try to find and load external language file, return false if failed.
 bool Localization::LoadExternalLanguage(const LCTYPE lcttype, const LCID lcid)
 {
-    const std::wstring name = L"lang_" + GetLocaleString(lcttype, lcid) + L".txt";
+    const std::wstring name = std::format(L"lang_{}.txt", GetLocaleString(lcttype, lcid));
     const std::wstring langFolder = GetAppFolder() + L"\\";
 
     return FinderBasic::DoesFileExist(langFolder, name) && LoadFile(langFolder + name);

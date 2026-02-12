@@ -78,11 +78,11 @@ std::wstring CItem::GetText(const int subitem) const
     case COL_SIZE_PHYSICAL:
         if (IsTypeOrFlag(ITF_HARDLINK))
         {
-            return std::wstring(L"⧉ ") + FormatBytes(GetSizePhysicalRaw());
+            return std::format(L"⧉ {}", FormatBytes(GetSizePhysicalRaw()));
         }
         if (IsTypeOrFlag(IT_HLINKS_FILE))
         {
-            return std::wstring(L"⫘ ") + FormatBytes(GetSizePhysical());
+            return std::format(L"⫘ {}", FormatBytes(GetSizePhysical()));
         }
         return FormatBytes(GetSizePhysical());
 
@@ -120,9 +120,9 @@ std::wstring CItem::GetText(const int subitem) const
     case COL_PERCENTAGE:
         if (COptions::ShowTimeSpent && MustShowReadJobs() || IsRootItem())
         {
-            return L"[" + FormatMilliseconds(GetTicksWorked() * 1000) + L"]";
+            return std::format(L"[{}]", FormatMilliseconds(GetTicksWorked() * 1000));
         }
-        return FormatDouble(GetFraction() * 100) + L"%";
+        return std::format(L"{}%", FormatDouble(GetFraction() * 100));
 
     case COL_ITEMS:
         if (!IsTypeOrFlag(IT_FILE, IT_FREESPACE, IT_UNKNOWN, IT_HLINKS, IT_HLINKS_SET, IT_HLINKS_IDX))
