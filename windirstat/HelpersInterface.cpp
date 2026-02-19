@@ -108,21 +108,26 @@ std::wstring FormatSizeSuffixes(const ULONGLONG n) noexcept
         ULONGLONG bytes;
         ULONGLONG threshold;
         const std::wstring& (*suffix)();
-    } units[] = {
+    } unitsDec[] = {
+        {T, T - (G / 2), GetSpec_TB},
+        {G, G - (M / 2), GetSpec_GB},
+        {M, M - (K / 2), GetSpec_MB},
+        {K, K,           GetSpec_KB},
+    }, unitsBin[] = {
         {Ti, Ti - (Gi / 2), GetSpec_TiB},
         {Gi, Gi - (Mi / 2), GetSpec_GiB},
         {Mi, Mi - (Ki / 2), GetSpec_MiB},
         {Ki, Ki,            GetSpec_KiB},
     };
 
-    for (const auto& [bytes, threshold, suffix] : units) [[msvc::flatten]]
+    for (const auto& [bytes, threshold, suffix] : unitsDec) [[msvc::flatten]]
     {
         if (n < threshold) continue;
         
         return FormatDouble(static_cast<double>(n)
             / static_cast<double>(bytes)) + L" " + suffix();
     }
-    return std::format(L"{} {}", std::to_wstring(n), GetSpec_Bytes());
+    return std::format(L"{} {}", n, GetSpec_Bytes());
 }
 
 std::wstring FormatCount(const ULONGLONG n) noexcept
@@ -334,6 +339,30 @@ const std::wstring& GetSpec_GiB() noexcept
 const std::wstring& GetSpec_TiB() noexcept
 {
     static std::wstring s = Localization::Lookup(IDS_SPEC_TiB);
+    return s;
+}
+
+const std::wstring& GetSpec_KB() noexcept
+{
+    static std::wstring s = Localization::Lookup(IDS_SPEC_KB);
+    return s;
+}
+
+const std::wstring& GetSpec_MB() noexcept
+{
+    static std::wstring s = Localization::Lookup(IDS_SPEC_MB);
+    return s;
+}
+
+const std::wstring& GetSpec_GB() noexcept
+{
+    static std::wstring s = Localization::Lookup(IDS_SPEC_GB);
+    return s;
+}
+
+const std::wstring& GetSpec_TB() noexcept
+{
+    static std::wstring s = Localization::Lookup(IDS_SPEC_TB);
     return s;
 }
 
