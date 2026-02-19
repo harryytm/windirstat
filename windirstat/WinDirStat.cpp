@@ -59,12 +59,12 @@ void CDirStatApp::RestartApplication(bool resetPreferences)
     if (resetPreferences)
     {
         // Cleanup registry preferences
-        RegDeleteTree(HKEY_CURRENT_USER, wds::strRegKey);
+        RegDeleteTree(HKEY_CURRENT_USER, strRegKey);
 
         // Enable portable mode by creating the file
         if (InPortableMode())
         {
-            const std::wstring ini = GetAppFileName(wds::strCfgFileExt);
+            const std::wstring ini = GetAppFileName(strCfgFileExt);
             DeleteFile(ini.c_str());
             SetPortableMode(true);
         }
@@ -130,7 +130,7 @@ COLORREF CDirStatApp::GetAlternativeColor(const COLORREF clrDefault, const std::
 {
     // Open the explorer key
     CRegKey key;
-    key.Open(HKEY_CURRENT_USER, wds::strExplorerKey, KEY_READ);
+    key.Open(HKEY_CURRENT_USER, strExplorerKey, KEY_READ);
 
     // Try to read the REG_BINARY value
     COLORREF x;
@@ -163,7 +163,7 @@ std::wstring CDirStatApp::GetCurrentProcessMemoryInfo()
     PROCESS_MEMORY_COUNTERS pmc = { .cb = sizeof(pmc) };
     if (!::GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
     {
-        return wds::strEmpty;
+        return strEmpty;
     }
 
     return Localization::Format(IDS_RAMUSAGEs, FormatBytes(pmc.WorkingSetSize));
@@ -171,13 +171,13 @@ std::wstring CDirStatApp::GetCurrentProcessMemoryInfo()
 
 bool CDirStatApp::InPortableMode()
 {
-    return GetFileAttributes(GetAppFileName(wds::strCfgFileExt).c_str()) != INVALID_FILE_ATTRIBUTES;
+    return GetFileAttributes(GetAppFileName(strCfgFileExt).c_str()) != INVALID_FILE_ATTRIBUTES;
 }
 
 bool CDirStatApp::SetPortableMode(const bool enable, const bool onlyOpen)
 {
     // If portable mode is Enabled, then just ensure the full path is used
-    const std::wstring ini = GetAppFileName(wds::strCfgFileExt);
+    const std::wstring ini = GetAppFileName(strCfgFileExt);
     if (ini == m_pszProfileName &&
         enable == InPortableMode())
     {
@@ -204,14 +204,14 @@ bool CDirStatApp::SetPortableMode(const bool enable, const bool onlyOpen)
         }
 
         // Fallback to registry mode for any failures
-        SetRegistryKey(wds::strWinDirStat);
+        SetRegistryKey(strWinDirStat);
         return false;
     }
 
     // Attempt to remove file succeeded
     if (DeleteFile(ini.c_str()) != 0 || GetLastError() == ERROR_FILE_NOT_FOUND)
     {
-        SetRegistryKey(wds::strWinDirStat);
+        SetRegistryKey(strWinDirStat);
         return true;
     }
 
@@ -224,7 +224,7 @@ CString AFXGetRegPath(LPCTSTR lpszPostFix, LPCTSTR)
 {
     // This overrides an internal MFC function that causes CWinAppEx
     // to malfunction when operated in portable mode
-    return CString(wds::strRegPath) + lpszPostFix + wds::chrBackslash;
+    return CString(strRegPath) + lpszPostFix + chrBackslash;
 }
 
 class CWinDirStatCommandLineInfo final : public CCommandLineInfo
@@ -243,8 +243,8 @@ public:
 
         // Normalize string for parsing
         std::wstring param{ pszParam };
-        TrimString(param, wds::chrDoubleQuote);
-        TrimString(param, wds::chrBackslash, true);
+        TrimString(param, chrDoubleQuote);
+        TrimString(param, chrBackslash, true);
 
         // If we have a pending flag, this non-flag param is its value
         if (!m_pendingFlag.empty() && !bFlag)
@@ -273,9 +273,9 @@ public:
         {
             for (const auto& paramSpilt : SplitString(param))
             {
-                if (!m_strFileName.IsEmpty()) m_strFileName += wds::chrPipe;
+                if (!m_strFileName.IsEmpty()) m_strFileName += chrPipe;
                 std::error_code ec;
-                const std::wstring fullPath = std::filesystem::absolute(paramSpilt + wds::chrBackslash, ec).wstring();
+                const std::wstring fullPath = std::filesystem::absolute(paramSpilt + chrBackslash, ec).wstring();
                 if (FolderExists(fullPath)) m_strFileName += fullPath.c_str();
             }
             return;
@@ -489,7 +489,7 @@ void CDirStatApp::LegacyUninstall()
     // Kill WinDirStat processes based on executable name
     if (SmartPointer<HANDLE> snap(CloseHandle, CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)); snap.IsValid())
     {
-        const std::wstring exeName = wds::strWinDirStat;
+        const std::wstring exeName = strWinDirStat;
         PROCESSENTRY32W pe{ .dwSize = sizeof(pe) };
         for (BOOL hasProcess = Process32First(snap, &pe); hasProcess; hasProcess = Process32Next(snap, &pe))
         {
@@ -506,7 +506,7 @@ void CDirStatApp::LegacyUninstall()
     std::vector<RegInfo> regKeys;
 
     // Add HKLM key
-    regKeys.push_back({ HKEY_LOCAL_MACHINE, wds::strUninstall });
+    regKeys.push_back({ HKEY_LOCAL_MACHINE, strUninstall });
 
     // Add HKU keys for all users
     if (CRegKey key; key.Open(HKEY_USERS, nullptr, KEY_ENUMERATE_SUB_KEYS) == ERROR_SUCCESS)
@@ -516,7 +516,7 @@ void CDirStatApp::LegacyUninstall()
             key.EnumKey(i, sidName.data(), &sidSize) == ERROR_SUCCESS;
             i++, sidSize = static_cast<DWORD>(sidName.size()))
         {
-            regKeys.push_back({ HKEY_USERS, std::wstring(sidName.data()) + wds::chrBackslash + wds::strUninstall });
+            regKeys.push_back({ HKEY_USERS, std::wstring(sidName.data()) + chrBackslash + strUninstall });
         }
     }
 

@@ -29,6 +29,7 @@
 #include "PageGeneral.h"
 #include "PagePrompts.h"
 #include "ProgressDlg.h"
+using namespace wds;
 
 // Clipboard Opener
 class COpenClipboard final
@@ -120,7 +121,7 @@ BOOL COptionsPropertySheet::OnCommand(const WPARAM wParam, const LPARAM lParam)
         if (m_restartRequest && (IDOK == cmd || !m_alreadyAsked))
         {
             const int r = WdsMessageBox(*this, Localization::Lookup(IDS_RESTART_REQUEST),
-                wds::strWinDirStat, MB_YESNOCANCEL);
+                strWinDirStat, MB_YESNOCANCEL);
             if (IDCANCEL == r)
             {
                 return true; // "Message handled". Don't proceed.
@@ -399,9 +400,9 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWndEx)
     ON_COMMAND(ID_VIEW_LARGEST_FILES, &CMainFrame::OnViewLargestFiles)
     ON_COMMAND(ID_VIEW_DUPLICATE_FILES, &CMainFrame::OnViewDuplicateFiles)
     ON_COMMAND(ID_VIEW_SEARCH_RESULTS, &CMainFrame::OnViewSearchResults)
-    ON_COMMAND_RANGE(ID_TOOLS_SHADOW_COPY_BASE, ID_TOOLS_SHADOW_COPY_BASE + wds::alphaSize, &CMainFrame::OnAdvancedShadowCopy)
-    ON_COMMAND_RANGE(ID_TOOLS_DEFRAG_BASE, ID_TOOLS_DEFRAG_BASE + wds::alphaSize, &CMainFrame::OnAdvancedDefrag)
-    ON_COMMAND_RANGE(ID_TOOLS_CHKDSK_BASE, ID_TOOLS_CHKDSK_BASE + wds::alphaSize, &CMainFrame::OnAdvancedChkdsk)
+    ON_COMMAND_RANGE(ID_TOOLS_SHADOW_COPY_BASE, ID_TOOLS_SHADOW_COPY_BASE + alphaSize, &CMainFrame::OnAdvancedShadowCopy)
+    ON_COMMAND_RANGE(ID_TOOLS_DEFRAG_BASE, ID_TOOLS_DEFRAG_BASE + alphaSize, &CMainFrame::OnAdvancedDefrag)
+    ON_COMMAND_RANGE(ID_TOOLS_CHKDSK_BASE, ID_TOOLS_CHKDSK_BASE + alphaSize, &CMainFrame::OnAdvancedChkdsk)
     ON_COMMAND(ID_TOOLS_WATCHER, &CMainFrame::OnToolsWatcher)
 END_MESSAGE_MAP()
 
@@ -481,7 +482,7 @@ void CMainFrame::SetProgressComplete()
     }
 
     DestroyProgress();
-    CDirStatDoc::Get()->SetTitlePrefix(wds::strEmpty);
+    CDirStatDoc::Get()->SetTitlePrefix(strEmpty);
     CFileTreeControl::Get()->SortItems();
     CFileDupeControl::Get()->SortItems();
     CFileTopControl::Get()->SortItems();
@@ -818,7 +819,7 @@ BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT /*lpcs*/, CCreateContext* pContex
 BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 {
     // seed initial Title bar text
-    static std::wstring title = Localization::LookupNeutral(AFX_IDS_APP_TITLE) + (IsElevationActive() ? std::format(L" ({})", Localization::Lookup(IDS_ADMIN)) : wds::strEmpty);
+    static std::wstring title = Localization::LookupNeutral(AFX_IDS_APP_TITLE) + (IsElevationActive() ? std::format(L" ({})", Localization::Lookup(IDS_ADMIN)) : strEmpty);
     cs.style &= ~FWS_ADDTOTITLE;
     cs.lpszName = title.c_str();
 
@@ -1142,7 +1143,7 @@ void CMainFrame::UpdateDynamicMenuItems(CMenu* menu) const
 
 void CMainFrame::OnAdvancedShadowCopy(const UINT nID)
 {
-    const WCHAR driveLetter = wds::strAlpha[nID - ID_TOOLS_SHADOW_COPY_BASE];
+    const WCHAR driveLetter = strAlpha[nID - ID_TOOLS_SHADOW_COPY_BASE];
     const std::wstring drive = std::format(L"{:c}:", driveLetter);
 
     bool success = false;
@@ -1155,19 +1156,19 @@ void CMainFrame::OnAdvancedShadowCopy(const UINT nID)
     if (!success)
     {
         const std::wstring msg = Localization::Format(IDS_SHADOW_COPY_FAILED, GetDrive(drive));
-        WdsMessageBox(*this, msg, wds::strWinDirStat, MB_ICONERROR | MB_OK);
+        WdsMessageBox(*this, msg, strWinDirStat, MB_ICONERROR | MB_OK);
     }
 }
 
 void CMainFrame::OnAdvancedDefrag(const UINT nID)
 {
-    const WCHAR driveLetter = wds::strAlpha[nID - ID_TOOLS_DEFRAG_BASE];
+    const WCHAR driveLetter = strAlpha[nID - ID_TOOLS_DEFRAG_BASE];
     ExecuteCommandInConsole(std::format(L"DEFRAG.EXE {:c}: /O", driveLetter), L"DEFRAG");
 }
 
 void CMainFrame::OnAdvancedChkdsk(const UINT nID)
 {
-    const WCHAR driveLetter = wds::strAlpha[nID - ID_TOOLS_CHKDSK_BASE];
+    const WCHAR driveLetter = strAlpha[nID - ID_TOOLS_CHKDSK_BASE];
     ExecuteCommandInConsole(std::format(L"CHKDSK.EXE {:c}: /F", driveLetter), L"CHKDSK");
 }
 
@@ -1267,7 +1268,7 @@ void CMainFrame::UpdatePaneText()
         }
         else if (fileSelectionText.empty())
         {
-            fileSelectionText = wds::chrStar + CDirStatDoc::Get()->GetHighlightExtension();
+            fileSelectionText = chrStar + CDirStatDoc::Get()->GetHighlightExtension();
         }
     }
 
@@ -1440,7 +1441,7 @@ BOOL CMainFrame::LoadFrame(const UINT nIDResource, const DWORD dwDefaultStyle, C
 
     Localization::UpdateMenu(*GetMenu());
     Localization::UpdateDialogs(*this);
-    SetTitle(wds::strWinDirStat);
+    SetTitle(strWinDirStat);
 
     return TRUE;
 }

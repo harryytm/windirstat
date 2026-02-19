@@ -24,6 +24,8 @@
 #pragma comment(lib,"virtdisk.lib")
 #pragma comment(lib,"mpr.lib")
 
+using namespace wds;
+
 static NTSTATUS(NTAPI* NtSetInformationProcess)(HANDLE ProcessHandle, ULONG ProcessInformationClass,
     PVOID ProcessInformation, ULONG ProcessInformationLength) = reinterpret_cast<decltype(NtSetInformationProcess)>(
         reinterpret_cast<LPVOID>(GetProcAddress(GetModuleHandle(L"ntdll.dll"), "NtSetInformationProcess")));
@@ -126,7 +128,7 @@ bool CreateShadowCopy(const std::wstring& volumePath)
 
     // Ensure volume path ends with backslash
     std::wstring volume = volumePath;
-    if (!volume.empty() && volume.back() != L'\\') volume += L'\\';
+    if (!volume.empty() && volume.back() != chrBackslash) volume += chrBackslash;
 
     // Attempt to do the shadow copy creation
     CComVariant vtVolume(volume.c_str());
@@ -143,27 +145,26 @@ bool CreateShadowCopy(const std::wstring& volumePath)
     return vtReturnValue.vt == VT_I4 && vtReturnValue.lVal == 0;
 }
 
-std::vector<std::wstring> GetDriveList(const std::vector<UINT>& driveTypes, const bool checkLocal, const bool checkRemote)
+std::vector<std::wstring> GetDriveList(const std::vector<UINT>& driveTypes, const bool checkAccessible)
 {
     std::vector<std::wstring> drives;
     const DWORD driveMask = GetLogicalDrives();
 
-    for (const auto i : std::views::iota(0, wds::alphaSize))
+    for (const auto i : std::views::iota(0, alphaSize))
     {
         if ((driveMask & (1 << i)) == 0) continue;
 
-        std::wstring drive = std::wstring{ wds::strAlpha[i] } + L":\\";
+        std::wstring drive = std::wstring{ strAlpha[i] } + L":";
         const UINT driveType = GetDriveType(drive.c_str());
 
         // See if drive type matches and in accessible
         for (const UINT dt : driveTypes) if (driveType == dt)
         {
             // Check if the drive is actually accessible
-            if ((checkLocal && driveType != DRIVE_REMOTE ||
-                checkRemote && driveType == DRIVE_REMOTE) && !DriveExists(drive)) continue;
-
-            // Passed checks - add to drive list
-            drives.push_back(drive.substr(0, 2));
+            if (!checkAccessible || checkAccessible && !GetVolumeName(drive).empty())
+            {
+                drives.push_back(drive);
+            }
         }
     }
 
@@ -179,18 +180,18 @@ bool FolderExists(const std::wstring& path) noexcept
 
 bool DriveExists(const std::wstring& path) noexcept
 {
-    if (path.size() < 2 || path[1] != wds::chrColon) return false;
+    if (path.size() != 3 || path[1] != chrColon || path[2] != chrBackslash)
+        return false;
 
-    const int d = std::toupper(path[0]) - wds::strAlpha[0];
+    const int d = std::toupper(path[0]) - strAlpha[0];
     const DWORD mask = 0x1 << d;
 
-    return (mask & GetLogicalDrives()) != 0 && 
-        GetVolumeInformation(path.c_str(), nullptr, 0, nullptr, nullptr, nullptr, nullptr, 0) != FALSE;;
+    return (mask & GetLogicalDrives()) != 0 && !GetVolumeName(path).empty();
 }
 
 bool IsLocalDrive(const std::wstring& path) noexcept
 {
-    if (path.size() < 3 || path[1] != wds::chrColon || path[2] != wds::chrBackslash)
+    if (path.size() < 3 || path[1] != chrColon || path[2] != chrBackslash)
     {
         return false;
     }
@@ -246,7 +247,7 @@ bool DeleteFileForce(const std::wstring& path, DWORD attributes)
 // Path utilities
 std::wstring WdsQueryDosDevice(const std::wstring& drive)
 {
-    if (drive.size() < 2 || drive[1] != wds::chrColon) return {};
+    if (drive.size() < 2 || drive[1] != chrColon) return {};
 
     std::array<WCHAR, 512> info;
     if (::QueryDosDevice(GetDrive(drive).c_str(), info.data(), std::ssize(info)) == 0)
@@ -467,7 +468,7 @@ bool CompressFileAllowed(const std::wstring& volumeName, const CompressionAlgori
 
     // Query volume for modern compression support based on NTFS and OS version
     compressionStandard[volumeName.data()] = isNTFS && (fileSystemFlags & FILE_FILE_COMPRESSION) != 0;
-    compressionModern[volumeName.data()] = isNTFS && IsWindows10OrGreater() && !volumeName.starts_with(L"\\\\");
+    compressionModern[volumeName.data()] = isNTFS && IsWindows10OrGreater() && !volumeName.starts_with(strUncPrefix);
 
     return compressionMap.at(volumeName);
 }
@@ -664,11 +665,11 @@ std::wstring ComputeFileHashes(const std::wstring& filePath)
     // Define algorithms to compute
     using AlgSet = struct { LPCWSTR id; LPCWSTR name; DWORD hashLen; };
     constexpr std::array algos = {
-        AlgSet{BCRYPT_MD5_ALGORITHM, L"MD5", 16},
-        AlgSet{BCRYPT_SHA1_ALGORITHM, L"SHA1", 20},
-        AlgSet{BCRYPT_SHA256_ALGORITHM, L"SHA256", 32},
-        AlgSet{BCRYPT_SHA384_ALGORITHM, L"SHA384", 48},
-        AlgSet{BCRYPT_SHA512_ALGORITHM, L"SHA512", 64}
+        AlgSet{BCRYPT_MD5_ALGORITHM, MD5, 16},
+        AlgSet{BCRYPT_SHA1_ALGORITHM, SHA1, 20},
+        AlgSet{BCRYPT_SHA256_ALGORITHM, SHA256, 32},
+        AlgSet{BCRYPT_SHA384_ALGORITHM, SHA384, 48},
+        AlgSet{BCRYPT_SHA512_ALGORITHM, SHA512, 64}
     };
 
     // Setup all algorithms
@@ -701,7 +702,7 @@ std::wstring ComputeFileHashes(const std::wstring& filePath)
     }
 
     // Read file and update all hashes
-    constexpr size_t BUFFER_SIZE = wds::Mi; // 1MB chunks
+    constexpr size_t BUFFER_SIZE = Mi; // 1MB chunks
     std::vector<BYTE> buffer(BUFFER_SIZE);
     DWORD bytesRead;
 
@@ -715,7 +716,7 @@ std::wstring ComputeFileHashes(const std::wstring& filePath)
     }
 
     // Finalize all hashes and convert to hex strings
-    std::wstring result = filePath + L"\n\n";
+    std::wstring result = filePath + strDblLF;
     for (auto& ctx : contexts)
     {
         if (BCryptFinishHash(ctx.hHash, ctx.hash.data(),
@@ -723,9 +724,9 @@ std::wstring ComputeFileHashes(const std::wstring& filePath)
 
         // Add to result
         result += std::format(L"{:\u2007<7}\t{}\n",
-            std::wstring(ctx.name) + L':', FormatHex(ctx.hash));
+            std::wstring(ctx.name) + chrColon, FormatHex(ctx.hash));
     }
-    if (!result.empty() && result.back() == L'\n') result.pop_back();
+    if (!result.empty() && result.back() == chrLF) result.pop_back();
 
     return result;
 }

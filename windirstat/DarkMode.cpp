@@ -49,7 +49,7 @@ void DarkMode::SetAppDarkMode() noexcept
     if (COptions::DarkMode == 2)
     {
         // Check Windows dark mode setting
-        if (CRegKey key; key.Open(HKEY_CURRENT_USER, wds::strThemesKey, KEY_READ) == ERROR_SUCCESS)
+        if (CRegKey key; key.Open(HKEY_CURRENT_USER, strThemesKey, KEY_READ) == ERROR_SUCCESS)
         {
             DWORD darkSetting = 0;
             key.QueryDWORDValue(L"AppsUseLightTheme", darkSetting);

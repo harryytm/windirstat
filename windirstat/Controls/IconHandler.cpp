@@ -52,7 +52,7 @@ void CIconHandler::Initialize()
         m_defaultFolderImage = FetchShellIcon(GetSysDirectory() + L"\\~", 0, FILE_ATTRIBUTE_DIRECTORY);
 
         // Cache icon for boot drive
-        std::wstring drive(MAX_PATH, wds::chrNull);
+        std::wstring drive(MAX_PATH, chrNull);
         drive.resize(min(wcslen(L"C:\\"), GetWindowsDirectory(drive.data(), MAX_PATH)));
         m_mountPointImage = FetchShellIcon(drive, 0, FILE_ATTRIBUTE_REPARSE_POINT);
 

@@ -26,6 +26,7 @@
 #include "FinderNtfs.h"
 #include "SearchDlg.h"
 #include "ProgressDlg.h"
+using namespace wds;
 
 IMPLEMENT_DYNCREATE(CDirStatDoc, CDocument)
 
@@ -204,7 +205,7 @@ void CDirStatDoc::SetPathName(LPCWSTR lpszPathName, BOOL /*bAddToMRU*/)
 //
 void CDirStatDoc::SetTitlePrefix(const std::wstring& prefix) const
 {
-    static std::wstring suffix = IsElevationActive() ? std::format(L" ({})", Localization::Lookup(IDS_ADMIN)) : wds::strEmpty;
+    static std::wstring suffix = IsElevationActive() ? std::format(L" ({})", Localization::Lookup(IDS_ADMIN)) : strEmpty;
     std::wstring docName = std::format(L"{} {} {}", prefix, GetTitle().GetString(), suffix);
     docName = TrimString(docName);
     CMainFrame::Get()->UpdateFrameTitleForDocument(docName.empty() ? nullptr : docName.c_str());
@@ -1135,7 +1136,7 @@ void CDirStatDoc::OnEditCopy()
     std::wstring paths;
     for (const auto & item : GetAllSelected())
     {
-        if (!paths.empty()) paths += wds::strCRLF;
+        if (!paths.empty()) paths += strCRLF;
         paths += item->GetPath();
     }
 
@@ -1329,8 +1330,8 @@ void CDirStatDoc::OnCommandPromptHere()
     for (const auto& path : paths)
     {
         // If using command prompt, use pushd to force a drive mount
-        std::wstring uncmod = path.starts_with(wds::strUncPrefix) ? std::format(L"&& PUSHD \"{}\" && CLS", path) : L"";
-        std::wstring params = std::format(L"/K TITLE {} - \"{}\" {}", wds::strWinDirStat, path, uncmod);
+        std::wstring uncmod = path.starts_with(strUncPrefix) ? std::format(L"&& PUSHD \"{}\" && CLS", path) : L"";
+        std::wstring params = std::format(L"/K TITLE {} - \"{}\" {}", strWinDirStat, path, uncmod);
 
         // Launch command prompt
         ShellExecuteWrapper(cmd, params, L"open", *AfxGetMainWnd(), path);
@@ -1388,7 +1389,7 @@ void CDirStatDoc::OnCleanupMoveTo()
 
     // Show folder browser dialog to get destination directory
     CFolderPickerDialog dlg(nullptr, OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_DONTADDTORECENT);
-    dlg.m_ofn.lpstrTitle = wds::strWinDirStat;
+    dlg.m_ofn.lpstrTitle = strWinDirStat;
 
     if (dlg.DoModal() != IDOK) return;
     const std::wstring destFolder = dlg.GetPathName().GetString();
@@ -1610,7 +1611,7 @@ void CDirStatDoc::OnComputeHash()
     }).DoModal();
 
     // Display result in message box
-    CMessageBoxDlg dlg(hashResult, wds::strWinDirStat, MB_OK | MB_ICONINFORMATION);
+    CMessageBoxDlg dlg(hashResult, strWinDirStat, MB_OK | MB_ICONINFORMATION);
     dlg.SetWidthAuto();
     dlg.DoModal();
 }

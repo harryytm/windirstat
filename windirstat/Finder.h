@@ -73,7 +73,7 @@ public:
     {
         if (path.find(L":\\", 1) == 1) return s_longPath.data() + path;
         if (path.starts_with(L"\\\\?")) return path;
-        if (path.starts_with(wds::strUncPrefix)) return s_longUNCPath.data() + path.substr(2);
+        if (path.starts_with(strUncPrefix)) return s_longUNCPath.data() + path.substr(2);
         return path;
     }
 

@@ -20,6 +20,7 @@
 
 std::unordered_map<std::wstring, std::wstring> Localization::m_map;
 constexpr auto IDS_PREFIX = L"IDS_";
+using namespace wds;
 
 void Localization::SearchReplace(std::wstring& input, const std::wstring_view& search, const std::wstring_view& replace)
 {
@@ -32,14 +33,14 @@ void Localization::SearchReplace(std::wstring& input, const std::wstring_view& s
 bool Localization::CrackStrings(const std::wstring& sFileData, const std::wstring& sPrefix)
 {
     const bool hasPrefix = !sPrefix.empty();
-    const std::wstring prefix = sPrefix + wds::chrColon;
+    const std::wstring prefix = sPrefix + chrColon;
 
     // Read the file line by line
     std::wstring line;
     std::wistringstream stream(sFileData);
 
     // Look for the language prefix and return false if not found
-    if (hasPrefix && sFileData.find(prefix) == wds::szNpos) return false;
+    if (hasPrefix && sFileData.find(prefix) == szNpos) return false;
 
     while (std::getline(stream, line))
     {
@@ -47,14 +48,14 @@ bool Localization::CrackStrings(const std::wstring& sFileData, const std::wstrin
         if (hasPrefix && !line.starts_with(prefix)) continue;
 
         // Parse the string after the first equals
-        SearchReplace(line, wds::chrCR, wds::strEmpty);
-        SearchReplace(line, wds::strEscLF, wds::chrLF);
-        SearchReplace(line, wds::strEscTab, wds::chrTab);
-        if (const auto e = line.find_first_of(wds::chrEqual); e != wds::szNpos)
+        SearchReplace(line, chrCR, strEmpty);
+        SearchReplace(line, strEscLF, chrLF);
+        SearchReplace(line, strEscTab, chrTab);
+        if (const auto e = line.find_first_of(chrEqual); e != szNpos)
         {
             // Strip the prefix if any and add to map
             size_t startPos = 0;
-            if (hasPrefix) startPos = line.find_first_of(wds::chrColon) + 1;
+            if (hasPrefix) startPos = line.find_first_of(chrColon) + 1;
             m_map[line.substr(startPos, e - startPos)] = line.substr(e + 1);
         }
     }
@@ -74,9 +75,9 @@ std::set<LANGID> Localization::GetLanguageList()
     while (std::getline(is, line))
     {
         // Convert to wide strings
-        SearchReplace(line, wds::chrCR, wds::strEmpty);
-        auto linePos = line.find_first_of(wds::chrColon);
-        if (linePos == wds::szNpos) continue;
+        SearchReplace(line, chrCR, strEmpty);
+        auto linePos = line.find_first_of(chrColon);
+        if (linePos == szNpos) continue;
         uniqueLangs.emplace(line.substr(0, linePos));
     }
 
@@ -137,7 +138,7 @@ void Localization::UpdateMenu(CMenu& menu)
             if (mi.wID != std::bit_cast<UINT>(-1))
             {
                 const std::wstring accel = GetAcceleratorString(mi.wID);
-                if (!accel.empty()) menuText += wds::chrTab + accel;
+                if (!accel.empty()) menuText += chrTab + accel;
             }
             
             // Set the item text
@@ -199,7 +200,7 @@ void Localization::UpdateDialogs(CWnd& wnd)
 bool Localization::LoadExternalLanguage(const LCTYPE lcttype, const LCID lcid)
 {
     const std::wstring name = std::format(L"lang_{}.txt", GetLocaleString(lcttype, lcid));
-    const std::wstring langFolder = GetAppFolder() + wds::chrBackslash;
+    const std::wstring langFolder = GetAppFolder() + chrBackslash;
 
     return FinderBasic::DoesFileExist(langFolder, name) && LoadFile(langFolder + name);
 }
@@ -225,7 +226,7 @@ std::wstring Localization::ConvertToWideString(const std::string_view & sv)
         static_cast<int>(sv.size()), nullptr, 0);
     if (required <= 0) return {};
 
-    std::wstring out(required, wds::chrNull);
+    std::wstring out(required, chrNull);
     if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, sv.data(),
         static_cast<int>(sv.size()), out.data(), required) <= 0) return {};
 

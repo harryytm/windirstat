@@ -39,7 +39,7 @@ CItem::CItem(const ITEMTYPE type, const std::wstring & name) : m_type(type)
     {
         // Store drive paths with a backslash
         std::wstring nameTmp = name;
-        if (nameTmp.ends_with(wds::chrColon)) nameTmp.append({ wds::chrBackslash });
+        if (nameTmp.ends_with(chrColon)) nameTmp.append({ chrBackslash });
 
         // The name string on the drive is two parts separated by a pipe. For example,
         // C:\|Local Disk (C:) is the true path followed by the name description
@@ -629,7 +629,7 @@ std::wstring CItem::GetFolderPath() const
     std::wstring path = GetPath();
     if (IsTypeOrFlag(IT_FILE))
     {
-        const auto i = path.find_last_of(wds::chrBackslash);
+        const auto i = path.find_last_of(chrBackslash);
         ASSERT(i != std::wstring::npos);
         path = path.substr(0, i + 1);
     }
@@ -648,7 +648,7 @@ CItem* CItem::FindItemByPath(const std::wstring& path) const
     if (pathDrive == nullptr) return nullptr;
 
     // Split the path into components, filtering out empty strings
-    const std::vector<std::wstring> components = SplitString(path, wds::chrBackslash);
+    const std::vector<std::wstring> components = SplitString(path, chrBackslash);
     if (components.empty()) return nullptr;
 
     // First component should match the drive (e.g., "C:")

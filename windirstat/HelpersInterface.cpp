@@ -30,7 +30,7 @@ static std::wstring FormatLongLongNormal(ULONGLONG n)
     const wchar_t sep = GetLocaleThousandSeparator();
     std::array<WCHAR, 32> buffer;
     size_t pos = buffer.size() - 1;
-    buffer[pos] = L'\0';
+    buffer[pos] = chrNull;
 
     for (int count = 0; n > 0; ++count, n /= 10)
     {
@@ -46,7 +46,7 @@ std::wstring GetLocaleString(const LCTYPE lctype, const LCID lcid)
     const int len = ::GetLocaleInfo(lcid, lctype, nullptr, 0);
     if (len <= 0) return {};
 
-    std::wstring s(len - 1, L'\0');
+    std::wstring s(len - 1, chrNull);
     ::GetLocaleInfo(lcid, lctype, s.data(), len);
     return s;
 }
@@ -163,17 +163,17 @@ std::wstring FormatFileTime(const FILETIME& t, const bool seconds) noexcept
 
 std::wstring FormatAttributes(const DWORD attr) noexcept
 {
-    if (attr == INVALID_FILE_ATTRIBUTES) return wds::strInvalidAttributes;
+    if (attr == INVALID_FILE_ATTRIBUTES) return strInvalidAttributes;
 
     std::wstring attributes;
-    if (attr & FILE_ATTRIBUTE_READONLY) attributes += wds::chrAttributeReadonly;
-    if (attr & FILE_ATTRIBUTE_HIDDEN) attributes += wds::chrAttributeHidden;
-    if (attr & FILE_ATTRIBUTE_SYSTEM) attributes += wds::chrAttributeSystem;
-    if (attr & FILE_ATTRIBUTE_ARCHIVE) attributes += wds::chrAttributeArchive;
-    if (attr & FILE_ATTRIBUTE_COMPRESSED) attributes += wds::chrAttributeCompressed;
-    if (attr & FILE_ATTRIBUTE_ENCRYPTED) attributes += wds::chrAttributeEncrypted;
-    if (attr & FILE_ATTRIBUTE_OFFLINE) attributes += wds::chrAttributeOffline;
-    if (attr & FILE_ATTRIBUTE_SPARSE_FILE) attributes += wds::chrAttributeSparse;
+    if (attr & FILE_ATTRIBUTE_READONLY) attributes += chrAttributeReadonly;
+    if (attr & FILE_ATTRIBUTE_HIDDEN) attributes += chrAttributeHidden;
+    if (attr & FILE_ATTRIBUTE_SYSTEM) attributes += chrAttributeSystem;
+    if (attr & FILE_ATTRIBUTE_ARCHIVE) attributes += chrAttributeArchive;
+    if (attr & FILE_ATTRIBUTE_COMPRESSED) attributes += chrAttributeCompressed;
+    if (attr & FILE_ATTRIBUTE_ENCRYPTED) attributes += chrAttributeEncrypted;
+    if (attr & FILE_ATTRIBUTE_OFFLINE) attributes += chrAttributeOffline;
+    if (attr & FILE_ATTRIBUTE_SPARSE_FILE) attributes += chrAttributeSparse;
 
     return attributes;
 }
@@ -288,19 +288,19 @@ std::vector<std::wstring> SplitString(const std::wstring& string, const WCHAR de
 // Attribute parsing
 DWORD ParseAttributes(const std::wstring_view& attributes) noexcept
 {
-    if (attributes == wds::strInvalidAttributes) return 0;
+    if (attributes == strInvalidAttributes) return 0;
 
     DWORD attr = 0;
     for (const WCHAR ch : attributes)
     {
-        if (ch == wds::chrAttributeReadonly) attr |= FILE_ATTRIBUTE_READONLY;
-        else if (ch == wds::chrAttributeHidden) attr |= FILE_ATTRIBUTE_HIDDEN;
-        else if (ch == wds::chrAttributeSystem) attr |= FILE_ATTRIBUTE_SYSTEM;
-        else if (ch == wds::chrAttributeArchive) attr |= FILE_ATTRIBUTE_ARCHIVE;
-        else if (ch == wds::chrAttributeCompressed) attr |= FILE_ATTRIBUTE_COMPRESSED;
-        else if (ch == wds::chrAttributeEncrypted) attr |= FILE_ATTRIBUTE_ENCRYPTED;
-        else if (ch == wds::chrAttributeOffline) attr |= FILE_ATTRIBUTE_OFFLINE;
-        else if (ch == wds::chrAttributeSparse) attr |= FILE_ATTRIBUTE_SPARSE_FILE;
+        if (ch == chrAttributeReadonly) attr |= FILE_ATTRIBUTE_READONLY;
+        else if (ch == chrAttributeHidden) attr |= FILE_ATTRIBUTE_HIDDEN;
+        else if (ch == chrAttributeSystem) attr |= FILE_ATTRIBUTE_SYSTEM;
+        else if (ch == chrAttributeArchive) attr |= FILE_ATTRIBUTE_ARCHIVE;
+        else if (ch == chrAttributeCompressed) attr |= FILE_ATTRIBUTE_COMPRESSED;
+        else if (ch == chrAttributeEncrypted) attr |= FILE_ATTRIBUTE_ENCRYPTED;
+        else if (ch == chrAttributeOffline) attr |= FILE_ATTRIBUTE_OFFLINE;
+        else if (ch == chrAttributeSparse) attr |= FILE_ATTRIBUTE_SPARSE_FILE;
     }
 
     return attr;
@@ -454,7 +454,7 @@ bool ExecuteCommandInConsole(const std::wstring& command, const std::wstring& ti
 {
     const std::wstring cmd = GetSysDirectory() + L"\\CMD.EXE";
     const std::wstring cmdline = std::format(LR"(/C "TITLE {} - {} & {} & PAUSE")",
-        wds::strWinDirStat, title, command);
+        strWinDirStat, title, command);
     
     return ShellExecuteWrapper(cmd, cmdline, L"runas");
 }
@@ -524,7 +524,7 @@ IContextMenu* GetContextMenu(const HWND hwnd, const std::vector<std::wstring>& p
 // Application info
 std::wstring GetAppFileName(const std::wstring& ext)
 {
-    std::wstring s(MAX_PATH, wds::chrNull);
+    std::wstring s(MAX_PATH, chrNull);
     ::GetModuleFileName(nullptr, s.data(), MAX_PATH);
     s.resize(wcslen(s.data()));
 
