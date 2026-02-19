@@ -51,7 +51,7 @@ BOOL CProgressDlg::OnInitDialog()
     DarkMode::AdjustControls(GetSafeHwnd());
 
     // Set window title and message
-    SetWindowText(wds::strWinDirStat);
+    SetWindowText(strWinDirStat);
     m_messageCtrl.SetWindowText(m_message.c_str());
 
     // Configure cancel button

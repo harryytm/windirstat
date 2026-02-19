@@ -233,7 +233,7 @@ std::wstring CExtensionListControl::GetSelectedExtension() const
     POSITION pos = GetFirstSelectedItemPosition();
     if (pos == nullptr)
     {
-        return wds::strEmpty;
+        return strEmpty;
     }
 
     const int i = GetNextSelectedItem(pos);

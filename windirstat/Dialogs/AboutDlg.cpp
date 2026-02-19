@@ -147,7 +147,7 @@ void CAboutDlg::WdsTabControl::OnEnLinkText(NMHDR* pNMHDR, LRESULT* pResult)
         CStringW link;
         const auto& active = GetActiveRichEdit();
         active.GetTextRange(el->chrg.cpMin, el->chrg.cpMax, link);
-        ::ShellExecute(*this, nullptr, link, nullptr, wds::strEmpty, SW_SHOWNORMAL);
+        ::ShellExecute(*this, nullptr, link, nullptr, strEmpty, SW_SHOWNORMAL);
     }
 }
 
@@ -188,7 +188,7 @@ CAboutDlg::CAboutDlg()
 std::wstring CAboutDlg::GetAppVersion()
 {
     return std::format(L"{} {}{}.{}.{} ({})\nGit Commit: {}",
-        wds::strWinDirStat, PRODUCTION == 0 ? L"Beta " : L"",
+        strWinDirStat, PRODUCTION == 0 ? L"Beta " : L"",
         PRD_MAJVER, PRD_MINVER, PRD_PATCH,
         _CRT_WIDE(GIT_DATE), _CRT_WIDE(GIT_COMMIT));
 }

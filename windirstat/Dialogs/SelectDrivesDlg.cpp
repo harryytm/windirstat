@@ -36,7 +36,10 @@ namespace
     // Return: false, if drive not accessible
     bool RetrieveDriveInformation(const std::wstring & path, std::wstring& name, ULONGLONG& total, ULONGLONG& free)
     {
-        name = FormatVolumeNameOfRootPath(path);
+        const std::wstring volumeName = GetVolumeName(path);
+        if (volumeName.empty()) return false;
+
+        name = FormatVolumeName(path, volumeName);
 
         std::tie(total, free) = CDirStatApp::GetFreeDiskSpace(path);
         if (total == 0) return false;
@@ -60,7 +63,7 @@ CDriveItem::~CDriveItem()
     StopQuery();
 }
 
-void CDriveItem::StartQuery(const HWND dialog)
+void CDriveItem::StartQuery(HWND dialog)
 {
     ASSERT(dialog != nullptr);
     ASSERT(m_querying);
@@ -427,17 +430,39 @@ BOOL CSelectDrivesDlg::OnInitDialog()
     BringWindowToTop();
     SetForegroundWindow();
 
-    const auto driveList = GetDriveList({ DRIVE_REMOVABLE, DRIVE_FIXED,
-        DRIVE_REMOTE, DRIVE_CDROM, DRIVE_RAMDISK });
-    for (const auto & drive : driveList)
+    const DWORD drives = GetLogicalDrives();
+    for (const auto i : std::views::iota(0, alphaSize))
     {
-        const auto item = new CDriveItem(&m_driveList, drive + L'\\');
+        const DWORD mask = 0x00000001 << i;
+        if ((drives & mask) == 0)
+        {
+            continue;
+        }
+        
+        std::wstring s = std::wstring(1, strAlpha.at(i)) + L":\\";
+        const UINT type = ::GetDriveType(s.c_str());
+        if (type == DRIVE_UNKNOWN || type == DRIVE_NO_ROOT_DIR)
+        {
+            continue;
+        }
+
+        // The check of remote drives will be done in the background by the query thread.
+        if (type != DRIVE_REMOTE && !DriveExists(s))
+        {
+            continue;
+        }
+
+        const auto item = new CDriveItem(&m_driveList, s);
         m_driveList.InsertListItem(m_driveList.GetItemCount(), { item });
         item->StartQuery(m_hWnd);
 
-        if (std::ranges::find(m_selectedDrives, drive) != m_selectedDrives.end())
+        for (const auto & drive : m_selectedDrives)
         {
-            m_driveList.SelectItem(item);
+            if (std::wstring(item->GetDrive()) == drive)
+            {
+                m_driveList.SelectItem(item);
+                break;
+            }
         }
     }
 
@@ -538,7 +563,7 @@ void CSelectDrivesDlg::UpdateButtons()
     if (m_useFastScan && prevUseFastScan != m_useFastScan && IsElevationAvailable())
     {
         if (WdsMessageBox(*this, Localization::Lookup(IDS_ELEVATION_QUESTION),
-            wds::strWinDirStat, MB_YESNO | MB_ICONQUESTION) == IDYES)
+            strWinDirStat, MB_YESNO | MB_ICONQUESTION) == IDYES)
         {
             COptions::UseFastScanEngine = true;
             RunElevated(CDirStatDoc::Get()->GetPathName().GetString());
@@ -562,7 +587,7 @@ void CSelectDrivesDlg::UpdateButtons()
     case RADIO_TARGET_FOLDER:
         if (!m_folderName.IsEmpty())
         {
-            if (m_folderName.GetLength() >= 2 && m_folderName.Left(2) == wds::strUncPrefix)
+            if (m_folderName.GetLength() >= 2 && m_folderName.Left(2) == strUncPrefix)
             {
                 enableOk = true;
             }
@@ -712,7 +737,7 @@ void CSelectDrivesDlg::OnBnClickedBrowseButton()
     // Setup folder picker dialog
     CFolderPickerDialog dlg(nullptr,
         OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_DONTADDTORECENT, this);
-    dlg.m_ofn.lpstrTitle = const_cast<LPWSTR>(wds::strWinDirStat);
+    dlg.m_ofn.lpstrTitle = const_cast<LPWSTR>(strWinDirStat);
 
     // Show dialog and validate results
     if (dlg.DoModal() != IDOK) return;

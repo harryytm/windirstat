@@ -168,7 +168,7 @@ CItem* LoadResults(const std::wstring & path)
         LPWSTR displayName = useFullPath ? lookupPath : wcsrchr(lookupPath, L'\\');
         if (!useFullPath && displayName != nullptr)
         {
-            displayName[0] = wds::chrNull;
+            displayName[0] = chrNull;
             displayName = &displayName[1];
         }
 
@@ -205,7 +205,7 @@ CItem* LoadResults(const std::wstring & path)
         if (!newitem->TmiIsLeaf() && newitem->GetItemsCount() > 0)
         {
             // Restore full path for parent assignment
-            if (lookupPath != displayName) lookupPath[wcslen(lookupPath)] = wds::chrBackslash;
+            if (lookupPath != displayName) lookupPath[wcslen(lookupPath)] = chrBackslash;
 
             const auto mapPath = fields[orderMap[FIELD_NAME]];
             parentMap[mapPath.data()] = newitem;

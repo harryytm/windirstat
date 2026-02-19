@@ -70,14 +70,14 @@ HBRUSH CPageGeneral::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 bool CPageGeneral::IsContextMenuRegistered()
 {
     return CRegKey().Open(HKEY_CLASSES_ROOT, std::format(L"Drive\\shell\\{}",
-        wds::strWinDirStat).c_str(), KEY_READ) == ERROR_SUCCESS;
+        strWinDirStat).c_str(), KEY_READ) == ERROR_SUCCESS;
 }
 
 bool CPageGeneral::SetContextMenuRegistration(bool enable)
 {
     for (const std::wstring& rootSubKey : { L"Drive", L"Directory" })
     {
-        const std::wstring baseKey = rootSubKey + L"\\shell\\" + wds::strWinDirStat;
+        const std::wstring baseKey = rootSubKey + L"\\shell\\" + strWinDirStat;
 
         if (!enable)
         {
@@ -90,7 +90,7 @@ bool CPageGeneral::SetContextMenuRegistration(bool enable)
         CRegKey key;
         const std::wstring exePath = GetAppFileName();
         if (key.Create(HKEY_CLASSES_ROOT, baseKey.c_str()) != ERROR_SUCCESS ||
-            key.SetStringValue(nullptr, wds::strWinDirStat) != ERROR_SUCCESS ||
+            key.SetStringValue(nullptr, strWinDirStat) != ERROR_SUCCESS ||
             key.SetStringValue(L"Icon", exePath.c_str()) != ERROR_SUCCESS)
         {
             SetContextMenuRegistration(false);

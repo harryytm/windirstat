@@ -95,3 +95,5 @@ namespace wds
     inline constexpr std::wstring_view strAlpha{ L"ABCDEFGHIJKLMNOPQRSTUVWXYZ" };
     inline constexpr int alphaSize = std::ssize(strAlpha);
 }
+
+using namespace wds;

@@ -173,7 +173,7 @@ void CLayout::CSizeGripper::Create(CWnd* parent, const CRect rc)
 {
     CWnd::Create(AfxRegisterWndClass(0,
         CDirStatApp::Get()->LoadStandardCursor(IDC_ARROW), nullptr, nullptr),
-        wds::strEmpty, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS, rc, parent, IDC_SIZEGRIPPER);
+        strEmpty, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS, rc, parent, IDC_SIZEGRIPPER);
 }
 
 BEGIN_MESSAGE_MAP(CLayout::CSizeGripper, CWnd)
