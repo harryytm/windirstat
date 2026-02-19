@@ -108,21 +108,28 @@ std::wstring FormatSizeSuffixes(const ULONGLONG n) noexcept
         ULONGLONG bytes;
         ULONGLONG threshold;
         const std::wstring& (*suffix)();
-    } units[] = {
-        {Ti, Ti - (Gi / 2), GetSpec_TiB},
-        {Gi, Gi - (Mi / 2), GetSpec_GiB},
-        {Mi, Mi - (Ki / 2), GetSpec_MiB},
-        {Ki, Ki,            GetSpec_KiB},
+    } unitsBin[] = {
+        {Ti, Gi * K, GetSpec_TiB},
+        {Gi, Mi * K, GetSpec_GiB},
+        {Mi, Ki * K, GetSpec_MiB},
+        {Ki, K,      GetSpec_KiB},
+    }, unitsDec[] = {
+        {T, T,       GetSpec_TB},
+        {G, G,       GetSpec_GB},
+        {M, M,       GetSpec_MB},
+        {K, K,       GetSpec_KB},
     };
 
-    for (const auto& [bytes, threshold, suffix] : units) [[msvc::flatten]]
+    // Allow option to use either binary (base 1024) or decimal (base 1000) suffixes
+    for (const auto& [bytes, threshold, suffix] :
+        (COptions::UseBinSizeSuffixes) ? unitsBin : unitsDec) [[msvc::flatten]]
     {
         if (n < threshold) continue;
         
         return FormatDouble(static_cast<double>(n)
             / static_cast<double>(bytes)) + L" " + suffix();
     }
-    return std::to_wstring(n) + L" " + GetSpec_Bytes();
+    return std::format(L"{} {}", n, GetSpec_Bytes());
 }
 
 std::wstring FormatCount(const ULONGLONG n) noexcept
@@ -334,6 +341,30 @@ const std::wstring& GetSpec_GiB() noexcept
 const std::wstring& GetSpec_TiB() noexcept
 {
     static std::wstring s = Localization::Lookup(IDS_SPEC_TiB);
+    return s;
+}
+
+const std::wstring& GetSpec_KB() noexcept
+{
+    static std::wstring s = Localization::Lookup(IDS_SPEC_KB);
+    return s;
+}
+
+const std::wstring& GetSpec_MB() noexcept
+{
+    static std::wstring s = Localization::Lookup(IDS_SPEC_MB);
+    return s;
+}
+
+const std::wstring& GetSpec_GB() noexcept
+{
+    static std::wstring s = Localization::Lookup(IDS_SPEC_GB);
+    return s;
+}
+
+const std::wstring& GetSpec_TB() noexcept
+{
+    static std::wstring s = Localization::Lookup(IDS_SPEC_TB);
     return s;
 }
 
