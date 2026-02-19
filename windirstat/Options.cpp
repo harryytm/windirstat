@@ -82,6 +82,7 @@ Setting<bool> COptions::TreeMapShowExtensions(OptionsTreeMap, L"TreeMapShowExten
 Setting<bool> COptions::TreeMapShowFolderFrames(OptionsTreeMap, L"TreeMapShowFolderFrames", (CTreeMap::GetDefaults().showFolderFrames));
 Setting<bool> COptions::TreeMapUseLogical(OptionsTreeMap, L"TreeMapUseLogicalSize", false);
 Setting<bool> COptions::UseBackupRestore(OptionsGeneral, L"UseBackupRestore", true);
+Setting<bool> COptions::UseBinSizeSuffixes(OptionsGeneral, L"UseBinSizeSuffixes", true);
 Setting<bool> COptions::UseDrawTextCache(OptionsGeneral, L"UseDrawTextCache", true);
 Setting<bool> COptions::UseFastScanEngine(OptionsGeneral, L"UseFastScanEngine", true);
 Setting<bool> COptions::UseWindowsLocaleSetting(OptionsGeneral, L"UseWindowsLocaleSetting", true);

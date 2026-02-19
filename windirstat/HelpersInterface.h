@@ -58,6 +58,10 @@ const std::wstring& GetSpec_KiB() noexcept;
 const std::wstring& GetSpec_MiB() noexcept;
 const std::wstring& GetSpec_GiB() noexcept;
 const std::wstring& GetSpec_TiB() noexcept;
+const std::wstring& GetSpec_KB() noexcept;
+const std::wstring& GetSpec_MB() noexcept;
+const std::wstring& GetSpec_GB() noexcept;
+const std::wstring& GetSpec_TB() noexcept;
 
 // System information
 std::wstring GetCOMSPEC();
