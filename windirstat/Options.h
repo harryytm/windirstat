@@ -175,6 +175,7 @@ public:
     static Setting<bool> TreeMapShowFolderFrames;
     static Setting<bool> TreeMapUseLogical;
     static Setting<bool> UseBackupRestore;
+    static Setting<bool> UseBinSizeSuffixes;
     static Setting<bool> UseDrawTextCache;
     static Setting<bool> UseFastScanEngine;
     static Setting<bool> UseWindowsLocaleSetting;
