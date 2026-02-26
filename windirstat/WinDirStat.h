@@ -37,54 +37,61 @@ class CDirStatApp final : public CWinAppEx
 public:
 
     CDirStatApp();
+    static CDirStatApp* Get() { return &s_singleton; }
     BOOL InitInstance() override;
+
+    static bool InPortableMode();
+
+    static std::tuple<ULONGLONG, ULONGLONG> GetFreeDiskSpace(const std::wstring& pszRootPath);
+    static std::wstring GetCurrentProcessMemoryInfo();
+
+    static void LaunchHelp();
+    static void LegacyUninstall();
+
+    void RestartApplication(bool resetPreferences = false);
+
+    bool SetPortableMode(bool enable, bool onlyOpen = false);
+    bool IsFollowingAllowed(DWORD reparseTag = 0) const;
+
     BOOL LoadState(LPCTSTR, CFrameImpl*) override { return TRUE; }
     BOOL IsIdleMessage(MSG* pMsg) override;
 
-    static bool InPortableMode();
-    bool SetPortableMode(bool enable, bool onlyOpen = false);
-
-    bool IsFollowingAllowed(DWORD reparseTag = 0) const;
+    std::wstring GetSaveDupesToCsvPath() const { return m_saveDupesToCsvPath; }
+    std::wstring GetSaveToCsvPath() const { return m_saveToCsvPath; }
 
     COLORREF AltColor() const;           // Coloring of compressed items
     COLORREF AltEncryptionColor() const; // Coloring of encrypted items
 
-    static std::wstring GetCurrentProcessMemoryInfo();
     CIconHandler* GetIconHandler();
-
-    static void LaunchHelp();
-    void RestartApplication(bool resetPreferences = false);
-
-    static void LegacyUninstall();
-    static std::tuple<ULONGLONG, ULONGLONG> GetFreeDiskSpace(const std::wstring& pszRootPath);
-    static CDirStatApp* Get() { return &s_singleton; }
-    std::wstring GetSaveToCsvPath() const { return m_saveToCsvPath; }
-    std::wstring GetSaveDupesToCsvPath() const { return m_saveDupesToCsvPath; }
 
 protected:
 
-    // Get the alternative color from Explorer configuration
-    COLORREF GetAlternativeColor(COLORREF clrDefault, const std::wstring& which) const;
-
     CSingleDocTemplate* m_pDocTemplate{nullptr}; // MFC voodoo.
 
-    CIconHandler m_iconList;           // Central icon list
+    static CDirStatApp s_singleton;    // Singleton application instance
+
+    std::wstring m_loadFromCsvPath;    // Path to load csv file from
+    std::wstring m_saveDupesToCsvPath; // Path to save duplicates csv file to
+    std::wstring m_saveToCsvPath;      // Path to save csv file to
+
+    // Get the alternative color from Explorer configuration
+    COLORREF GetAlternativeColor(COLORREF clrDefault, const std::wstring& which) const;
     COLORREF m_altColor;               // Coloring of compressed items
     COLORREF m_altEncryptionColor;     // Coloring of encrypted items
-    std::wstring m_loadFromCsvPath;    // Path to load csv file from
-    std::wstring m_saveToCsvPath;      // Path to save csv file to
-    std::wstring m_saveDupesToCsvPath; // Path to save duplicates csv file to
-    static CDirStatApp s_singleton;    // Singleton application instance
+
+    CIconHandler m_iconList;           // Central icon list
+
 #ifdef _DEBUG
     CWDSTracerConsole m_vtraceConsole;
 #endif
 
     DECLARE_MESSAGE_MAP()
+    afx_msg void OnAppAbout();
     afx_msg void OnFileOpen();
-    afx_msg void OnRunElevated();
     afx_msg void OnFilter();
-    afx_msg void OnUpdateRunElevated(CCmdUI* pCmdUI);
     afx_msg void OnHelpManual();
     afx_msg void OnReportBug();
-    afx_msg void OnAppAbout();
+    afx_msg void OnRunElevated();
+    afx_msg void OnUpdateRunElevated(CCmdUI* pCmdUI);
+
 };
