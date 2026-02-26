@@ -39,34 +39,34 @@
 #include <afxcontrolbars.h> // MFC support for ribbons and control bars
 
 // Windows API headers
-#include <VersionHelpers.h>
-#include <psapi.h>
-#include <winioctl.h>
-#include <bcrypt.h>
-#include <sal.h>
-#include <wincrypt.h>
-#include <sddl.h>
-#include <winternl.h>
-#include <powrprof.h>
 #include <aclapi.h>
-#include <uxtheme.h>
-#include <vssym32.h>
-#include <dwmapi.h>
+#include <bcrypt.h>
 #include <comdef.h>
-#include <wbemidl.h>
-#include <initguid.h>
-#include <virtdisk.h>
-#include <tlhelp32.h>
+#include <dwmapi.h>
 #include <fdi.h>
+#include <initguid.h>
+#include <powrprof.h>
+#include <psapi.h>
+#include <sal.h>
+#include <sddl.h>
+#include <tlhelp32.h>
+#include <uxtheme.h>
+#include <VersionHelpers.h>
+#include <virtdisk.h>
+#include <vssym32.h>
+#include <wbemidl.h>
+#include <wincrypt.h>
+#include <winioctl.h>
+#include <winternl.h>
 
 // STL headers
 #include <algorithm>
 #include <array>
 #include <atomic>
 #include <bit>
-#include <cstdint>
 #include <cmath>
 #include <condition_variable>
+#include <cstdint>
 #include <execution>
 #include <filesystem>
 #include <format>
@@ -84,8 +84,8 @@
 #include <set>
 #include <shared_mutex>
 #include <source_location>
-#include <string>
 #include <string_view>
+#include <string>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>

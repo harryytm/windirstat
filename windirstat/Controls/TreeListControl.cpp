@@ -369,13 +369,13 @@ int CTreeListControl::FindTreeItem(const CTreeListItem* item) const
 }
 
 BEGIN_MESSAGE_MAP(CTreeListControl, CWdsListControl)
+    ON_NOTIFY_EX(HDN_ENDDRAG, 0, OnHeaderEndDrag)
     ON_NOTIFY_REFLECT(LVN_ITEMCHANGING, OnLvnItemChangingList)
     ON_WM_CONTEXTMENU()
-    ON_WM_LBUTTONDOWN()
     ON_WM_KEYDOWN()
     ON_WM_LBUTTONDBLCLK()
+    ON_WM_LBUTTONDOWN()
     ON_WM_SETFOCUS()
-    ON_NOTIFY_EX(HDN_ENDDRAG, 0, OnHeaderEndDrag)
 END_MESSAGE_MAP()
 
 void CTreeListControl::DrawNode(CDC* pDC, CRect& rcRest, CRect& rcPlusMinus, const CTreeListItem* item, int* width)

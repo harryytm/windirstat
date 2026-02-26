@@ -55,36 +55,39 @@ class CTreeListItem : public CWdsListItem
 public:
     CTreeListItem() = default;
 
-    virtual int CompareSibling(const CTreeListItem* tlib, int subitem) const = 0;
-
-    bool DrawSubItem(int subitem, CDC* pdc, CRect rc, UINT state, int* width, int* focusLeft) override;
-    std::wstring GetText(int subitem) const override;
-    HICON GetIcon() override { return m_visualInfo->icon; }
-    int Compare(const CWdsListItem* baseOther, int subitem) const override;
-    virtual CTreeListItem* GetTreeListChild(int i) const = 0;
-    virtual int GetTreeListChildCount() const = 0;
     virtual CItem* GetLinkedItem() { return reinterpret_cast<CItem*>(this); }
+    virtual CTreeListItem* GetTreeListChild(int i) const = 0;
+    virtual int CompareSibling(const CTreeListItem* tlib, int subitem) const = 0;
+    virtual int GetTreeListChildCount() const = 0;
 
     void DrawPacman(CDC* pdc, const CRect& rc) const;
-    CTreeListItem* GetParent() const;
-    void SetParent(CTreeListItem* parent);
-    bool IsAncestorOf(const CTreeListItem* item) const;
-    bool HasChildren() const;
-    bool IsExpanded() const;
+    void DrivePacman() const;
     void SetExpanded(bool expanded = true) const;
-    bool IsVisible() const { return m_visualInfo.get() != nullptr; }
-    void SetVisible(CTreeListControl * control, bool visible = true);
-    unsigned char GetIndent() const;
     void SetIndent(unsigned char indent) const;
-    CRect GetPlusMinusRect() const;
+    void SetParent(CTreeListItem* parent);
     void SetPlusMinusRect(const CRect& rc) const;
-    CRect GetTitleRect() const;
-    void SetTitleRect(const CRect& rc) const;
-    int GetScrollPosition() const;
     void SetScrollPosition(int top) const;
+    void SetTitleRect(const CRect& rc) const;
+    void SetVisible(CTreeListControl * control, bool visible = true);
     void StartPacman() const;
     void StopPacman() const;
-    void DrivePacman() const;
+
+    bool DrawSubItem(int subitem, CDC* pdc, CRect rc, UINT state, int* width, int* focusLeft) override;
+    bool HasChildren() const;
+    bool IsAncestorOf(const CTreeListItem* item) const;
+    bool IsExpanded() const;
+    bool IsVisible() const { return m_visualInfo.get() != nullptr; }
+
+    int Compare(const CWdsListItem* baseOther, int subitem) const override;
+    int GetScrollPosition() const;
+
+    unsigned char GetIndent() const;
+
+    CRect GetPlusMinusRect() const;
+    CRect GetTitleRect() const;
+    CTreeListItem* GetParent() const;
+    HICON GetIcon() override { return m_visualInfo->icon; }
+    std::wstring GetText(int subitem) const override;
 
 protected:
     std::unique_ptr<VISIBLEINFO> m_visualInfo;
@@ -102,26 +105,31 @@ class CTreeListControl : public CWdsListControl
 
     CTreeListControl(std::vector<int>* columnOrder = {}, std::vector<int>* columnWidths = {}, LOGICAL_FOCUS logicalFocus = static_cast<LOGICAL_FOCUS>(0), bool blockFirstColumnReorder = false);
     ~CTreeListControl() override = default;
+
+    bool IsItemSelected(const CTreeListItem* item) const;
+    bool SelectedItemCanToggle();
+
+    CTreeListItem* GetItem(int i) const;
+
+    int FindTreeItem(const CTreeListItem* item) const;
+    int GetItemScrollPosition(const CTreeListItem* item) const;
+
     virtual BOOL CreateExtended(DWORD dwExStyle, DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID);
-    void SysColorChanged() override;
-    virtual void SetRootItem(CTreeListItem* root = nullptr);
     virtual void AfterDeleteAllItems() {}
+    virtual void SetRootItem(CTreeListItem* root = nullptr);
+
+    void DrawNode(CDC* pdc, CRect& rc, CRect& rcPlusMinus, const CTreeListItem* item, int* width);
+    void EmulateInteractiveSelection(const CTreeListItem* item);
+    void EnsureItemVisible(const CTreeListItem* item);
+    void ExpandItem(const CTreeListItem* item);
+    void ExpandPathToItem(const CTreeListItem* item);
     void OnChildAdded(const CTreeListItem* parent, CTreeListItem* child);
     void OnChildRemoved(const CTreeListItem* parent, const CTreeListItem* child);
     void OnRemovingAllChildren(const CTreeListItem* parent);
-    CTreeListItem* GetItem(int i) const;
-    bool IsItemSelected(const CTreeListItem* item) const;
     void SelectItem(const CTreeListItem* item, bool deselect = false, bool focus = false);
-    void ExpandPathToItem(const CTreeListItem* item);
-    void DrawNode(CDC* pdc, CRect& rc, CRect& rcPlusMinus, const CTreeListItem* item, int* width);
-    void EnsureItemVisible(const CTreeListItem* item);
-    void ExpandItem(const CTreeListItem* item);
-    int FindTreeItem(const CTreeListItem* item) const;
-    int GetItemScrollPosition(const CTreeListItem* item) const;
     void SetItemScrollPosition(const CTreeListItem* item, int top);
-    bool SelectedItemCanToggle();
+    void SysColorChanged() override;
     void ToggleSelectedItem();
-    void EmulateInteractiveSelection(const CTreeListItem* item);
 
     template <class T = CTreeListItem> std::vector<T*> GetAllSelected(bool visual = false)
     {
@@ -147,27 +155,29 @@ class CTreeListControl : public CWdsListControl
     }
 
 protected:
-    void OnItemDoubleClick(int i);
-    void InsertItem(int i, CTreeListItem* item);
-    void DeleteItem(int i);
     void CollapseItem(int i);
+    void DeleteItem(int i);
     void ExpandItem(int i, bool scroll = true);
+    void InsertItem(int i, CTreeListItem* item);
+    void OnItemDoubleClick(int i);
     void ToggleExpansion(int i);
 
     //
     /////////////////////////////////////////////////////
 
-    int m_lButtonDownItem = -1;        // Set in OnLButtonDown(). -1 if not item hit.
-    bool m_lButtonDownOnPlusMinusRect = false; // Set in OnLButtonDown(). True, if plus-minus-rect hit.
-    LOGICAL_FOCUS m_logicalFocus = static_cast<LOGICAL_FOCUS>(0);
     bool m_blockFirstColumnReorder = false;
+    bool m_lButtonDownOnPlusMinusRect = false; // Set in OnLButtonDown(). True, if plus-minus-rect hit.
+
+    int m_lButtonDownItem = -1;        // Set in OnLButtonDown(). -1 if not item hit.
+
+    LOGICAL_FOCUS m_logicalFocus = static_cast<LOGICAL_FOCUS>(0);
 
     DECLARE_MESSAGE_MAP()
-    afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint /*point*/);
-    afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
-    afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
-    afx_msg void OnLvnItemChangingList(NMHDR* pNMHDR, LRESULT* pResult);
-    afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
-    afx_msg void OnSetFocus(CWnd* pOldWnd);
     afx_msg BOOL OnHeaderEndDrag(UINT, NMHDR* pNMHDR, LRESULT* pResult);
+    afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint /*point*/);
+    afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+    afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
+    afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+    afx_msg void OnLvnItemChangingList(NMHDR* pNMHDR, LRESULT* pResult);
+    afx_msg void OnSetFocus(CWnd* pOldWnd);
 };

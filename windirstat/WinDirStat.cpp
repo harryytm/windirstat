@@ -16,11 +16,11 @@
 //
 
 #include "pch.h"
-#include "SelectDrivesDlg.h"
 #include "AboutDlg.h"
-#include "TreeMapView.h"
-#include "PageFiltering.h"
 #include "CsvLoader.h"
+#include "PageFiltering.h"
+#include "SelectDrivesDlg.h"
+#include "TreeMapView.h"
 
 CIconHandler* GetIconHandler()
 {
@@ -33,10 +33,10 @@ BEGIN_MESSAGE_MAP(CDirStatApp, CWinAppEx)
     ON_COMMAND(ID_APP_ABOUT, OnAppAbout)
     ON_COMMAND(ID_FILE_SELECT, OnFileOpen)
     ON_COMMAND(ID_FILTER, OnFilter)
-    ON_COMMAND(ID_RUN_ELEVATED, OnRunElevated)
-    ON_UPDATE_COMMAND_UI(ID_RUN_ELEVATED, OnUpdateRunElevated)
     ON_COMMAND(ID_HELP_MANUAL, OnHelpManual)
     ON_COMMAND(ID_HELP_REPORTBUG, OnReportBug)
+    ON_COMMAND(ID_RUN_ELEVATED, OnRunElevated)
+    ON_UPDATE_COMMAND_UI(ID_RUN_ELEVATED, OnUpdateRunElevated)
 END_MESSAGE_MAP()
 
 CDirStatApp CDirStatApp::s_singleton;
