@@ -22,32 +22,32 @@
 // Interface helpers declarations
 
 // Locale and formatting
-std::wstring GetLocaleString(LCTYPE lctype, LCID lcid);
-std::wstring GetLocaleLanguage(LANGID langid);
-wchar_t GetLocaleThousandSeparator() noexcept;
-wchar_t GetLocaleDecimalSeparator() noexcept;
+std::wstring FormatAttributes(DWORD attr) noexcept;
 std::wstring FormatBytes(ULONGLONG n) noexcept;
-std::wstring FormatSizeSuffixes(ULONGLONG n) noexcept;
 std::wstring FormatCount(ULONGLONG n) noexcept;
 std::wstring FormatDouble(double d) noexcept;
 std::wstring FormatFileTime(const FILETIME& t, bool seconds = false) noexcept;
-std::wstring FormatAttributes(DWORD attr) noexcept;
 std::wstring FormatHex(const std::vector<BYTE>& bytes, bool upper = true) noexcept;
 std::wstring FormatMilliseconds(ULONGLONG ms) noexcept;
-std::wstring FormatVolumeNameOfRootPath(const std::wstring& rootPath);
+std::wstring FormatSizeSuffixes(ULONGLONG n) noexcept;
 std::wstring FormatVolumeName(const std::wstring& rootPath, const std::wstring& volumeName);
+std::wstring FormatVolumeNameOfRootPath(const std::wstring& rootPath);
+std::wstring GetLocaleLanguage(LANGID langid);
+std::wstring GetLocaleString(LCTYPE lctype, LCID lcid);
+wchar_t GetLocaleDecimalSeparator() noexcept;
+wchar_t GetLocaleThousandSeparator() noexcept;
 
 // File and path helpers
-std::wstring GetFolderNameFromPath(const std::wstring& path);
 std::wstring GetBaseNameFromPath(const std::wstring& path);
+std::wstring GetFolderNameFromPath(const std::wstring& path);
 std::wstring GlobToRegex(const std::wstring& glob, bool useAnchors = true);
 
 // String helpers
-void ReplaceString(std::wstring& subject, const std::wstring& search, const std::wstring& replace);
-std::wstring& TrimString(std::wstring& s, wchar_t c = L' ', bool endOnly = false) noexcept;
-std::wstring MakeLower(const std::wstring& s);
-std::wstring JoinString(const std::vector<std::wstring>& items, WCHAR delim = chrPipe);
 std::vector<std::wstring> SplitString(const std::wstring& string, WCHAR delim = chrPipe);
+std::wstring JoinString(const std::vector<std::wstring>& items, WCHAR delim = chrPipe);
+std::wstring MakeLower(const std::wstring& s);
+std::wstring& TrimString(std::wstring& s, wchar_t c = L' ', bool endOnly = false) noexcept;
+void ReplaceString(std::wstring& subject, const std::wstring& search, const std::wstring& replace);
 
 // Attribute parsing
 DWORD ParseAttributes(const std::wstring_view& attributes) noexcept;
@@ -64,28 +64,28 @@ const std::wstring& GetSpec_GB() noexcept;
 const std::wstring& GetSpec_TB() noexcept;
 
 // System information
-std::wstring GetCOMSPEC();
 const std::wstring& GetSysDirectory() noexcept;
+std::wstring GetCOMSPEC();
 
 // UI helpers
-void WaitForHandleWithRepainting(HANDLE h, DWORD TimeOut = INFINITE) noexcept;
-void ProcessMessagesUntilSignaled(const std::function<void()>& callback);
-void DisplayError(const std::wstring& error);
-std::wstring TranslateError(HRESULT hr = static_cast<HRESULT>(GetLastError()));
+bool ExecuteCommandInConsole(const std::wstring& command, const std::wstring& title = L"");
+bool IsMenuEnabled(const CMenu* menu, UINT pos, bool isCommand = false) noexcept;
 bool ShellExecuteWrapper(const std::wstring& lpFile, const std::wstring& lpParameters = L"",
         const std::wstring& lpVerb = L"", HWND hwnd = *AfxGetMainWnd(),
         const std::wstring& lpDirectory = L"", INT nShowCmd = SW_NORMAL);
-bool ExecuteCommandInConsole(const std::wstring& command, const std::wstring& title = L"");
+std::wstring TranslateError(HRESULT hr = static_cast<HRESULT>(GetLastError()));
+void DisplayError(const std::wstring& error);
+void ProcessMessagesUntilSignaled(const std::function<void()>& callback);
 void SetMenuItem(CMenu* menu, int pos, bool enable, bool isCommand = false);
-bool IsMenuEnabled(const CMenu* menu, UINT pos, bool isCommand = false) noexcept;
+void WaitForHandleWithRepainting(HANDLE h, DWORD TimeOut = INFINITE) noexcept;
 
 // DPI scaling
 int DpiRest(int value, const CWnd* wnd = nullptr) noexcept;
 int DpiSave(int value, const CWnd* wnd = nullptr) noexcept;
 
 // Context menu
-constexpr auto CONTENT_MENU_MINCMD = 0x1ul;
 constexpr auto CONTENT_MENU_MAXCMD = 0x7FFFul;
+constexpr auto CONTENT_MENU_MINCMD = 0x1ul;
 IContextMenu* GetContextMenu(HWND hwnd, const std::vector<std::wstring>& paths);
 
 // Application info
@@ -94,8 +94,8 @@ std::wstring GetAppFolder();
 
 // Resources
 std::vector<BYTE> GetCompressedResource(HRSRC resource) noexcept;
-std::wstring GetTextResource(UINT id);
 std::wstring GetAcceleratorString(UINT commandID);
+std::wstring GetTextResource(UINT id);
 
 // Input state
 inline bool IsControlKeyDown() noexcept { return (HSHELL_HIGHBIT & GetKeyState(VK_CONTROL)) != 0; };
