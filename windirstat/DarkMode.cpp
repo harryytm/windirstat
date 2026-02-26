@@ -77,10 +77,6 @@ void DarkMode::SetAppDarkMode() noexcept
 
     // Setup dark mode colors
     DarkModeColors = OriginalColors;
-    DarkModeColors[CTLCOLOR_DLG] = RGB(40, 40, 40);
-    DarkModeColors[CTLCOLOR_STATIC] = RGB(40, 40, 40);
-    DarkModeColors[CTLCOLOR_EDIT] = RGB(32, 32, 32);
-    DarkModeColors[CTLCOLOR_LISTBOX] = RGB(32, 32, 32);
     DarkModeColors[COLOR_3DHIGHLIGHT] = RGB(70, 70, 70);
     DarkModeColors[COLOR_3DLIGHT] = RGB(60, 60, 60);
     DarkModeColors[COLOR_3DSHADOW] = RGB(20, 20, 20);
@@ -95,6 +91,10 @@ void DarkMode::SetAppDarkMode() noexcept
     DarkModeColors[COLOR_WINDOW] = RGB(32, 32, 32);
     DarkModeColors[COLOR_WINDOWFRAME] = RGB(50, 50, 50);
     DarkModeColors[COLOR_WINDOWTEXT] = RGB(220, 220, 220);
+    DarkModeColors[CTLCOLOR_DLG] = RGB(40, 40, 40);
+    DarkModeColors[CTLCOLOR_EDIT] = RGB(32, 32, 32);
+    DarkModeColors[CTLCOLOR_LISTBOX] = RGB(32, 32, 32);
+    DarkModeColors[CTLCOLOR_STATIC] = RGB(40, 40, 40);
 
     // Update colors
     SetupGlobalColors();
@@ -106,12 +106,12 @@ void DarkMode::SetupGlobalColors() noexcept
     if (!s_darkModeEnabled) return;
 
     // Update global colors
-    GetGlobalData()->clrBarFace = WdsSysColor(COLOR_MENUBAR);
+    GetGlobalData()->clrBarFace   = WdsSysColor(COLOR_MENUBAR);
     GetGlobalData()->clrBarShadow = WdsSysColor(COLOR_MENUBAR);
-    GetGlobalData()->clrBtnText = WdsSysColor(COLOR_BTNTEXT);
-    GetGlobalData()->clrBtnFace = WdsSysColor(COLOR_BTNFACE);
+    GetGlobalData()->clrBtnFace   = WdsSysColor(COLOR_BTNFACE);
     GetGlobalData()->clrBtnHilite = WdsSysColor(COLOR_BTNHILIGHT);
     GetGlobalData()->clrBtnShadow = WdsSysColor(COLOR_BTNSHADOW);
+    GetGlobalData()->clrBtnText   = WdsSysColor(COLOR_BTNTEXT);
     GetGlobalData()->brBarFace.DeleteObject();
     GetGlobalData()->brBarFace.CreateSolidBrush(GetGlobalData()->clrBarFace);
     GetGlobalData()->brBtnFace.DeleteObject();
