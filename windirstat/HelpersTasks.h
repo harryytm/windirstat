@@ -46,53 +46,53 @@ constexpr T* ByteOffset(void* ptr, const std::ptrdiff_t offset) noexcept
 // Task helpers declarations grouped by functionality
 
 // WMI helpers
+bool CreateShadowCopy(const std::wstring& volumePath);
 void QueryShadowCopies(ULONGLONG& count, ULONGLONG& bytesUsed);
 void RemoveWmiInstances(const std::wstring& wmiClass, CProgressDlg* pdlg, const std::wstring& whereClause = L"__PATH IS NOT NULL");
-bool CreateShadowCopy(const std::wstring& volumePath);
 
 // Disk utilities
 std::vector<std::wstring> GetDriveList(
-    const std::vector<UINT> & driveTypes = {DRIVE_FIXED, DRIVE_REMOTE, 
+    const std::vector<UINT>& driveTypes = { DRIVE_FIXED, DRIVE_REMOTE,
     DRIVE_REMOVABLE, DRIVE_RAMDISK }, bool checkAccessible = true);
 
 // File system helpers
-bool FolderExists(const std::wstring& path) noexcept;
+bool DeleteFileForce(const std::wstring& path, DWORD attributes = INVALID_FILE_ATTRIBUTES);
 bool DriveExists(const std::wstring& path) noexcept;
+bool FolderExists(const std::wstring& path) noexcept;
 bool IsLocalDrive(const std::wstring& path) noexcept;
 std::wstring GetVolumeName(const std::wstring& rootPath);
-bool DeleteFileForce(const std::wstring& path, DWORD attributes = INVALID_FILE_ATTRIBUTES);
- 
+
 // Path utilities
-std::wstring WdsQueryDosDevice(const std::wstring& drive);
 bool IsSUBSTedDrive(const std::wstring& drive);
 inline auto GetDrive(const std::wstring_view& sv) { return std::wstring{ sv.substr(0, 2) }; };
+std::wstring WdsQueryDosDevice(const std::wstring& drive);
 
 // Hibernation
-void DisableHibernate() noexcept;
 bool IsHibernateEnabled() noexcept;
+void DisableHibernate() noexcept;
 
 // Elevation and privileges
+bool EnableReadPrivileges() noexcept;
 bool IsElevationActive() noexcept;
 bool IsElevationAvailable() noexcept;
 inline bool IsElevationPossible() noexcept { return IsElevationActive() || IsElevationAvailable(); };
-bool EnableReadPrivileges() noexcept;
 void RunElevated(const std::wstring& cmdLine);
 
 // SID helpers
 std::wstring GetNameFromSid(PSID sid);
 
 // Compression
-bool CompressFileAllowed(const std::wstring& volumeName, CompressionAlgorithm algorithm);
 bool CompressFile(const std::wstring& filePath, CompressionAlgorithm algorithm);
-bool SparsifyFile(const std::wstring& path, ULONGLONG minZeroRunSize = 64ULL * Ki, ULONGLONG chunkSize = Mi);
+bool CompressFileAllowed(const std::wstring& volumeName, CompressionAlgorithm algorithm);
 bool CreateHardlinkFromFile(const std::wstring& pathOne, const std::wstring& pathTwo);
+bool SparsifyFile(const std::wstring& path, ULONGLONG minZeroRunSize = 64ULL * Ki, ULONGLONG chunkSize = Mi);
 
 // File hashing
 std::wstring ComputeFileHashes(const std::wstring& filePath);
 
 // I/O priority and VHD optimization
-void SetProcessIoPriorityHigh() noexcept;
 bool OptimizeVhd(const std::wstring& vhdPath) noexcept;
+void SetProcessIoPriorityHigh() noexcept;
 
 // Drive mappings
 void CopyAllDriveMappings() noexcept;
