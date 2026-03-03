@@ -400,13 +400,18 @@ bool EnableReadPrivileges() noexcept
 }
 
 // SID helpers
+static constexpr DWORD SidGetLength(const PSID x)
+{
+    return sizeof(SID) + (static_cast<SID*>(x)->SubAuthorityCount - 1) * sizeof(static_cast<SID*>(x)->SubAuthority);
+}
+
 std::wstring GetNameFromSid(const PSID sid)
 {
     // return immediately if sid is null or invalid
     if (sid == nullptr || !IsValidSid(sid)) return {};
 
     // attempt to lookup sid in cache
-    const std::vector sidVec(ByteOffset<BYTE>(sid, 0), ByteOffset<BYTE>(sid, GetLengthSid(sid)));
+    const std::vector sidVec(ByteOffset<BYTE>(sid, 0), ByteOffset<BYTE>(sid, SidGetLength(sid)));
     static std::map<std::vector<BYTE>, std::wstring> nameMap;
     if (const auto iter = nameMap.find(sidVec); iter != nameMap.end())
     {
@@ -431,8 +436,7 @@ std::wstring GetNameFromSid(const PSID sid)
     // fallback: return sid string
     SmartPointer sidBuff(LocalFree, static_cast<LPWSTR>(nullptr));
     ConvertSidToStringSid(sid, &sidBuff);
-    return nameMap.try_emplace(sidVec, sidBuff != nullptr ?
-        std::wstring(sidBuff) : std::wstring()).first->second;
+    return nameMap.try_emplace(sidVec, sidBuff).first->second;
 }
 
 // Compression
@@ -491,8 +495,7 @@ bool CompressFile(const std::wstring& filePath, const CompressionAlgorithm algor
         return false;
     }
 
-    DWORD bytesReturned = 0;
-    BOOL status = FALSE;
+    DWORD status = 0;
     if (modernAlgorithm)
     {
         struct
@@ -512,32 +515,30 @@ bool CompressFile(const std::wstring& filePath, const CompressionAlgorithm algor
             },
         };
 
+        DWORD bytesReturned;
         status = DeviceIoControl(handle, FSCTL_SET_EXTERNAL_BACKING,
             &info, sizeof(info), nullptr, 0, &bytesReturned, nullptr);
     }
     else if (numericAlgorithm == COMPRESSION_FORMAT_LZNT1)
     {
+        DWORD bytesReturned = 0;
         status = DeviceIoControl(
             handle, FSCTL_SET_COMPRESSION, &numericAlgorithm,
             sizeof(numericAlgorithm), nullptr, 0, &bytesReturned, nullptr);
     }
     else
     {
-        // Decompress: clearing standard compression also prompts the WOF
-        // driver to fully expand an externally backed file, so the explicit
-        // backing removal below is a fallback that typically reports
-        // ERROR_OBJECT_NOT_EXTERNALLY_BACKED
-        status = DeviceIoControl(
+        DWORD bytesReturned = 0;
+        DeviceIoControl(
             handle, FSCTL_SET_COMPRESSION, &numericAlgorithm,
             sizeof(numericAlgorithm), nullptr, 0, &bytesReturned, nullptr);
 
-        if (DeviceIoControl(
+        DeviceIoControl(
             handle, FSCTL_DELETE_EXTERNAL_BACKING, nullptr,
-            0, nullptr, 0, &bytesReturned, nullptr)) status = TRUE;
+            0, nullptr, 0, nullptr, nullptr);
     }
 
-    // WOF refuses files that would not shrink - treat as success
-    return status != FALSE || GetLastError() == ERROR_COMPRESSION_NOT_BENEFICIAL;
+    return status == 1 || status == 0xC000046F;
 }
 
 bool SparsifyFile(const std::wstring& path, const ULONGLONG minZeroRunSize, const ULONGLONG chunkSize)
@@ -642,14 +643,10 @@ bool CreateHardlinkFromFile(const std::wstring& pathOne, const std::wstring& pat
     std::array<WCHAR, GUIDSTRING_MAX> guidStr;
     (void) StringFromGUID2(guid, guidStr.data(), static_cast<int>(guidStr.size()));
 
-    // Create hardlink to source and move it over the target
+    // Create hardlink to source
     const std::wstring tempPath = pathTwo + guidStr.data();
-    if (CreateHardLink(tempPath.c_str(), pathOne.c_str(), nullptr) == 0) return false;
-    if (MoveFileEx(tempPath.c_str(), pathTwo.c_str(), MOVEFILE_REPLACE_EXISTING) != 0) return true;
-
-    // Do not leave the temporary link behind on failure
-    DeleteFile(tempPath.c_str());
-    return false;
+    return CreateHardLink(tempPath.c_str(), pathOne.c_str(), nullptr) != 0 &&
+        MoveFileEx(tempPath.c_str(), pathTwo.c_str(), MOVEFILE_REPLACE_EXISTING) != 0;
 }
 
 // File hashing
@@ -674,21 +671,27 @@ std::wstring ComputeFileHashes(const std::wstring& filePath, CProgressDlg* pProg
         SmartPointer<BCRYPT_HASH_HANDLE, decltype(&BCryptDestroyHash)> hHash = { BCryptDestroyHash, BCRYPT_HASH_HANDLE{} };
     };
 
+    // Define algorithms to compute
+    using AlgSet = struct { LPCWSTR id; LPCWSTR name; DWORD hashLen; };
+    constexpr std::array algos = {
+        AlgSet{BCRYPT_MD5_ALGORITHM, BCRYPT_MD5_ALGORITHM, 16},
+        AlgSet{BCRYPT_SHA1_ALGORITHM, BCRYPT_SHA1_ALGORITHM, 20},
+        AlgSet{BCRYPT_SHA256_ALGORITHM, BCRYPT_SHA256_ALGORITHM, 32},
+        AlgSet{BCRYPT_SHA384_ALGORITHM, BCRYPT_SHA384_ALGORITHM, 48},
+        AlgSet{BCRYPT_SHA512_ALGORITHM, BCRYPT_SHA512_ALGORITHM, 64}
+    };
+
     // Setup all algorithms
     std::vector<HashContext> contexts;
-    for (const auto& [algorithm, id, name] : HashAlgorithms)
+    for (const auto& [id, name, hashLen] : algos)
     {
         HashContext ctx;
         BCRYPT_ALG_HANDLE hAlg = nullptr;
         if (BCryptOpenAlgorithmProvider(&hAlg, id, nullptr, 0) != 0) continue;
         ctx.hAlg = SmartPointer(CloseAlgProvider, hAlg);
 
-        DWORD bytesWritten = 0;
-        DWORD hashLen = 0;
-        if (BCryptGetProperty(ctx.hAlg, BCRYPT_OBJECT_LENGTH,
-            reinterpret_cast<PBYTE>(&ctx.objectLen), sizeof(DWORD), &bytesWritten, 0) != ERROR_SUCCESS ||
-            BCryptGetProperty(ctx.hAlg, BCRYPT_HASH_LENGTH,
-            reinterpret_cast<PBYTE>(&hashLen), sizeof(DWORD), &bytesWritten, 0) != ERROR_SUCCESS)
+        if (DWORD bytesWritten = 0; BCryptGetProperty(ctx.hAlg, BCRYPT_OBJECT_LENGTH,
+            reinterpret_cast<PBYTE>(&ctx.objectLen), sizeof(DWORD), &bytesWritten, 0) != ERROR_SUCCESS)
         {
             continue;
         }
