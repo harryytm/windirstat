@@ -19,6 +19,13 @@
 
 #include "pch.h"
 
+enum DarkModeSetting : uint8_t
+{
+    Disabled,
+    Enabled,
+    System
+};
+
 class DarkMode final
 {
 public:
