@@ -624,16 +624,18 @@ std::wstring GetAcceleratorString(const UINT commandID)
     {
         // Define mappings for modifier keys and special keys to their string representations
         static constexpr struct { UINT key; std::wstring_view name; }
-        Modifiers[] = { { FCONTROL,    L"Ctrl"  }, { FALT,        L"Alt"   }, { FSHIFT,      L"Shift" } },
+        Modifiers[] = {
+            { FCONTROL,        L"Ctrl"  }, { FALT,            L"Alt"   }, { FSHIFT,          L"Shift" } },
         SpecialKeys[] = {
             // Directional Keys
-            { VK_UP,       L"Up"    }, { VK_DOWN,     L"Down"  }, { VK_LEFT,     L"Left"  }, { VK_RIGHT,    L"Right" },
+            { VK_UP,           L"Up"    }, { VK_DOWN,         L"Down"  }, { VK_LEFT,         L"Left"  }, { VK_RIGHT,        L"Right" },
             // Numpad Keys
-            { VK_ADD,      L"Num +" }, { VK_SUBTRACT, L"Num -" }, { VK_MULTIPLY, L"Num *" }, { VK_DIVIDE,   L"Num /" },
+            { VK_ADD,          L"Num +" }, { VK_SUBTRACT,     L"Num -" }, { VK_MULTIPLY,     L"Num *" }, { VK_DIVIDE,       L"Num /" },
+            { VK_DECIMAL,      L"Num ." },
             // Other Special Keys
-            { VK_INSERT,   L"Ins"   }, { VK_DELETE,   L"Del"   }, { VK_HOME,     L"Home"  }, { VK_END,      L"End"   },
-            { VK_PRIOR,    L"PgUp"  }, { VK_NEXT,     L"PgDn"  }, { VK_OEM_PLUS, L"+"     }, { VK_OEM_MINUS,L"-"     },
-            { VK_TAB,      L"Tab"   }, { VK_RETURN,   L"Enter" }, { VK_SPACE,    L"Space" }
+            { VK_INSERT,       L"Ins"   }, { VK_DELETE,       L"Del"   }, { VK_HOME,         L"Home"  }, { VK_END,          L"End"   },
+            { VK_PRIOR,        L"PgUp"  }, { VK_NEXT,         L"PgDn"  }, { VK_OEM_PLUS,     L"+"     }, { VK_OEM_MINUS,    L"-"     },
+            { VK_OEM_PERIOD,   L"."     }, { VK_TAB,          L"Tab"   }, { VK_RETURN,       L"Enter" }, { VK_SPACE,        L"Space" }
         };
 
         // Load all accelerator object and get count 
