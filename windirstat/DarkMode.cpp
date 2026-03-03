@@ -44,9 +44,9 @@ static std::array<COLORREF, 50> DarkModeColors;
 void DarkMode::SetAppDarkMode() noexcept
 {
     // Determine if dark mode should be set based on settings
-    s_darkModeEnabled = COptions::DarkMode == 1;
+    s_darkModeEnabled = COptions::DarkMode == DarkModeSetting::Enabled;
 
-    if (COptions::DarkMode == 2)
+    if (COptions::DarkMode == DarkModeSetting::System)
     {
         // Check Windows dark mode setting
         if (CRegKey key; key.Open(HKEY_CURRENT_USER, wds::strThemesKey, KEY_READ) == ERROR_SUCCESS)
