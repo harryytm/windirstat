@@ -284,9 +284,29 @@ void CDrivesList::OnDoubleClick(NMHDR* /*pNMHDR*/, LRESULT* pResult)
     (void) GetParent()->SendMessage(WMU_OK);
 }
 
+void CDrivesList::OnLButtonDown(UINT nFlags, CPoint point)
+{
+    LVHITTESTINFO lvhti = { 0 };
+    lvhti.pt = point;
+
+    if (SubItemHitTest(&lvhti) != -1)
+    {
+        int nItem = lvhti.iItem;
+        UINT uState = GetItemState(nItem, LVIS_SELECTED);
+        SetItemState(nItem, (uState & LVIS_SELECTED) ? 0 : (LVIS_SELECTED | LVIS_FOCUSED),
+            LVIS_SELECTED | LVIS_FOCUSED);
+        SetFocus();
+    }
+    else
+    {
+        CWdsListControl::OnLButtonDown(nFlags, point);
+    }
+}
+
 BEGIN_MESSAGE_MAP(CDrivesList, CWdsListControl)
     ON_NOTIFY_REFLECT(LVN_DELETEITEM, OnLvnDeleteItem)
     ON_NOTIFY_REFLECT(NM_DBLCLK, OnDoubleClick)
+    ON_WM_LBUTTONDOWN()
 END_MESSAGE_MAP()
 
 void CDrivesList::OnLvnDeleteItem(NMHDR* pNMHDR, LRESULT* pResult)
