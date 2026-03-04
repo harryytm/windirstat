@@ -181,7 +181,10 @@ void CWdsSplitterWnd::StopTracking(const BOOL bAccept)
                 {
                     pExtensionView->ShowTypes(true);
                 }
-
+                else
+                {
+                    pExtensionView->ShowTypes(false);
+                }
                 m_splitterPos = static_cast<double>(cxLeft) / rcClient.Width();
             }
         }
@@ -199,6 +202,10 @@ void CWdsSplitterWnd::StopTracking(const BOOL bAccept)
                     pTreeMapView != nullptr && !pTreeMapView->IsShowTreeMap())
                 {
                     pTreeMapView->ShowTreeMap(true);
+                }
+                else
+                {
+                    pTreeMapView->ShowTreeMap(false);
                 }
                 m_splitterPos = static_cast<double>(cyUpper) / rcClient.Height();
             }
