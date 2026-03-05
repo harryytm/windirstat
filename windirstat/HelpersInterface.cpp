@@ -377,6 +377,24 @@ const std::wstring& GetSpec_TB() noexcept
     return s;
 }
 
+enum Spec { Bytes, KiB, MiB, GiB, TiB, KB, MB, GB, TB };
+
+const std::wstring& GetSpec(Spec spec) noexcept {
+    static const std::wstring specs[] = {
+        Localization::Lookup(IDS_SPEC_BYTES),
+        Localization::Lookup(IDS_SPEC_KiB),
+        Localization::Lookup(IDS_SPEC_MiB),
+        Localization::Lookup(IDS_SPEC_GiB),
+        Localization::Lookup(IDS_SPEC_TiB),
+        Localization::Lookup(IDS_SPEC_KB),
+        Localization::Lookup(IDS_SPEC_MB),
+        Localization::Lookup(IDS_SPEC_GB),
+        Localization::Lookup(IDS_SPEC_TB)
+    };
+
+    return specs[static_cast<size_t>(spec)];
+}
+
 // System information
 std::wstring GetCOMSPEC()
 {
