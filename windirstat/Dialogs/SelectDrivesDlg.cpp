@@ -286,21 +286,22 @@ void CDrivesList::OnDoubleClick(NMHDR* /*pNMHDR*/, LRESULT* pResult)
 
 void CDrivesList::OnLButtonDown(UINT nFlags, CPoint point)
 {
-    LVHITTESTINFO lvhti = { 0 };
-    lvhti.pt = point;
+    if (COptions::UseStickySelection)
+    {
+        LVHITTESTINFO lvhti = { 0 };
+        lvhti.pt = point;
 
-    if (SubItemHitTest(&lvhti) != -1)
-    {
-        int nItem = lvhti.iItem;
-        UINT uState = GetItemState(nItem, LVIS_SELECTED);
-        SetItemState(nItem, (uState & LVIS_SELECTED) ? 0 : (LVIS_SELECTED | LVIS_FOCUSED),
-            LVIS_SELECTED | LVIS_FOCUSED);
-        SetFocus();
+        if (SubItemHitTest(&lvhti) != -1)
+        {
+            int nItem = lvhti.iItem;
+            UINT uState = GetItemState(nItem, LVIS_SELECTED);
+            SetItemState(nItem, (uState & LVIS_SELECTED) ? 0 : (LVIS_SELECTED | LVIS_FOCUSED),
+                LVIS_SELECTED | LVIS_FOCUSED);
+            SetFocus();
+            return;
+        }
     }
-    else
-    {
-        CWdsListControl::OnLButtonDown(nFlags, point);
-    }
+    CWdsListControl::OnLButtonDown(nFlags, point);
 }
 
 BEGIN_MESSAGE_MAP(CDrivesList, CWdsListControl)

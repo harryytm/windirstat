@@ -71,6 +71,7 @@ Setting<bool> COptions::ShowToolBar(OptionsGeneral, L"ShowToolBar", true);
 Setting<bool> COptions::LargeToolBar(OptionsGeneral, L"LargeToolBar", false);
 Setting<bool> COptions::ShowTreeMap(OptionsTreeMap, L"ShowTreeMap", true);
 Setting<bool> COptions::ShowUnknown(OptionsGeneral, L"ShowUnknown", false);
+Setting<bool> COptions::UseStickySelection(OptionsGeneral, L"UseStickySelection", false);
 Setting<bool> COptions::SkipDupeDetectionCloudLinks(OptionsGeneral, L"SkipDupeDetectionCloudLinks", true);
 Setting<bool> COptions::GroupFoldersBeforeFiles(OptionsGeneral, L"GroupFoldersBeforeFiles", true);
 Setting<bool> COptions::ShowDupeDetectionCloudLinksWarning(OptionsGeneral, L"ShowDupeDetectionCloudLinksWarning", true);
