@@ -137,15 +137,21 @@ std::wstring FormatCount(const ULONGLONG n) noexcept
     return FormatLongLongNormal(n);
 }
 
-std::wstring FormatDouble(const double d) noexcept
+std::wstring FormatDouble(const double input) noexcept
 {
-    ASSERT(d >= 0);
+    ASSERT(input >= 0);
+    const int scaledValue = std::lround(input * 100.0);
+    const int integer = scaledValue / 100;
+    const int decimal = scaledValue % 100;
 
-    const int x = std::lround(d * 10);
-    const int i = x / 10;
-    const int r = x % 10;
+    std::wstring result;
+    result.reserve(16); // Reserve enough space to avoid reallocations
+    result.append(std::to_wstring(integer));
+    result.push_back(GetLocaleDecimalSeparator());
+    if (decimal < 10) result.push_back(L'0'); // Pad with leading zero for single-digit decimals
+    result.append(std::to_wstring(decimal));
 
-    return std::to_wstring(i) + GetLocaleDecimalSeparator() + std::to_wstring(r);
+    return result;
 }
 
 std::wstring FormatFileTime(const FILETIME& t, const bool seconds) noexcept
