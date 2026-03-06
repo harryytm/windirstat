@@ -171,15 +171,20 @@ void CWdsSplitterWnd::StopTracking(const BOOL bAccept)
             int dummy;
             int cxLeft;
             GetColumnInfo(0, cxLeft, dummy);
+            bool rightVisible = (rcClient.Width() - cxLeft) > 10;
 
             if (rcClient.Width() > 0)
             {        
                 // if user drag the splitter to show the extension view,
                 // treat that as an intent to enable showing file types in the extension view
-                if (CExtensionView* pExtensionView = CMainFrame::Get()->GetExtensionView();
-                    pExtensionView != nullptr && !pExtensionView->IsShowTypes()) 
+                if (CExtensionView* pExtensionView = CMainFrame::Get()->GetExtensionView(); pExtensionView != nullptr) 
                 {
-                    pExtensionView->ShowTypes(true);
+                    pExtensionView->ShowTypes(rightVisible);
+                }
+                if (!rightVisible)
+                {
+                    CMainFrame::Get()->MinimizeExtensionView();
+                    return;
                 }
 
                 m_splitterPos = static_cast<double>(cxLeft) / rcClient.Width();
@@ -190,15 +195,20 @@ void CWdsSplitterWnd::StopTracking(const BOOL bAccept)
             int dummy;
             int cyUpper;
             GetRowInfo(0, cyUpper, dummy);
+            bool lowerVisible = (rcClient.Height() - cyUpper) > 10;
 
             if (rcClient.Height() > 0)
             {
                 // if user drag the splitter to show the treemap view,
                 // treat that as an intent to enable treemap
-                if (CTreeMapView* pTreeMapView = CMainFrame::Get()->GetTreeMapView();
-                    pTreeMapView != nullptr && !pTreeMapView->IsShowTreeMap())
+                if (CTreeMapView* pTreeMapView = CMainFrame::Get()->GetTreeMapView(); pTreeMapView != nullptr)
                 {
-                    pTreeMapView->ShowTreeMap(true);
+                    pTreeMapView->ShowTreeMap(lowerVisible);
+                }
+                if (!lowerVisible)
+                {
+                    CMainFrame::Get()->MinimizeTreeMapView();
+                    return;
                 }
                 m_splitterPos = static_cast<double>(cyUpper) / rcClient.Height();
             }
