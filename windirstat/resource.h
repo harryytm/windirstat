@@ -137,6 +137,7 @@
 #define IDC_FILTERING_INCLUDE_FILES     1120
 #define IDC_HASH_ALGORITHM              1121
 #define IDC_FILTER_BUTTON               1122
+#define IDC_STICKY_SELECTION_CHECKBOX   1123
 #define IDC_FILTERING_MAX_AGE_DAYS      1124
 #define ID_WDS_CONTROL                  4711
 #define ID_TREEMAP_ZOOMRESET            32767
@@ -240,7 +241,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        306
 #define _APS_NEXT_COMMAND_VALUE         32943
-#define _APS_NEXT_CONTROL_VALUE         1123
+#define _APS_NEXT_CONTROL_VALUE         1125
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

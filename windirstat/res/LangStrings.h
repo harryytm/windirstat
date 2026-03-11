@@ -264,6 +264,7 @@ constexpr std::wstring_view IDS_SPEC_KiB = L"IDS_SPEC_KiB";
 constexpr std::wstring_view IDS_SPEC_MiB = L"IDS_SPEC_MiB";
 constexpr std::wstring_view IDS_SPEC_TiB = L"IDS_SPEC_TiB";
 constexpr std::wstring_view IDS_sREADJOBS = L"IDS_sREADJOBS";
+constexpr std::wstring_view IDS_STICKY_SELECTION_CHECKBOX = L"IDS_STICKY_SELECTION_CHECKBOX";
 constexpr std::wstring_view IDS_STOP = L"IDS_STOP";
 constexpr std::wstring_view IDS_SUSPEND = L"IDS_SUSPEND";
 constexpr std::wstring_view IDS_SUSPENDED = L"IDS_SUSPENDED";
