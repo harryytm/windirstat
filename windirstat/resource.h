@@ -138,6 +138,7 @@
 #define IDC_FILTERING_INCLUDE_FILES     1120
 #define IDC_HASH_ALGORITHM              1121
 #define IDC_FILTER_BUTTON               1122
+#define IDC_STICKY_SELECTION_CHECKBOX   1123
 #define IDC_FILTERING_MAX_AGE_DAYS      1124
 #define IDC_PERMS_ACCOUNT0              1125
 #define IDC_PERMS_ACCOUNT1              1126

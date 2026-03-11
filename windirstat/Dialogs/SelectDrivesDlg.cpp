@@ -286,7 +286,7 @@ void CDrivesList::OnDoubleClick(NMHDR* /*pNMHDR*/, LRESULT* pResult)
 
 void CDrivesList::OnLButtonDown(UINT nFlags, CPoint point)
 {
-    if (COptions::UseStickySelection)
+    if (static_cast<CSelectDrivesDlg*>(GetParent())->IsStickySelectionEnabled())
     {
         LVHITTESTINFO lvhti = { 0 };
         lvhti.pt = point;
@@ -333,6 +333,7 @@ void CSelectDrivesDlg::DoDataExchange(CDataExchange* pDX)
     DDX_Radio(pDX, IDC_RADIO_TARGET_DRIVES_ALL, m_radio);
     DDX_Check(pDX, IDC_SCAN_DUPLICATES, m_scanDuplicates);
     DDX_Check(pDX, IDC_FAST_SCAN_CHECKBOX, m_useFastScan);
+    DDX_Check(pDX, IDC_STICKY_SELECTION_CHECKBOX, m_useStickySelection);
     DDX_Control(pDX, IDOK, m_okButton);
     DDX_Control(pDX, IDC_BROWSE_FOLDER, m_browseList);
     DDX_Control(pDX, IDC_BROWSE_BUTTON, m_browseButton);
@@ -348,6 +349,7 @@ BEGIN_MESSAGE_MAP(CSelectDrivesDlg, CLayoutDialogEx)
     ON_BN_CLICKED(IDC_RADIO_TARGET_DRIVES_SUBSET, &CSelectDrivesDlg::OnBnClickedRadioTargetDrivesSubset)
     ON_BN_CLICKED(IDC_RADIO_TARGET_FOLDER, &CSelectDrivesDlg::OnBnClickedRadioTargetFolder)
     ON_BN_CLICKED(IDC_SCAN_DUPLICATES, OnBnClickedUpdateButtons)
+    ON_BN_CLICKED(IDC_STICKY_SELECTION_CHECKBOX, OnBnClickedUpdateButtons)
     ON_BN_DOUBLECLICKED(IDC_RADIO_TARGET_DRIVES_ALL, &CSelectDrivesDlg::OnBnDoubleclickedRadio)
     ON_BN_DOUBLECLICKED(IDC_RADIO_TARGET_DRIVES_SUBSET, &CSelectDrivesDlg::OnBnDoubleclickedRadio)
     ON_BN_DOUBLECLICKED(IDC_RADIO_TARGET_FOLDER, &CSelectDrivesDlg::OnBnDoubleclickedRadio)
@@ -375,6 +377,7 @@ BOOL CSelectDrivesDlg::OnInitDialog()
     m_layout.AddControl(IDOK, 1, 1, 0, 0);
     m_layout.AddControl(IDCANCEL, 1, 1, 0, 0);
     m_layout.AddControl(IDC_TARGET_DRIVES_LIST, 0, 0, 1, 1);
+    m_layout.AddControl(IDC_STICKY_SELECTION_CHECKBOX, 1, 0, 0, 0);
     m_layout.AddControl(IDC_RADIO_TARGET_DRIVES_ALL, 0, 0, 1, 0);
     m_layout.AddControl(IDC_RADIO_TARGET_FOLDER, 0, 1, 0, 0);
     m_layout.AddControl(IDC_BROWSE_BUTTON, 1, 1, 0, 0);
@@ -433,6 +436,7 @@ BOOL CSelectDrivesDlg::OnInitDialog()
     // Read persisted settings
     m_scanDuplicates = COptions::ScanForDuplicates;
     m_useFastScan = COptions::UseFastScanEngine;
+    m_useStickySelection = COptions::UseStickySelection;
     m_radio = COptions::SelectDrivesRadio;
     m_selectedDrives = COptions::SelectDrivesDrives;
 
@@ -531,12 +535,18 @@ void CSelectDrivesDlg::OnOK()
     COptions::SelectDrivesDrives = m_selectedDrives;
     COptions::ScanForDuplicates = (FALSE != m_scanDuplicates);
     COptions::UseFastScanEngine = (FALSE != m_useFastScan);
+    COptions::UseStickySelection = (FALSE != m_useStickySelection);
 
     // Switch focus to file tree view
     const auto tabbedView = CMainFrame::Get()->GetFileTabbedView();
     tabbedView->SetActiveFileTreeView();
 
     CLayoutDialogEx::OnOK();
+}
+
+bool CSelectDrivesDlg::IsStickySelectionEnabled() const
+{
+    return m_useStickySelection != FALSE;
 }
 
 void CSelectDrivesDlg::UpdateButtons()
