@@ -347,6 +347,7 @@ void CSelectDrivesDlg::DoDataExchange(CDataExchange* pDX)
     DDX_Radio(pDX, IDC_RADIO_TARGET_DRIVES_ALL, m_radio);
     DDX_Check(pDX, IDC_SCAN_DUPLICATES, m_scanDuplicates);
     DDX_Check(pDX, IDC_FAST_SCAN_CHECKBOX, m_useFastScan);
+    DDX_Check(pDX, IDC_STICKY_SELECTION_CHECKBOX, m_useStickySelection);
     DDX_Control(pDX, IDOK, m_okButton);
     DDX_Control(pDX, IDC_BROWSE_FOLDER, m_browseList);
     DDX_Control(pDX, IDC_BROWSE_BUTTON, m_browseButton);
@@ -360,6 +361,7 @@ BEGIN_MESSAGE_MAP(CSelectDrivesDlg, CLayoutDialogEx)
     ON_BN_CLICKED(IDC_RADIO_TARGET_DRIVES_SUBSET, &CSelectDrivesDlg::OnBnClickedRadioTargetDrivesSubset)
     ON_BN_CLICKED(IDC_RADIO_TARGET_FOLDER, &CSelectDrivesDlg::OnBnClickedRadioTargetFolder)
     ON_BN_CLICKED(IDC_SCAN_DUPLICATES, OnBnClickedUpdateButtons)
+    ON_BN_CLICKED(IDC_STICKY_SELECTION_CHECKBOX, OnBnClickedUpdateButtons)
     ON_BN_DOUBLECLICKED(IDC_RADIO_TARGET_DRIVES_ALL, &CSelectDrivesDlg::OnBnDoubleclickedRadio)
     ON_BN_DOUBLECLICKED(IDC_RADIO_TARGET_DRIVES_SUBSET, &CSelectDrivesDlg::OnBnDoubleclickedRadio)
     ON_BN_DOUBLECLICKED(IDC_RADIO_TARGET_FOLDER, &CSelectDrivesDlg::OnBnDoubleclickedRadio)
@@ -388,6 +390,7 @@ BOOL CSelectDrivesDlg::OnInitDialog()
     m_layout.AddControl(IDOK, 1, 1, 0, 0);
     m_layout.AddControl(IDCANCEL, 1, 1, 0, 0);
     m_layout.AddControl(IDC_TARGET_DRIVES_LIST, 0, 0, 1, 1);
+    m_layout.AddControl(IDC_STICKY_SELECTION_CHECKBOX, 1, 0, 0, 0);
     m_layout.AddControl(IDC_RADIO_TARGET_DRIVES_ALL, 0, 0, 1, 0);
     m_layout.AddControl(IDC_RADIO_TARGET_FOLDER, 0, 1, 0, 0);
     m_layout.AddControl(IDC_BROWSE_BUTTON, 1, 1, 0, 0);
@@ -423,6 +426,7 @@ BOOL CSelectDrivesDlg::OnInitDialog()
     m_selectedDrives = COptions::SelectDrivesDrives;
     m_scanDuplicates = COptions::ScanForDuplicates;
     m_useFastScan = COptions::UseFastScanEngine;
+    m_useStickySelection = COptions::UseStickySelection;
 
     // Add previously used folders to the combo box
     for (const auto & folder : COptions::SelectDrivesFolder.Obj())
@@ -555,6 +559,9 @@ void CSelectDrivesDlg::UpdateButtons()
 {
     const BOOL prevUseFastScan = m_useFastScan;
     UpdateData();
+
+    // Update the option immediately to reflect in the drive list selection behavior
+    COptions::UseStickySelection = (FALSE != m_useStickySelection);
     
     // Prompt user to elevate if the Fast Scan option is checked in non-elevated session
     if (m_useFastScan && prevUseFastScan != m_useFastScan && IsElevationAvailable())
