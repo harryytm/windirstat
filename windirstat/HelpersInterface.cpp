@@ -664,7 +664,7 @@ std::wstring GetAcceleratorString(const UINT commandID)
             {
                 cache.emplace_back(cmd, wds::strEmpty);
                 cacheEntry = std::prev(cache.end());
-                cacheEntry->second.reserve(24); // Pre-allocate string size
+                cacheEntry->second.reserve(23); // Pre-allocate string size to eliminate reallocations
             }
             auto& result = cacheEntry->second;
 
