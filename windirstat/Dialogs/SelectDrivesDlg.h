@@ -115,6 +115,7 @@ class CSelectDrivesDlg final : public CLayoutDialogEx
     void DoDataExchange(CDataExchange* pDX) override;
     BOOL OnInitDialog() override;
     void OnOK() override;
+    bool IsStickySelectionEnabled() const;
     void UpdateButtons();
     void UpdateFilterButton();
     void SetActiveRadio(int radio);
@@ -124,6 +125,7 @@ protected:
     // Dialog Data
     BOOL m_scanDuplicates = false; // whether duplicate scanning is enabled
     BOOL m_useFastScan = false; // whether fast scan is enabled
+    BOOL m_useStickySelection = false; // whether sticky selection is enabled
     int m_radio = 0;          // out.
     CStringW m_folderName;    // out. Valid if m_radio = RADIO_TARGET_FOLDER
     std::vector<std::wstring> m_drives;    // out. Valid if m_radio != RADIO_TARGET_FOLDER
