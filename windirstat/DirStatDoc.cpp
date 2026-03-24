@@ -1622,11 +1622,9 @@ void CDirStatDoc::OnComputeHash()
 {
     // Compute the hash in the message thread
     std::wstring hashResult;
-    const auto& items = GetAllSelected();
-    const ULONGLONG totalSize = items.front()->GetSizeLogical() / wds::Mi;
-    CProgressDlg(totalSize , false, AfxGetMainWnd(), [&](CProgressDlg* pdlg)
+    CProgressDlg(GetAllSelected().front()->GetSizeLogical() / wds::Mi, false, AfxGetMainWnd(), [&](CProgressDlg* pdlg)
     {
-        hashResult = ComputeFileHashes(items.front()->GetPath(), pdlg);
+        hashResult = ComputeFileHashes(GetAllSelected().front()->GetPath(), pdlg);
     }).DoModal();
 
     if (!hashResult.empty())
