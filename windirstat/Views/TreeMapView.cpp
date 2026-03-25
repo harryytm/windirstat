@@ -30,6 +30,7 @@ BEGIN_MESSAGE_MAP(CTreeMapView, CView)
     ON_WM_CONTEXTMENU()
     ON_WM_MOUSEMOVE()
     ON_WM_MOUSEWHEEL()
+    ON_NOTIFY_EX(TTN_NEEDTEXT, 0, OnToolTipNotify)
 END_MESSAGE_MAP()
 
 void CTreeMapView::SuspendRecalculationDrawing(const bool suspend)
@@ -360,10 +361,15 @@ void CTreeMapView::OnLButtonDblClk(UINT nFlags, CPoint point)
 
 void CTreeMapView::OnLButtonDown(const UINT nFlags, const CPoint point)
 {
-    if (auto* item = ResolveItemAtPoint(point))
+    if (CItem* item = ResolveItemAtPoint(point))
     {
         CDirStatDoc::Get()->ClearReselectChildStack();
         CDirStatDoc::Get()->UpdateAllViews(this, HINT_SELECTIONACTION, item);
+
+        if (::IsWindow(m_toolTip.m_hWnd))
+        {
+            m_toolTip.Update();
+        }
     }
     CView::OnLButtonDown(nFlags, point);
 }
@@ -539,11 +545,17 @@ void CTreeMapView::OnContextMenu(CWnd* /*pWnd*/, const CPoint point)
 
 void CTreeMapView::OnMouseMove(UINT /*nFlags*/, const CPoint point)
 {
-    if (auto* item = ResolveItemAtPoint(point))
+    if (CItem* item = ResolveItemAtPoint(point))
     {
         m_paneTextOverride = item->GetPath();
         m_paneSizeOverride = item->GetSizeLogical();
         CMainFrame::Get()->UpdatePaneText();
+        if (::IsWindow(m_toolTip.m_hWnd) && item != m_pLastItem)
+        {
+            m_pLastItem = item;
+            m_toolTip.Activate(FALSE);
+            m_toolTip.Activate(TRUE);
+        }
     }
 }
 
@@ -571,4 +583,81 @@ BOOL CTreeMapView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
     }
 
     return TRUE;
+}
+
+BOOL CTreeMapView::PreTranslateMessage(MSG* pMsg)
+{
+    if (::IsWindow(m_toolTip.m_hWnd))
+    {
+        m_toolTip.RelayEvent(pMsg);
+    }
+    return CView::PreTranslateMessage(pMsg);
+}
+
+void CTreeMapView::OnInitialUpdate()
+{
+    CView::OnInitialUpdate();
+
+    if (m_toolTip.m_hWnd == nullptr)
+    {
+        if (m_toolTip.Create(this, TTS_ALWAYSTIP | TTS_NOPREFIX))
+        {
+            m_toolTip.Activate(TRUE);
+            m_toolTip.AddTool(this, LPSTR_TEXTCALLBACK);
+            m_toolTip.SetMaxTipWidth(DpiRest(300, this));
+            m_toolTip.SetDelayTime(TTDT_INITIAL, 1000);
+            //m_toolTip.SetDelayTime(TTDT_RESHOW, 1000);
+            //m_toolTip.SetDelayTime(TTDT_AUTOPOP, 10000);
+        }
+    }
+}
+
+BOOL CTreeMapView::OnToolTipNotify(UINT /*id*/, NMHDR* pNMHDR, LRESULT* /*pResult*/)
+{
+    CPoint pt;
+    GetCursorPos(&pt);
+    ScreenToClient(&pt);
+
+    if (CItem* item = ResolveItemAtPoint(pt))
+    {
+        static std::wstring tip;
+        tip.clear();
+        tip.reserve(512);
+
+        tip.append(
+            std::format(
+                L"{}\n\n{}: {}\n{}: {}\n{}: {}\n{}: {}",
+                item->GetPath(),
+                Localization::Lookup(L"IDS_COL_SIZE_LOGICAL"), FormatSizeSuffixes(item->GetSizeLogical()),
+                Localization::Lookup(L"IDS_COL_SIZE_PHYSICAL"), FormatSizeSuffixes(item->GetSizePhysical()),
+                Localization::Lookup(L"IDS_COL_LAST_CHANGE"), FormatFileTime(item->GetLastChange(), true),
+                Localization::Lookup(L"IDS_COL_ATTRIBUTES"), FormatAttributes(item->GetAttributes())
+            )
+        );
+        /*
+        // Header: Path/Name
+        tip.append(item->GetPath()).append(L"\n\n");
+
+        // Size Line: Logical vs Physical
+        tip.append(std::format(L"{}: {}\n", Localization::Lookup(L"IDS_COL_SIZE_LOGICAL"), FormatSizeSuffixes(item->GetSizeLogical())));
+        tip.append(std::format(L" {}: {}\n", Localization::Lookup(L"IDS_COL_SIZE_PHYSICAL"), FormatSizeSuffixes(item->GetSizePhysical())));
+
+        // Modification Date
+        tip.append(std::format(L"{}: {}\n",
+            Localization::Lookup(L"IDS_COL_LAST_CHANGE"),
+            FormatFileTime(item->GetLastChange(), true)));
+
+        // Attributes
+        if (const DWORD attr = item->GetAttributes())
+        {
+            tip.append(std::format(L"{}: {}",
+                Localization::Lookup(L"IDS_COL_ATTRIBUTES"),
+                FormatAttributes(attr)));
+        }
+        */
+
+        reinterpret_cast<TOOLTIPTEXT*>(pNMHDR)->lpszText = tip.data();
+        return TRUE;
+    }
+    return FALSE;
 }

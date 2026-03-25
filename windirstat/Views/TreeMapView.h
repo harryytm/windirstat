@@ -28,6 +28,10 @@ class CItem;
 //
 class CTreeMapView final : public CView
 {
+public:
+    virtual BOOL PreTranslateMessage(MSG* pMsg) override;
+    void OnInitialUpdate() override;
+
 protected:
     CTreeMapView() = default;
     DECLARE_DYNCREATE(CTreeMapView)
@@ -72,6 +76,8 @@ protected:
     CBitmap m_bitmap;                 // Cached view. If m_hObject is nullptr, the view must be recalculated.
     CSize m_dimmedSize{ 0,0 };        // Size of bitmap m_dimmed
     CBitmap m_dimmed;                 // Dimmed view. Used during refresh to avoid the ooops-effect.
+    CToolTipCtrl m_toolTip;
+    CItem* m_pLastItem = nullptr;
 
     DECLARE_MESSAGE_MAP()
     afx_msg void OnSize(UINT nType, int cx, int cy);
@@ -82,4 +88,5 @@ protected:
     afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);
     afx_msg void OnMouseMove(UINT nFlags, CPoint point);
     afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+    afx_msg BOOL OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult);
 };
