@@ -1625,7 +1625,7 @@ void CDirStatDoc::OnComputeHash()
     CProgressDlg(GetAllSelected().front()->GetSizeLogical() / wds::Mi, false, AfxGetMainWnd(), [&](CProgressDlg* pdlg)
     {
         hashResult = ComputeFileHashes(GetAllSelected().front()->GetPath(), pdlg);
-    }).DoModal();
+    }, true).DoModal();
 
     if (!hashResult.empty())
     {

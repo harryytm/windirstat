@@ -20,12 +20,14 @@
 
 IMPLEMENT_DYNAMIC(CProgressDlg, CDialogEx)
 
-CProgressDlg::CProgressDlg(const size_t total, const bool noCancel, CWnd* pParent, std::function<void(CProgressDlg*)> task)
+CProgressDlg::CProgressDlg(const size_t total, const bool noCancel, CWnd* pParent,
+    std::function<void(CProgressDlg*)> task, bool showSpeed)
     : CDialogEx(IDD, pParent)
     , m_message(Localization::Lookup(IDS_PROGRESS))
     , m_task(std::move(task))
     , m_total(total)
     , m_noCancel(noCancel)
+    , m_showSpeed(showSpeed) // Initialize the toggle
 {
 }
 
@@ -56,6 +58,14 @@ BOOL CProgressDlg::OnInitDialog()
 
     // Configure cancel button
     if (m_noCancel) m_cancelButton.ShowWindow(SW_HIDE);
+
+    if (m_showSpeed)
+    {
+        // Synchronize with the member names used in OnTimer
+        m_lastUpdate = std::chrono::steady_clock::now();
+        m_lastCurrent = 0;
+        m_speedSuffix = L""; // Start empty until the first 1000ms threshold is met
+    }
 
     // Configure progress bar
     if (m_total > 0)
@@ -100,14 +110,25 @@ void CProgressDlg::OnTimer(UINT_PTR nIDEvent)
 {
     if (nIDEvent == TIMER_ID)
     {
+        const auto now = std::chrono::steady_clock::now();
+        const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_lastUpdate).count();
+
+        // Update speed suffix only if enabled and 1s has passed
+        if (m_showSpeed && ms >= 1000)
+        {
+            const double speed = (static_cast<double>(m_current.load() - m_lastCurrent) / ms) * 1000.0;
+            m_speedSuffix = std::format(L" ({}/s)", FormatDouble(speed));
+            m_lastUpdate = now;
+            m_lastCurrent = m_current.load();
+        }
+
         // Update progress bar position
         m_progressCtrl.SetPos(static_cast<int>((m_current.load() * 100) / m_total));
 
         // Update message with progress
-        const std::wstring progressText = std::format(L"{}: {}% - {} / {}",
-            m_message, FormatDouble((static_cast<double>(m_current.load()) * 100) / m_total),
-            FormatCount(m_current.load()), FormatCount(m_total));
-        m_messageCtrl.SetWindowText(progressText.c_str());
+        m_messageCtrl.SetWindowText(std::format(L"{}: {}% - {} / {}{}", m_message,
+            FormatDouble((static_cast<double>(m_current.load()) * 100) / m_total), FormatCount(m_current.load()),
+            FormatCount(m_total), m_showSpeed ? m_speedSuffix : wds::strEmpty).c_str());
     }
     CDialogEx::OnTimer(nIDEvent);
 }
