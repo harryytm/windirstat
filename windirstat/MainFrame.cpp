@@ -193,6 +193,7 @@ CWdsSplitterWnd::CWdsSplitterWnd(double* splitterPos) :
 }
 
 BEGIN_MESSAGE_MAP(CWdsSplitterWnd, CSplitterWndEx)
+    ON_WM_LBUTTONDBLCLK()
     ON_WM_SIZE()
 END_MESSAGE_MAP()
 
@@ -304,6 +305,13 @@ void CWdsSplitterWnd::OnSize(const UINT nType, const int cx, const int cy)
         }
     }
     CSplitterWndEx::OnSize(nType, cx, cy);
+}
+
+void CWdsSplitterWnd::OnLButtonDblClk(UINT /*nFlags*/, CPoint point)
+{
+    constexpr UINT H_SPLITTER = 101U;
+    AfxGetMainWnd()->SendMessage(WM_COMMAND,
+        (HitTest(point) == H_SPLITTER) ? ID_VIEW_SHOWTREEMAP : ID_VIEW_SHOWFILETYPES);
 }
 
 /////////////////////////////////////////////////////////////////////////////
