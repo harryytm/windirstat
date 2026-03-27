@@ -397,6 +397,7 @@ void CTreeMapView::OnLButtonDown(const UINT nFlags, const CPoint point)
     {
         CWinDirStatModel::Get()->ClearReselectChildStack();
         NotifyOtherPanes(MODEL_CHANGE_SELECTION_ACTION, item);
+        CMainFrame::Get()->GetFileTabbedView()->SetActiveFileTreeView();
     }
     CWinDirStatPane::OnLButtonDown(nFlags, point);
 }
