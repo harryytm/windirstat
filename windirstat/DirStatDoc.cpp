@@ -1716,7 +1716,7 @@ void CDirStatDoc::OnComputeHash()
     CProgressDlg(totalSize , false, AfxGetMainWnd(), [&](CProgressDlg* pdlg)
     {
         hashResult = ComputeFileHashes(items.front()->GetPath(), pdlg);
-    }).DoModal();
+    }, true).DoModal();
 
     if (!hashResult.empty())
     {
