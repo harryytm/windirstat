@@ -371,6 +371,7 @@ void CTreeMapView::OnLButtonDown(const UINT nFlags, const CPoint point)
             m_toolTip.Update();
         }
     }
+    CMainFrame::Get()->GetFileTabbedView()->SetActiveFileTreeView();
     CView::OnLButtonDown(nFlags, point);
 }
 
