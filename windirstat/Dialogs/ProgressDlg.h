@@ -38,7 +38,7 @@ class CProgressDlg final : public CDialogEx
     DECLARE_DYNAMIC(CProgressDlg)
 
 public:
-    CProgressDlg(size_t total, bool noCancel, CWnd* pParent, std::function<void(CProgressDlg*)> task);
+    CProgressDlg(size_t total, bool noCancel, CWnd* pParent, std::function<void(CProgressDlg*)> task, bool showSpeed = false);
     ~CProgressDlg() override = default;
 
     INT_PTR DoModal() override;
@@ -75,6 +75,10 @@ private:
     const size_t m_total = 0;
     bool m_cancelled = false;
     const bool m_noCancel = false;
+    bool m_showSpeed = false;
+    size_t m_lastCurrent = 0;
+    std::wstring m_speedSuffix;
+    std::chrono::steady_clock::time_point m_lastUpdate = std::chrono::steady_clock::now();
 
     std::optional<std::jthread> m_workerThread;
     static constexpr UINT_PTR TIMER_ID = 1;
