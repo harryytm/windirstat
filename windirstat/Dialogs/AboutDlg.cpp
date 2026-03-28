@@ -187,10 +187,10 @@ CAboutDlg::CAboutDlg()
 
 std::wstring CAboutDlg::GetAppVersion()
 {
-    return std::format(L"{} {}{}.{}.{} Development Preview Build ({})\nGit Commit: {}",
+    return std::format(L"{} {}{}.{}.{} Experimental Build ({})\nGit Commit: {} Git Count: {}",
         wds::strWinDirStat, PRODUCTION == 0 ? L"Beta " : L"",
         PRD_MAJVER, PRD_MINVER, PRD_PATCH,
-        _CRT_WIDE(GIT_DATE), _CRT_WIDE(GIT_COMMIT));
+        _CRT_WIDE(GIT_DATE), _CRT_WIDE(GIT_COMMIT), GIT_COUNT);
 }
 
 void CAboutDlg::DoDataExchange(CDataExchange* pDX)
