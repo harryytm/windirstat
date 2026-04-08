@@ -31,6 +31,7 @@ LPCWSTR COptions::OptionsPerms = L"PermissionsView";
 LPCWSTR COptions::OptionsDriveSelect = L"DriveSelect";
 
 Setting<bool> COptions::AutomaticallyResizeColumns(OptionsGeneral, L"AutomaticallyResizeColumns", true);
+Setting<int> COptions::AutomaticallyResizeColumnsLimit(OptionsGeneral, L"AutomaticallyResizeColumnsLimit", 50, 50, 10000);
 Setting<bool> COptions::ExcludeJunctions(OptionsGeneral, L"ExcludeJunctions", true);
 Setting<bool> COptions::ExcludeSymbolicLinksDirectory(OptionsGeneral, L"ExcludeSymbolicLinksDirectory", true);
 Setting<bool> COptions::ExcludeVolumeMountPoints(OptionsGeneral, L"ExcludeVolumeMountPoints", true);
