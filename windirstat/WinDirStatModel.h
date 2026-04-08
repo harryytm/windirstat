@@ -68,6 +68,7 @@ enum MODEL_CHANGE : std::uint8_t
     MODEL_CHANGE_SELECTION_ACTION,    // Inform central selection handler to update selection (uses item)
     MODEL_CHANGE_SELECTION_REFRESH,   // Inform all views to redraw based on current selections
     MODEL_CHANGE_SELECTION_STYLE,     // Only update selection in TreeMapView
+    MODEL_CHANGE_SORT_ORDER,          // Inform all views to update sort order
     MODEL_CHANGE_EXTENSION_SELECTION, // Type list selected a new extension
     MODEL_CHANGE_ZOOM,                // Only zoom item has changed.
     MODEL_CHANGE_LIST_STYLE,          // Options: List style (grid/stripes) or treelist colors changed
@@ -245,4 +246,8 @@ private:
     afx_msg void OnCreateHardlink();
     afx_msg void OnFilterExcludeItem();
     afx_msg void OnPopupCancel() {}
+    afx_msg void OnGroupFoldersBeforeFiles();
+    afx_msg void OnUpdateGroupFoldersBeforeFiles(CCmdUI* pCmdUI);
+    afx_msg void OnGroupDriveStatsFirst();
+    afx_msg void OnUpdateGroupDriveStatsFirst(CCmdUI* pCmdUI);
 };

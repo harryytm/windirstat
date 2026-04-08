@@ -62,6 +62,12 @@ void CControlView::OnUpdate(CWnd* sender, MODEL_CHANGE change, CItem* item)
     }
     break;
 
+    case MODEL_CHANGE_SORT_ORDER:
+    {
+        control.SortItems();
+    }
+    break;
+
     case MODEL_CHANGE_NONE:
     {
         CWinDirStatPane::OnUpdate(sender, change, item);
