@@ -113,6 +113,7 @@ class COptions final
 public:
 
     static Setting<bool> AutomaticallyResizeColumns;
+    static Setting<int> AutomaticallyResizeColumnsLimit;
     static Setting<bool> AutoMapDrivesWhenElevated;
     static Setting<bool> ExcludeJunctions;
     static Setting<bool> ExcludeSymbolicLinksDirectory;
