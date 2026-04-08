@@ -721,6 +721,9 @@ std::wstring GetAcceleratorString(const UINT commandID)
             return !isNumpadKey(firstAccel) && isNumpadKey(secondAccel);
         });
 
+        // Pre-allocate shortcut hint strings cache
+        cache.reserve(accels.size());
+
         // Compute strings for all the commands in the table
         for (const auto& [virtKey, key, cmd] : accels)
         {
@@ -729,6 +732,7 @@ std::wstring GetAcceleratorString(const UINT commandID)
             {
                 cache.emplace_back(cmd, wds::strEmpty);
                 cacheEntry = std::prev(cache.end());
+                cacheEntry->second.reserve(23); // Pre-allocate string size to eliminate reallocations
             }
             auto& result = cacheEntry->second;
 
