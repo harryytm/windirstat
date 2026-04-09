@@ -183,14 +183,14 @@ void CWdsSplitterWnd::StopTracking(const BOOL bAccept)
     const auto& view = views[isVertical]; // Select view based on the splitter orientation
     const CRect rcClient = ClientRectOf(this); // Get the current client area to calculate the total size for visibility determination
     const int totalSize = (rcClient.*view.totalSize)(); // Calculate the left or upper view size
-    const bool isVisible = (totalSize - currentPos) > 10; // Consider the other view visible if larger than 10 pixels
+    const bool isVisible = (totalSize - currentPos) > 10; // Consider the view visible if larger than 10 pixels
 
     if (totalSize <= 0) return;
     if (!view.toggle(isVisible)) return; // Toggle Show/Hide of the view based on the calculated visibility
 
     if (!isVisible)
     {
-        (CMainFrame::Get()->*view.minimize)(); // Minimize the other view if it's not visible
+        (CMainFrame::Get()->*view.minimize)(); // Minimize the view if it considered not visible
         return; // Early exit to keep the current splitter position unchanged for show views to function properly
     }
 
