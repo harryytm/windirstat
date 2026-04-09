@@ -193,6 +193,10 @@ void CWdsSplitterWnd::StopTracking(const BOOL bAccept)
     m_splitterPos = static_cast<double>(splitterPos) / totalSize;
     m_wasTrackedByUser = true;
     *m_userSplitterPos = m_splitterPos;
+
+    // Unified Debug Output
+    CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [DEBUG] {} Ratio: {:.4f} | Pos: {} | Total: {}",
+        isVertical ? L"V" : L"H", m_splitterPos, splitterPos, totalSize).c_str());
 }
 
 void CWdsSplitterWnd::SetSplitterPos(const double pos)
