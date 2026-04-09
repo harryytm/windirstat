@@ -188,6 +188,7 @@ void CWdsSplitterWnd::StopTracking(const BOOL bAccept)
                 }
 
                 m_splitterPos = static_cast<double>(cxLeft) / rcClient.Width();
+                CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [DEBUG] m_splitterPos: {} | cxLeft: {} {} | Windows Size: {}x{}", m_splitterPos, cxLeft, dummy, rcClient.Width(), rcClient.Height()).c_str());
             }
         }
         else
@@ -211,6 +212,7 @@ void CWdsSplitterWnd::StopTracking(const BOOL bAccept)
                     return;
                 }
                 m_splitterPos = static_cast<double>(cyUpper) / rcClient.Height();
+                CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [DEBUG] m_splitterPos: {} | cyUpper: {} {} | Windows Size: {}x{}", m_splitterPos, cyUpper, dummy, rcClient.Width(), rcClient.Height()).c_str());
             }
         }
         m_wasTrackedByUser = true;
