@@ -162,62 +162,37 @@ END_MESSAGE_MAP()
 void CWdsSplitterWnd::StopTracking(const BOOL bAccept)
 {
     CSplitterWndEx::StopTracking(bAccept);
+    if (!bAccept) return;
 
-    if (bAccept)
+    const CRect rcClient = ClientRectOf(this);
+    const bool isVertical = (GetColumnCount() > 1);
+
+    // Abstract the orientation-specific data
+    int splitterPos, dummy;
+    isVertical ? GetColumnInfo(0, splitterPos, dummy) : GetRowInfo(0, splitterPos, dummy);
+    const int totalSize = isVertical ? rcClient.Width() : rcClient.Height();
+
+    if (totalSize <= 0) return;
+
+    // Determine visibility based on the 10-pixel threshold
+    const bool isVisible = (totalSize - splitterPos) > 10;
+
+    // Execute the appropriate View commands based on orientation
+    if (isVertical)
     {
-        const CRect rcClient = ClientRectOf(this);
-        if (GetColumnCount() > 1)
-        {
-            int dummy;
-            int cxLeft;
-            GetColumnInfo(0, cxLeft, dummy);
-            bool rightVisible = (rcClient.Width() - cxLeft) > 10;
-
-            if (rcClient.Width() > 0)
-            {        
-                // if user drag the splitter to show the extension view,
-                // treat that as an intent to enable showing file types in the extension view
-                if (CExtensionView* pExtensionView = CMainFrame::Get()->GetExtensionView(); pExtensionView != nullptr) 
-                {
-                    pExtensionView->ShowTypes(rightVisible);
-                }
-                if (!rightVisible)
-                {
-                    CMainFrame::Get()->MinimizeExtensionView();
-                    return;
-                }
-
-                m_splitterPos = static_cast<double>(cxLeft) / rcClient.Width();
-                CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [DEBUG] m_splitterPos: {} | cxLeft: {} {} | Windows Size: {}x{}", m_splitterPos, cxLeft, dummy, rcClient.Width(), rcClient.Height()).c_str());
-            }
-        }
-        else
-        {
-            int dummy;
-            int cyUpper;
-            GetRowInfo(0, cyUpper, dummy);
-            bool lowerVisible = (rcClient.Height() - cyUpper) > 10;
-
-            if (rcClient.Height() > 0)
-            {
-                // if user drag the splitter to show the treemap view,
-                // treat that as an intent to enable treemap
-                if (CTreeMapView* pTreeMapView = CMainFrame::Get()->GetTreeMapView(); pTreeMapView != nullptr)
-                {
-                    pTreeMapView->ShowTreeMap(lowerVisible);
-                }
-                if (!lowerVisible)
-                {
-                    CMainFrame::Get()->MinimizeTreeMapView();
-                    return;
-                }
-                m_splitterPos = static_cast<double>(cyUpper) / rcClient.Height();
-                CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [DEBUG] m_splitterPos: {} | cyUpper: {} {} | Windows Size: {}x{}", m_splitterPos, cyUpper, dummy, rcClient.Width(), rcClient.Height()).c_str());
-            }
-        }
-        m_wasTrackedByUser = true;
-        *m_userSplitterPos = m_splitterPos;
+        if (auto pView = CMainFrame::Get()->GetExtensionView()) pView->ShowTypes(isVisible);
+        if (!isVisible) { CMainFrame::Get()->MinimizeExtensionView(); return; }
     }
+    else
+    {
+        if (auto pView = CMainFrame::Get()->GetTreeMapView()) pView->ShowTreeMap(isVisible);
+        if (!isVisible) { CMainFrame::Get()->MinimizeTreeMapView(); return; }
+    }
+
+    // Update internal and persistent state
+    m_splitterPos = static_cast<double>(splitterPos) / totalSize;
+    m_wasTrackedByUser = true;
+    *m_userSplitterPos = m_splitterPos;
 }
 
 void CWdsSplitterWnd::SetSplitterPos(const double pos)
