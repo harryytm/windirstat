@@ -235,9 +235,11 @@ void CWdsSplitterWnd::StopTracking(const BOOL bAccept)
     m_wasTrackedByUser = true;
     *m_userSplitterPos = m_splitterPos;
 
+#ifdef _DEBUG
     // Diagnostic feedback: Provide real-time confirmation of the calculated ratio in the title bar.
     CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [DEBUG] {} Splitter Ratio: {:.4f}",
         isVertical ? L"Vertical" : L"Horizontal", m_splitterPos).c_str());
+#endif 
 }
 
 void CWdsSplitterWnd::SetSplitterPos(const double pos)
