@@ -239,9 +239,9 @@ void CWdsSplitterWnd::StopTracking(const BOOL bAccept)
     m_wasTrackedByUser = true;
     *m_userSplitterPos = m_splitterPos;
 
-    // Unified Debug Output
-    CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [DEBUG] {} Ratio: {:.4f} | Pos: {} | Total: {}",
-        isVertical ? L"V" : L"H", m_splitterPos, splitterPos, totalSize).c_str());
+    // Diagnostic feedback: Provide real-time confirmation of the calculated ratio in the title bar.
+    CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [DEBUG] {} Splitter Ratio: {:.4f}",
+        isVertical ? L"Vertical" : L"Horizontal", m_splitterPos).c_str());
 }
 
 void CWdsSplitterWnd::SetSplitterPos(const double pos)
