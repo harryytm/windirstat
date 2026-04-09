@@ -161,42 +161,46 @@ END_MESSAGE_MAP()
 
 void CWdsSplitterWnd::StopTracking(const BOOL bAccept)
 {
+    // Define toggle functions for both views, which will show or hide the corresponding views based on the calculated visibility.
+    static constexpr bool (*toggleTreeMap)(bool) = [](bool isVisible) { CTreeMapView* pView = CMainFrame::Get()->GetTreeMapView(); return pView && (pView->ShowTreeMap(isVisible), true); };
+    static constexpr bool (*toggleExtension)(bool) = [](bool isVisible) { CExtensionView* pView = CMainFrame::Get()->GetExtensionView(); return pView && (pView->ShowTypes(isVisible), true); };
+
+    static constexpr struct {
+        void (CMainFrame::* minimize)();
+        int (CRect::* totalSize)() const;
+        bool (*toggle)(bool);
+    } views[] = {
+        { &CMainFrame::MinimizeTreeMapView,  &CRect::Height, toggleTreeMap },  // [0] TreeMap
+        { &CMainFrame::MinimizeExtensionView, &CRect::Width, toggleExtension } // [1] Extension List
+    };
+
     CSplitterWndEx::StopTracking(bAccept);
     if (!bAccept) return;
 
-    const CRect rcClient = ClientRectOf(this);
-    const bool isVertical = (GetColumnCount() > 1);
-
-    // Abstract the orientation-specific data
-    int splitterPos, dummy;
-    isVertical ? GetColumnInfo(0, splitterPos, dummy) : GetRowInfo(0, splitterPos, dummy);
-    const int totalSize = isVertical ? rcClient.Width() : rcClient.Height();
+    int currentPos, dummy;
+    const bool isVertical = (GetColumnCount() > 1); // Determine if the splitter is vertical (columns) or horizontal (rows)
+    isVertical ? GetColumnInfo(0, currentPos, dummy) : GetRowInfo(0, currentPos, dummy); // Get the current position of the splitter
+    const auto& view = views[isVertical]; // Select view based on the splitter orientation
+    const CRect rcClient = ClientRectOf(this); // Get the current client area to calculate the total size for visibility determination
+    const int totalSize = (rcClient.*view.totalSize)(); // Calculate the left or upper view size
+    const bool isVisible = (totalSize - currentPos) > 10; // Consider the other view visible if larger than 10 pixels
 
     if (totalSize <= 0) return;
+    if (!view.toggle(isVisible)) return; // Toggle Show/Hide of the view based on the calculated visibility
 
-    // Determine visibility based on the 10-pixel threshold
-    const bool isVisible = (totalSize - splitterPos) > 10;
-
-    // Execute the appropriate View commands based on orientation
-    if (isVertical)
+    if (!isVisible)
     {
-        if (auto pView = CMainFrame::Get()->GetExtensionView()) pView->ShowTypes(isVisible);
-        if (!isVisible) { CMainFrame::Get()->MinimizeExtensionView(); return; }
-    }
-    else
-    {
-        if (auto pView = CMainFrame::Get()->GetTreeMapView()) pView->ShowTreeMap(isVisible);
-        if (!isVisible) { CMainFrame::Get()->MinimizeTreeMapView(); return; }
+        (CMainFrame::Get()->*view.minimize)(); // Minimize the other view if it's not visible
+        return; // Early exit to keep the current splitter position unchanged for show views to function properly
     }
 
-    // Update internal and persistent state
-    m_splitterPos = static_cast<double>(splitterPos) / totalSize;
+    m_splitterPos = static_cast<double>(currentPos) / totalSize;
     m_wasTrackedByUser = true;
     *m_userSplitterPos = m_splitterPos;
 
-    // Unified Debug Output
-    CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [DEBUG] {} Ratio: {:.4f} | Pos: {} | Total: {}",
-        isVertical ? L"V" : L"H", m_splitterPos, splitterPos, totalSize).c_str());
+    // Diagnostic feedback: Provide real-time confirmation of the calculated ratio in the title bar.
+    CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [DEBUG] {} Splitter Ratio: {:.4f}",
+        isVertical ? L"Vertical" : L"Horizontal", m_splitterPos).c_str());
 }
 
 void CWdsSplitterWnd::SetSplitterPos(const double pos)
