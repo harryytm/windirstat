@@ -689,6 +689,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     std::vector<CWdsListItem*> children;
     for (const int c : std::views::iota(0, childCount))
     {
+        const int limit = COptions::AutomaticallyResizeColumnsPageLimit * GetCountPerPage();
         const auto child = item->GetTreeListChild(c);
         children.push_back(child);
         child->SetVisible(this, true);
@@ -698,7 +699,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
         // unlikely to require a resize based on their text length
         // to reduce unnecessary width calculations while maintaining
         // auto column resizing accuracy
-        if (COptions::AutomaticallyResizeColumns && scroll)
+        if (COptions::AutomaticallyResizeColumns && scroll && (limit == 0 || c < limit))
         {
             // get the text length of the first column
             const size_t length = child->GetText(0).length();
