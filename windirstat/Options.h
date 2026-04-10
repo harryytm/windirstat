@@ -115,7 +115,6 @@ class COptions final
 public:
 
     static Setting<bool> AutomaticallyResizeColumns;
-    static Setting<int> AutomaticallyResizeColumnsLimit;
     static Setting<bool> AutoMapDrivesWhenElevated;
     static Setting<bool> ExcludeJunctions;
     static Setting<bool> ExcludeSymbolicLinksDirectory;
@@ -187,6 +186,7 @@ public:
     static Setting<std::wstring> PermsExcludeRegex;
     static Setting<double> MainSplitterPos;
     static Setting<double> SubSplitterPos;
+    static Setting<int> AutomaticallyResizeColumnsPageLimit;
     static Setting<int> ConfigPage;
     static Setting<int> FollowReparsePointMask;
     static Setting<int> LanguageId;

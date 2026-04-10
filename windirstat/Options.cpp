@@ -31,7 +31,6 @@ LPCWSTR COptions::OptionsPerms = L"PermissionsView";
 LPCWSTR COptions::OptionsDriveSelect = L"DriveSelect";
 
 Setting<bool> COptions::AutomaticallyResizeColumns(OptionsGeneral, L"AutomaticallyResizeColumns", true);
-Setting<int> COptions::AutomaticallyResizeColumnsLimit(OptionsGeneral, L"AutomaticallyResizeColumnsLimit", 50, 50, 10000);
 Setting<bool> COptions::ExcludeJunctions(OptionsGeneral, L"ExcludeJunctions", true);
 Setting<bool> COptions::ExcludeSymbolicLinksDirectory(OptionsGeneral, L"ExcludeSymbolicLinksDirectory", true);
 Setting<bool> COptions::ExcludeVolumeMountPoints(OptionsGeneral, L"ExcludeVolumeMountPoints", true);
@@ -125,6 +124,7 @@ Setting<COLORREF> COptions::PermsColor[PERMSRULECOUNT] =
 Setting<std::wstring> COptions::PermsExcludeRegex(OptionsPerms, L"ExcludeRegex", L"");
 Setting<double> COptions::MainSplitterPos(OptionsGeneral, L"MainSplitterPos", -1.0, 0.0, 1.0);
 Setting<double> COptions::SubSplitterPos(OptionsGeneral, L"SubSplitterPos", -1.0, 0.0, 1.0);
+Setting<int> COptions::AutomaticallyResizeColumnsPageLimit(OptionsGeneral, L"AutomaticallyResizeColumnsPageLimit", 10, 0, 10000);
 Setting<int> COptions::ConfigPage(OptionsGeneral, L"ConfigPage", 0);
 Setting<int> COptions::DarkMode(OptionsGeneral, L"DarkMode", DM_USE_WINDOWS, DM_DISABLED, DM_USE_WINDOWS);
 Setting<int> COptions::LanguageId(OptionsGeneral, L"LanguageId", 0);
