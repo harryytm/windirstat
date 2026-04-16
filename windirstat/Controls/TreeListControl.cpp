@@ -667,7 +667,9 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     size_t maxLength = item->GetText(0).length(); // trace the maximum text length in the first column
     int maxWidth = GetSubItemWidth(item, 0);
     const auto childCount = item->GetTreeListChildCount();
-    std::vector<CWdsListItem*> children;
+    static std::vector<CWdsListItem*> children;
+    children.clear();
+    children.reserve(childCount); // reserve known number of children to avoid reallocations
     for (const int c : std::views::iota(0, childCount))
     {
         const int limit = COptions::AutomaticallyResizeColumnsPageLimit * GetCountPerPage();
