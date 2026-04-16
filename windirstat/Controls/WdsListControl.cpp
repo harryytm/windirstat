@@ -609,12 +609,19 @@ bool CWdsListControl::HasFocus() const
 
 int CWdsListControl::GetSubItemWidth(CWdsListItem* item, const int subitem)
 {
-    CClientDC dc(this);
-    const CRect rc(0, 0, 3500, 20);
+    thread_local CClientDC* dc = nullptr;
+    thread_local HFONT sofont = NULL;
 
+    if (!dc) {
+        dc = new CClientDC(this);
+        sofont = (HFONT)SelectObject(dc->GetSafeHdc(), GetFont());
+    }
+
+    const CRect rc(0, 0, 3500, 0);
     int width;
     int dummy = rc.left;
-    if (item->DrawSubItem(subitem, &dc, rc, 0, &width, &dummy))
+
+    if (item->DrawSubItem(subitem, dc, rc, 0, &width, &dummy))
     {
         return width;
     }
@@ -625,11 +632,10 @@ int CWdsListControl::GetSubItemWidth(CWdsListItem* item, const int subitem)
         return 0;
     }
 
-    CSelectObject sofont(&dc, GetFont());
-
     SIZE size;
-    GetTextExtentPoint32(dc, s.c_str(), static_cast<int>(s.size()), &size);
+    GetTextExtentPoint32(dc->GetSafeHdc(), s.c_str(), static_cast<int>(s.size()), &size);
     return TEXT_X_MARGIN + size.cx;
+
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -883,8 +889,10 @@ BOOL CWdsListControl::OnEraseBkgnd(CDC* pDC)
 
 void CWdsListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
 {
+    CWaitCursor wc;
     const int column = reinterpret_cast<LPNMHEADER>(pNMHDR)->iItem;
     const int subitem = ColumnToSubItem(column);
+    size_t maxLength = 0;
 
     // fetch size of rendered column header text
     // temporarily insert a false column to the finalize column does
@@ -898,6 +906,9 @@ void CWdsListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
     // fetch size of sub-elements
     for (const int i : std::views::iota(0, GetItemCount()))
     {
+        const size_t length = GetItem(i)->GetText(0).length();
+        if (maxLength > 0 && (length * 5) < (maxLength * 4)) continue;
+        maxLength = std::max(maxLength, length); // update max string length
         width = std::max(width, GetSubItemWidth(GetItem(i), subitem));
     }
 
