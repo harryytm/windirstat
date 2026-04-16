@@ -671,6 +671,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     for (const int c : std::views::iota(0, childCount))
     {
         const int limit = COptions::AutomaticallyResizeColumnsPageLimit * GetCountPerPage();
+        const int ratio = COptions::AutomaticallyResizeColumnsPrefilter;
         const auto child = item->GetTreeListChild(c);
         children.push_back(child);
         child->SetVisible(this, true);
@@ -686,7 +687,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
             const size_t length = child->GetText(0).length();
             // using 80% length threshold to handle eage cases of portional width fonts
             // intenally used integer arithmetic to avoid the cost of floating point operations
-            if (maxLength > 0 && (length * 5) < (maxLength * 4)) continue;
+            if (maxLength > 0 && (length * 100) < (maxLength * ratio)) continue;
             maxLength = max(maxLength, length); // update max text length
             maxWidth = max(maxWidth, GetSubItemWidth(child, 0));
             count++;
