@@ -882,23 +882,31 @@ void CWdsListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
     // not autosize to fit the whole control width
     const CSetRedrawLock lock(this);
     const int falseColumn = InsertColumn(m_columnCount + 1, L"");
+    const int filter = COptions::AutofitColumnPrefilter;
     SetColumnWidth(column, LVSCW_AUTOSIZE_USEHEADER);
     int width = GetColumnWidth(column);
     DeleteColumn(falseColumn);
+    int count = 0; // count of GetSubItemWidth calls
+
+    for (const int i : std::views::iota(0, GetItemCount()))
+    {
+        maxLength = max(maxLength, GetItem(i)->GetText(subitem).length());
+    }
 
     // fetch size of sub-elements
     for (const int i : std::views::iota(0, GetItemCount()))
     {
-        const size_t length = GetItem(i)->GetText(0).length();
-        if (maxLength > 0 && (length * 5) < (maxLength * 4)) continue;
-        maxLength = max(maxLength, length); // update max string length
-        width = max(width, GetSubItemWidth(GetItem(i), subitem));
+        const size_t length = GetItem(i)->GetText(subitem).length();
+        if (maxLength > 0 && (length * 100) < (maxLength * filter)) continue;
+        width = max(width, GetSubItemWidth(GetItem(i), subitem)); count++;
     }
 
     // update final column width
     constexpr int padding = 2;
     SetColumnWidth(column, width + DpiRest(padding));
     *pResult = FALSE;
+    // Display benchmark results in the title for performance testing purposes
+    CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [BENCHMARK] {} items, {} width calculations", GetItemCount(), count).c_str());
 }
 
 void CWdsListControl::OnHdnItemchanging(NMHDR* /*pNMHDR*/, LRESULT* pResult)
