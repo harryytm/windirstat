@@ -176,6 +176,7 @@ public:
     static Setting<COLORREF> TreeMapHighlightColor;
     static Setting<double> MainSplitterPos;
     static Setting<double> SubSplitterPos;
+    static Setting<int> AutofitColumnPrefilter;
     static Setting<int> AutomaticallyResizeColumnsPageLimit;
     static Setting<int> AutomaticallyResizeColumnsPrefilter;
     static Setting<int> ConfigPage;

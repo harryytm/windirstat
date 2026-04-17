@@ -92,8 +92,9 @@ Setting<COLORREF> COptions::TreeMapGridColor(OptionsTreeMap, L"TreeMapGridColor"
 Setting<COLORREF> COptions::TreeMapHighlightColor(OptionsTreeMap, L"TreeMapHighlightColor", RGB(255, 255, 255));
 Setting<double> COptions::MainSplitterPos(OptionsGeneral, L"MainSplitterPos", -1.0, 0.0, 1.0);
 Setting<double> COptions::SubSplitterPos(OptionsGeneral, L"SubSplitterPos", -1.0, 0.0, 1.0);
+Setting<int> COptions::AutofitColumnPrefilter(OptionsGeneral, L"AutofitColumnPrefilter", 90, 0, 100);
 Setting<int> COptions::AutomaticallyResizeColumnsPageLimit(OptionsGeneral, L"AutomaticallyResizeColumnsPageLimit", 10, 0, 10000);
-Setting<int> COptions::AutomaticallyResizeColumnsPrefilter(OptionsGeneral, L"AutomaticallyResizeColumnsPrefilter", 80, 0, 100);
+Setting<int> COptions::AutomaticallyResizeColumnsPrefilter(OptionsGeneral, L"AutomaticallyResizeColumnsPrefilter", 90, 0, 100);
 Setting<int> COptions::ConfigPage(OptionsGeneral, L"ConfigPage", 0);
 Setting<int> COptions::DarkMode(OptionsGeneral, L"DarkMode", DM_USE_WINDOWS, DM_DISABLED, DM_USE_WINDOWS);
 Setting<int> COptions::LanguageId(OptionsGeneral, L"LanguageId", 0);
