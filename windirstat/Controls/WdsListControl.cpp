@@ -599,7 +599,7 @@ int CWdsListControl::GetSubItemWidth(CWdsListItem* item, const int subitem)
         sofont = (HFONT)SelectObject(dc->GetSafeHdc(), GetFont());
     }
 
-    const CRect rc(0, 0, 3500, 0);
+    const CRect rc(0, 0, DpiRest(3500), 0);
     int width;
     int dummy = rc.left;
 
@@ -896,8 +896,8 @@ void CWdsListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
     }
 
     // update final column width
-    constexpr int padding = 3;
-    SetColumnWidth(column, width + padding);
+    constexpr int padding = 2;
+    SetColumnWidth(column, width + DpiRest(padding));
     *pResult = FALSE;
 }
 
