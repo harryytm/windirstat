@@ -683,35 +683,45 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     CWaitCursor wc;
 
     int count = 0; // count number of actual width calculations
-    size_t maxLength = item->GetText(0).length(); // trace the maximum text length in the first column
-    int maxWidth = GetSubItemWidth(item, 0);
+    int maxWidth = GetSubItemWidth(item, 0); count++; // get width of selected item
     const auto childCount = item->GetTreeListChildCount();
+    const int limit = COptions::AutomaticallyResizeColumnsPageLimit * GetCountPerPage();
+    const int filter = COptions::AutomaticallyResizeColumnsPrefilter;
+
+    // trace the maximum text length in the first column
+    size_t maxLength = 0;
+
+    // find the maximum text length among the children
+    for (const int c : std::views::iota(0, childCount))
+    {
+        maxLength = max(maxLength, std::wstring_view(item->GetTreeListChild(c)->GetText(0)).length());
+    }
+
     static std::vector<CWdsListItem*> children;
     children.clear();
     children.reserve(childCount); // reserve known number of children to avoid reallocations
     for (const int c : std::views::iota(0, childCount))
     {
-        const int limit = COptions::AutomaticallyResizeColumnsPageLimit * GetCountPerPage();
-        const int ratio = COptions::AutomaticallyResizeColumnsPrefilter;
         const auto child = item->GetTreeListChild(c);
         children.push_back(child);
         child->SetVisible(this, true);
 
         // The calculation of item width is very expensive for
-        // very large lists so loose pre-filter items that are very
-        // unlikely to require a resize based on their text length
-        // to reduce unnecessary width calculations while maintaining
-        // auto column resizing accuracy
-        if (COptions::AutomaticallyResizeColumns && scroll && (limit == 0 || c < limit))
+        // very large lists so use a loose pre-filter to filter out majority
+        // of the items that are very unlikely to require a resize based
+        // on their text length to reduce unnecessary width calculations
+        // while maintaining certain level of auto column resizing accuracy
+        if (COptions::AutomaticallyResizeColumns && scroll)
         {
             // get the text length of the first column
-            const size_t length = child->GetText(0).length();
-            // using 80% length threshold to handle eage cases of portional width fonts
+            const size_t length = std::wstring_view(child->GetText(0)).length();
+            // using configurable length threshold to handle eage cases of portional width fonts
+            // and configurable page limit to prevent too many calculations for very large lists
+            // with many item names have the same length
             // intenally used integer arithmetic to avoid the cost of floating point operations
-            if (maxLength > 0 && (length * 100) < (maxLength * ratio)) continue;
-            maxLength = std::max(maxLength, length); // update max text length
-            maxWidth = std::max(maxWidth, GetSubItemWidth(child, 0));
-            count++;
+            if ((maxLength > 0 && (length * 100) < (maxLength * filter))
+                || (limit > 0 && count >= limit)) continue; 
+            maxWidth = std::max(maxWidth, GetSubItemWidth(child, 0)); count++;
         }
     }
 
