@@ -94,7 +94,7 @@ Setting<double> COptions::MainSplitterPos(OptionsGeneral, L"MainSplitterPos", -1
 Setting<double> COptions::SubSplitterPos(OptionsGeneral, L"SubSplitterPos", -1.0, 0.0, 1.0);
 Setting<int> COptions::AutofitColumnPrefilter(OptionsGeneral, L"AutofitColumnPrefilter", 90, 0, 100);
 Setting<int> COptions::AutomaticallyResizeColumnsPageLimit(OptionsGeneral, L"AutomaticallyResizeColumnsPageLimit", 10, 0, 10000);
-Setting<int> COptions::AutomaticallyResizeColumnsPrefilter(OptionsGeneral, L"AutomaticallyResizeColumnsPrefilter", 90, 0, 100);
+Setting<int> COptions::AutomaticallyResizeColumnsFilterRate(OptionsGeneral, L"AutomaticallyResizeColumnsFilterRate", 90, 0, 100);
 Setting<int> COptions::ConfigPage(OptionsGeneral, L"ConfigPage", 0);
 Setting<int> COptions::DarkMode(OptionsGeneral, L"DarkMode", DM_USE_WINDOWS, DM_DISABLED, DM_USE_WINDOWS);
 Setting<int> COptions::LanguageId(OptionsGeneral, L"LanguageId", 0);

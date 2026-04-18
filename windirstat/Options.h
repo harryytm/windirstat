@@ -178,7 +178,7 @@ public:
     static Setting<double> SubSplitterPos;
     static Setting<int> AutofitColumnPrefilter;
     static Setting<int> AutomaticallyResizeColumnsPageLimit;
-    static Setting<int> AutomaticallyResizeColumnsPrefilter;
+    static Setting<int> AutomaticallyResizeColumnsFilterRate;
     static Setting<int> ConfigPage;
     static Setting<int> FollowReparsePointMask;
     static Setting<int> LanguageId;
