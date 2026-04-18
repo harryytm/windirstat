@@ -686,7 +686,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     int maxWidth = GetSubItemWidth(item, 0); count++; // get width of selected item
     const auto childCount = item->GetTreeListChildCount();
     const int limit = COptions::AutomaticallyResizeColumnsPageLimit * GetCountPerPage();
-    const int filter = COptions::AutomaticallyResizeColumnsPrefilter;
+    const int filter = COptions::AutomaticallyResizeColumnsFilterRate;
 
     // trace the maximum text length in the first column
     size_t maxLength = 0;
