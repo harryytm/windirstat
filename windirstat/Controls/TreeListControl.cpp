@@ -663,19 +663,23 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
 
     CWaitCursor wc;
 
+    bool isAutoResizeEnabled = COptions::AutomaticallyResizeColumns && scroll;
     int count = 0; // count number of actual width calculations
     int maxWidth = GetSubItemWidth(item, 0); count++; // get width of selected item
     const auto childCount = item->GetTreeListChildCount();
-    const int limit = COptions::AutomaticallyResizeColumnsPageLimit * GetCountPerPage();
-    const int filter = COptions::AutomaticallyResizeColumnsFilterRate;
+    const int limit = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsPageLimit * GetCountPerPage() : 0;
+    const int filter = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsFilterRate : 0;
 
     // trace the maximum text length in the first column
     size_t maxLength = 0;
 
     // find the maximum text length among the children
-    for (const int c : std::views::iota(0, childCount))
+    if (isAutoResizeEnabled)
     {
-        maxLength = max(maxLength, std::wstring_view(item->GetTreeListChild(c)->GetText(0)).length());
+        for (const int c : std::views::iota(0, childCount))
+        {
+            maxLength = max(maxLength, std::wstring_view(item->GetTreeListChild(c)->GetText(0)).length());
+        }
     }
 
     thread_local std::vector<CWdsListItem*> children;
@@ -692,7 +696,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
         // of the items that are very unlikely to require a resize based
         // on their text length to reduce unnecessary width calculations
         // while maintaining certain level of auto column resizing accuracy
-        if (COptions::AutomaticallyResizeColumns && scroll)
+        if (isAutoResizeEnabled)
         {
             // get the text length of the first column
             const size_t length = std::wstring_view(child->GetText(0)).length();
