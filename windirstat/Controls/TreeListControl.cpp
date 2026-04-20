@@ -655,6 +655,17 @@ void CTreeListControl::ExpandItem(const CTreeListItem* item)
 
 void CTreeListControl::ExpandItem(const int i, const bool scroll)
 {
+    // LUT to filter out width calculations based on text length and configurable exclusion rate
+    static constexpr struct FontLengthFilter {
+        bool filter[256][101];
+        constexpr FontLengthFilter() : filter{} {
+            for (int len = 0; len < 256; ++len) // pre-calculate results for text length 0 to 255
+                for (int rate = 0; rate < 101; ++rate) // exclusion rate 0% to 100%
+                    if ((len * 100) < (255 * rate)) // mark as filtered if it does not meet the threshold
+                        filter[len][rate] = true;
+        }
+    } fontLengthFilterLUT{};
+
     CTreeListItem* item = GetItem(i);
     if (item->IsExpanded())
     {
@@ -692,20 +703,16 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
         child->SetVisible(this, true);
 
         // The calculation of item width is very expensive for
-        // very large lists so use a loose pre-filter to filter out majority
-        // of the items that are very unlikely to require a resize based
-        // on their text length to reduce unnecessary width calculations
-        // while maintaining certain level of auto column resizing accuracy
+        // very large lists so apply a filter based on text length
+        // with configurable proportional width exclusion rate to
+        // filter out unnecessary calculations while maintaining
+        // certain level of accuracy for auto column width extension
         if (isAutoResizeEnabled)
         {
-            // get the text length of the first column
-            const size_t length = std::wstring_view(child->GetText(0)).length();
-            // using configurable length threshold to handle eage cases of portional width fonts
-            // and configurable page limit to prevent too many calculations for very large lists
-            // with many item names have the same length
-            // intenally used integer arithmetic to avoid the cost of floating point operations
-            if ((maxLength > 0 && (length * 100) < (maxLength * filter))
-                || (limit > 0 && count >= limit)) continue; 
+            bool isFiltered = fontLengthFilterLUT.filter[min(
+                (maxLength > 0) ? (std::wstring_view(child->GetText(0)).length() * 255) / maxLength : 0,
+                (size_t)255)][std::clamp(filter, 0, 100)];
+            if (isFiltered || (limit > 0 && count >= limit)) continue;
             maxWidth = max(maxWidth, GetSubItemWidth(child, 0)); count++;
         }
     }
@@ -734,7 +741,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     if (childCount > 0) SortItems();
 
     // show the count result as benchmark info in title bar
-    CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [BENCHMARK] Expanded {} children, {} width calculations", childCount, count).c_str());
+    CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [BENCHMARK] Expanded {} children, {} width calculations, {}%", childCount, count, FormatDouble(static_cast<double>(count) / childCount * 100).c_str()).c_str());
 }
 
 void CTreeListControl::OnKeyDown(const UINT nChar, const UINT nRepCnt, const UINT nFlags)
