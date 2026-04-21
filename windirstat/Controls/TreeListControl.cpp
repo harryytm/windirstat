@@ -672,7 +672,7 @@ void CTreeListControl::ExpandItem(const CTreeListItem* item)
 
 void CTreeListControl::ExpandItem(const int i, const bool scroll)
 {
-    // LUT to filter out width calculations based on text length and configurable exclusion rate
+    // LUT for filtering out width calculations based on text length and configurable exclusion rate
     static constexpr struct FontLengthFilter {
         bool filter[256][101];
         constexpr FontLengthFilter() : filter{} {
@@ -698,7 +698,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     int maxWidth = GetSubItemWidth(item, 0); count++; // get width of selected item
     const auto childCount = item->GetTreeListChildCount();
     const int limit = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsPageLimit * GetCountPerPage() : 0;
-    const int filter = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsFilterRate : 0;
+    const size_t filterRate = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsFilterRate : 0;
 
     // trace the maximum text length in the first column
     size_t maxLength = 0;
@@ -728,9 +728,10 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
         // certain level of accuracy for auto column width extension
         if (isAutoResizeEnabled)
         {
-            bool isFiltered = fontLengthFilterLUT.filter[min(
-                (maxLength > 0) ? (std::wstring_view(child->GetText(0)).length() * 255) / maxLength : 0,
-                (size_t)255)][std::clamp(filter, 0, 100)];
+            const size_t itemLength = min((maxLength > 0) ?
+                (std::wstring_view(child->GetText(0)).length() * 255) / maxLength :
+                0, (size_t)255);
+            bool isFiltered = fontLengthFilterLUT.filter[itemLength][filterRate];
             if (isFiltered || (limit > 0 && count >= limit)) continue;
             maxWidth = std::max(maxWidth, GetSubItemWidth(child, 0)); count++;
         }
