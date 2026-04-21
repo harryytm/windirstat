@@ -140,3 +140,22 @@ inline CRect ClientRectOf(const CWnd* hWnd)
     ::GetClientRect(*hWnd, &rc);
     return rc;
 }
+
+// Pre-compiled LUT for filtering out width calculations based on text length and configurable exclusion rate.
+inline static constexpr struct FontLengthFilter {
+    bool filter[256][101];
+    constexpr FontLengthFilter() : filter{} {
+        for (int len = 0; len < 256; ++len)
+            for (int rate = 0; rate < 101; ++rate)
+                if ((len * 100) < (255 * rate))
+                    filter[len][rate] = true;
+    }
+
+    inline bool IsFiltered(const size_t currentLength, const size_t maxLength, const size_t filterRate) const {
+        if (filterRate == 0) return false;
+        if (maxLength == 0) return true;
+
+        const size_t index = min((currentLength * 255) / maxLength, (size_t)255);
+        return filter[index][filterRate];
+    }
+} g_fontLengthFilterLUT{};
