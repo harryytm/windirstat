@@ -678,7 +678,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
         maxLength = max(maxLength, std::wstring_view(item->GetTreeListChild(c)->GetText(0)).length());
     }
 
-    static std::vector<CWdsListItem*> children;
+    thread_local std::vector<CWdsListItem*> children;
     children.clear();
     children.reserve(childCount); // reserve known number of children to avoid reallocations
     for (const int c : std::views::iota(0, childCount))
