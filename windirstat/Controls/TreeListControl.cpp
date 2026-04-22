@@ -669,9 +669,10 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     const auto childCount = item->GetTreeListChildCount();
     const int limit = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsPageLimit * GetCountPerPage() : 0;
     const size_t filterRate = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsFilterRate : 0;
-
-    // trace the maximum text length in the first column
-    size_t maxLength = 0;
+    thread_local std::vector<CWdsListItem*> children;
+    children.clear();
+    children.reserve(childCount); // reserve known number of children to avoid reallocations
+    size_t maxLength = 0; // trace the maximum text length in the first column
 
     // find the maximum text length among the children
     if (isAutoResizeEnabled)
@@ -682,9 +683,6 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
         }
     }
 
-    thread_local std::vector<CWdsListItem*> children;
-    children.clear();
-    children.reserve(childCount); // reserve known number of children to avoid reallocations
     for (const int c : std::views::iota(0, childCount))
     {
         const auto child = item->GetTreeListChild(c);

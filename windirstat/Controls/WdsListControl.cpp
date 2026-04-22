@@ -882,7 +882,7 @@ void CWdsListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
     // not autosize to fit the whole control width
     const CSetRedrawLock lock(this);
     const int falseColumn = InsertColumn(m_columnCount + 1, L"");
-    const int filter = COptions::AutofitColumnPrefilter;
+    const size_t filterRate = static_cast<size_t>(COptions::AutofitColumnPrefilter);
     SetColumnWidth(column, LVSCW_AUTOSIZE_USEHEADER);
     int width = GetColumnWidth(column);
     DeleteColumn(falseColumn);
@@ -897,7 +897,7 @@ void CWdsListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
     for (const int i : std::views::iota(0, GetItemCount()))
     {
         const size_t length = GetItem(i)->GetText(subitem).length();
-        if (maxLength > 0 && (length * 100) < (maxLength * filter)) continue;
+        if (g_stringLengthFilter.IsFiltered(length, maxLength, filterRate)) continue;
         width = max(width, GetSubItemWidth(GetItem(i), subitem)); count++;
     }
 
