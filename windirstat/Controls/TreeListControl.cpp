@@ -739,7 +739,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     if (childCount > 0) SortItems();
 
     // show the count result as benchmark info in title bar
-    CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [BENCHMARK] Expanded {} children, {} width calculations, {}%", childCount, count, FormatDouble(static_cast<double>(count) / childCount * 100).c_str()).c_str());
+    CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [BENCHMARK] Expanded {} children, {} width calculations, {}%", childCount, count, FormatDouble(static_cast<double>(count) / childCount * 100)).c_str());
 }
 
 void CTreeListControl::OnKeyDown(const UINT nChar, const UINT nRepCnt, const UINT nFlags)
