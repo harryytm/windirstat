@@ -145,20 +145,3 @@ inline CRect ClientRectOf(const CWnd* hWnd)
     ::GetClientRect(*hWnd, &rc);
     return rc;
 }
-
-// String length filter lookup table for filtering out long file names in the tree view
-inline static constexpr struct StringLengthFilter {
-    bool filter[256][101];
-    constexpr StringLengthFilter() : filter{} {
-        for (int len = 0; len < 256; ++len)
-            for (int rate = 0; rate < 101; ++rate)
-                if ((len * 100) < (255 * rate))
-                    filter[len][rate] = true;
-    }
-
-    inline bool IsFiltered(const size_t currentLength, const size_t maxLength, const size_t filterRate) const {
-        if (filterRate == 0) return false;
-        if (maxLength == 0) return true;
-        return filter[min((currentLength * 255) / maxLength, (size_t)255)][filterRate];
-    }
-} g_stringLengthFilter{};
