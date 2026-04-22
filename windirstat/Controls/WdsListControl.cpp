@@ -897,7 +897,7 @@ void CWdsListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
     for (const int i : std::views::iota(0, GetItemCount()))
     {
         const size_t length = GetItem(i)->GetText(subitem).length();
-        if (g_stringLengthFilter.IsFiltered(length, maxLength, filterRate)) continue;
+        if ((maxLength > 0 && (length * 100) < (maxLength * filterRate))) continue;
         width = max(width, GetSubItemWidth(GetItem(i), subitem)); count++;
     }
 
