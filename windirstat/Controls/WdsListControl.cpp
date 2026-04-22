@@ -592,7 +592,7 @@ bool CWdsListControl::HasFocus() const
 int CWdsListControl::GetSubItemWidth(CWdsListItem* item, const int subitem)
 {
     CClientDC dc(this);
-    const CRect rc(0, 0, 3500, 20);
+    const CRect rc(0, 0, DpiRest(3500), 0);
 
     int width;
     int dummy = rc.left;
@@ -866,28 +866,41 @@ BOOL CWdsListControl::OnEraseBkgnd(CDC* pDC)
 
 void CWdsListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
 {
+    CWaitCursor wc;
     const int column = reinterpret_cast<LPNMHEADER>(pNMHDR)->iItem;
     const int subitem = ColumnToSubItem(column);
+    size_t maxLength = 0;
 
     // fetch size of rendered column header text
     // temporarily insert a false column to the finalize column does
     // not autosize to fit the whole control width
     const CSetRedrawLock lock(this);
     const int falseColumn = InsertColumn(m_columnCount + 1, L"");
+    const size_t filterRate = static_cast<size_t>(COptions::AutofitColumnFilterRate);
     SetColumnWidth(column, LVSCW_AUTOSIZE_USEHEADER);
     int width = GetColumnWidth(column);
     DeleteColumn(falseColumn);
+    int count = 0; // count of GetSubItemWidth calls
+
+    for (const int i : std::views::iota(0, GetItemCount()))
+    {
+        maxLength = max(maxLength, GetItem(i)->GetText(subitem).length());
+    }
 
     // fetch size of sub-elements
     for (const int i : std::views::iota(0, GetItemCount()))
     {
-        width = max(width, GetSubItemWidth(GetItem(i), subitem));
+        const size_t length = GetItem(i)->GetText(subitem).length();
+        if ((maxLength > 0 && (length * 100) < (maxLength * filterRate))) continue;
+        width = max(width, GetSubItemWidth(GetItem(i), subitem)); count++;
     }
 
     // update final column width
-    constexpr int padding = 3;
-    SetColumnWidth(column, width + padding);
+    constexpr int padding = 2;
+    SetColumnWidth(column, width + DpiRest(padding));
     *pResult = FALSE;
+    // Display benchmark results in the title for performance testing purposes
+    CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [BENCHMARK] {} items, {} width calculations", GetItemCount(), count).c_str());
 }
 
 void CWdsListControl::OnHdnItemchanging(NMHDR* /*pNMHDR*/, LRESULT* pResult)

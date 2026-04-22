@@ -663,28 +663,52 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
 
     CWaitCursor wc;
 
-    int maxwidth = GetSubItemWidth(item, 0);
+    bool isAutoResizeEnabled = COptions::AutomaticallyResizeColumns && scroll;
+    int count = 0; // count number of width calculations
+    int maxWidth = GetSubItemWidth(item, 0); count++; // get width of selected item
     const auto childCount = item->GetTreeListChildCount();
-    std::vector<CWdsListItem*> children;
+    const int limit = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsPageLimit * max(GetCountPerPage(),50) : 0;
+    const size_t filterRate = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsFilterRate : 0;
+    thread_local std::vector<CWdsListItem*> children;
+    children.clear();
+    children.reserve(childCount); // reserve known number of children to avoid reallocations
+    size_t maxLength = 0; // trace the maximum text length in the first column
+
+    // find the maximum text length among the children
     for (const int c : std::views::iota(0, childCount))
     {
         const auto child = item->GetTreeListChild(c);
         children.push_back(child);
         child->SetVisible(this, true);
-
-        // The calculation of item width is very expensive for
-        // very large lists so limit calculation based on the
-        // first few bunch of visible items
-        if (COptions::AutomaticallyResizeColumns && scroll && c < 50)
+        if (isAutoResizeEnabled)
         {
-            maxwidth = max(maxwidth, GetSubItemWidth(child, 0));
+            maxLength = max(maxLength, std::wstring_view(item->GetTreeListChild(c)->GetText(0)).length());
         }
     }
 
-    if (scroll && GetColumnWidth(0) < maxwidth)
+    if (isAutoResizeEnabled)
+    {
+        if (limit > 0)
+        {
+            std::sort(children.begin(), children.end(), [](CWdsListItem* a, CWdsListItem* b) {
+                return std::wstring_view(a->GetText(0)).length() > std::wstring_view(b->GetText(0)).length();
+            });
+        }
+
+        for (const int c : std::views::iota(0, childCount))
+        {
+            const auto child = children[c];
+            const size_t childLength = std::wstring_view(child->GetText(0)).length();
+            if ((maxLength > 0 && (childLength * 100) < (maxLength * filterRate))
+                || (limit > 0 && count >= limit)) continue;
+            maxWidth = max(maxWidth, GetSubItemWidth(child, 0)); count++;
+        }
+    }
+
+    if (scroll && GetColumnWidth(0) < maxWidth)
     {
         constexpr int padding = 3;
-        SetColumnWidth(0, maxwidth + padding);
+        SetColumnWidth(0, maxWidth + padding);
     }
 
     InsertListItem(i + 1, children);
@@ -703,6 +727,9 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
 
     // Sort at end so we do not invalidate position data
     if (childCount > 0) SortItems();
+
+    // show the count result as benchmark info in title bar
+    CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [BENCHMARK] Expanded {} children, {} width calculations, {}%", childCount, count, FormatDouble(static_cast<double>(count) / childCount * 100).c_str()).c_str());
 }
 
 void CTreeListControl::OnKeyDown(const UINT nChar, const UINT nRepCnt, const UINT nFlags)
