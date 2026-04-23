@@ -706,13 +706,13 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
         // to maintain certain level of width accuracy
         if (isAutoResizeEnabled)
         {
-            const size_t childLen = std::wstring_view(child->GetText(0)).length();
-            if ((maxLength > 0 && (childLen * 100) < (maxLength * filterRate))
             // Skip width calculation for items with text length
             // shorter than the filterRate or the page-based limit
             // of calculations is reached
             // intentionally use integer arithmetic to avoid overhead
             // of floating point calculation
+            const size_t childLength = std::wstring_view(child->GetText(0)).length();
+            if ((maxLength > 0 && (childLength * 100) < (maxLength * filterRate))
                 || (limit > 0 && count >= limit)) continue;
             maxWidth = max(maxWidth, GetSubItemWidth(child, 0)); count++;
         }
