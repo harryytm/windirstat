@@ -667,7 +667,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     int count = 0; // count number of actual width calculations
     int maxWidth = GetSubItemWidth(item, 0); count++; // get width of selected item
     const auto childCount = item->GetTreeListChildCount();
-    const int limit = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsPageLimit * GetCountPerPage() : 0;
+    const int limit = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsPageLimit * max(GetCountPerPage(),50) : 0;
     const size_t filterRate = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsFilterRate : 0;
     thread_local std::vector<CWdsListItem*> children;
     children.clear();
@@ -675,19 +675,27 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     size_t maxLength = 0; // trace the maximum text length in the first column
 
     // find the maximum text length among the children
-    if (isAutoResizeEnabled)
-    {
-        for (const int c : std::views::iota(0, childCount))
-        {
-            maxLength = max(maxLength, std::wstring_view(item->GetTreeListChild(c)->GetText(0)).length());
-        }
-    }
-
     for (const int c : std::views::iota(0, childCount))
     {
         const auto child = item->GetTreeListChild(c);
         children.push_back(child);
         child->SetVisible(this, true);
+        if (isAutoResizeEnabled)
+        {
+            maxLength = max(maxLength, std::wstring_view(item->GetTreeListChild(c)->GetText(0)).length());
+        }
+    }
+
+    if (isAutoResizeEnabled && limit > 0)
+    {
+        std::sort(children.begin(), children.end(), [](CWdsListItem* a, CWdsListItem* b) {
+            return std::wstring_view(a->GetText(0)).length() > std::wstring_view(b->GetText(0)).length();
+        });
+    }
+
+    for (const int c : std::views::iota(0, childCount))
+    {
+        const auto child = item->GetTreeListChild(c);
 
         // The calculation of item width is very expensive for
         // very large lists so apply a text length filter with
