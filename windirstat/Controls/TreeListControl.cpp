@@ -696,21 +696,8 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     for (const int c : std::views::iota(0, childCount))
     {
         const auto child = item->GetTreeListChild(c);
-
-        // The calculation of item width is very expensive for
-        // very large lists so apply a text length filter with
-        // configurable proportional width exclusion rate to
-        // filter out unnecessary calculations of very short string
-        // that is unlikely to need calculation, while still
-        // including some amount of shorter strings to be calculated
-        // to maintain certain level of width accuracy
         if (isAutoResizeEnabled)
         {
-            // Skip width calculation for items with text length
-            // shorter than the filterRate or the page-based limit
-            // of calculations is reached
-            // intentionally use integer arithmetic to avoid overhead
-            // of floating point calculation
             const size_t childLength = std::wstring_view(child->GetText(0)).length();
             if ((maxLength > 0 && (childLength * 100) < (maxLength * filterRate))
                 || (limit > 0 && count >= limit)) continue;
