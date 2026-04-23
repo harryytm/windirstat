@@ -664,7 +664,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     CWaitCursor wc;
 
     bool isAutoResizeEnabled = COptions::AutomaticallyResizeColumns && scroll;
-    int count = 0; // count number of actual width calculations
+    int count = 0; // count number of width calculations
     int maxWidth = GetSubItemWidth(item, 0); count++; // get width of selected item
     const auto childCount = item->GetTreeListChildCount();
     const int limit = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsPageLimit * max(GetCountPerPage(),50) : 0;
@@ -707,9 +707,12 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
         if (isAutoResizeEnabled)
         {
             const size_t childLen = std::wstring_view(child->GetText(0)).length();
-            // Skip width calculation for items with text length filtered out
-            // or when the limit of page-based calculations is reached
             if ((maxLength > 0 && (childLen * 100) < (maxLength * filterRate))
+            // Skip width calculation for items with text length
+            // shorter than the filterRate or the page-based limit
+            // of calculations is reached
+            // intentionally use integer arithmetic to avoid overhead
+            // of floating point calculation
                 || (limit > 0 && count >= limit)) continue;
             maxWidth = max(maxWidth, GetSubItemWidth(child, 0)); count++;
         }
