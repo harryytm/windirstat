@@ -686,18 +686,18 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
         }
     }
 
-    if (isAutoResizeEnabled && limit > 0)
+    if (isAutoResizeEnabled)
     {
-        std::sort(children.begin(), children.end(), [](CWdsListItem* a, CWdsListItem* b) {
-            return std::wstring_view(a->GetText(0)).length() > std::wstring_view(b->GetText(0)).length();
-        });
-    }
-
-    for (const int c : std::views::iota(0, childCount))
-    {
-        const auto child = item->GetTreeListChild(c);
-        if (isAutoResizeEnabled)
+        if (limit > 0)
         {
+            std::sort(children.begin(), children.end(), [](CWdsListItem* a, CWdsListItem* b) {
+                return std::wstring_view(a->GetText(0)).length() > std::wstring_view(b->GetText(0)).length();
+            });
+        }
+
+        for (const int c : std::views::iota(0, childCount))
+        {
+            const auto child = children[c];
             const size_t childLength = std::wstring_view(child->GetText(0)).length();
             if ((maxLength > 0 && (childLength * 100) < (maxLength * filterRate))
                 || (limit > 0 && count >= limit)) continue;
