@@ -186,7 +186,7 @@ public:
     static Setting<std::wstring> PermsExcludeRegex;
     static Setting<double> MainSplitterPos;
     static Setting<double> SubSplitterPos;
-    static Setting<int> AutofitColumnPrefilter;
+    static Setting<int> AutofitColumnFilterRate;
     static Setting<int> AutomaticallyResizeColumnsPageLimit;
     static Setting<int> AutomaticallyResizeColumnsFilterRate;
     static Setting<int> ConfigPage;
