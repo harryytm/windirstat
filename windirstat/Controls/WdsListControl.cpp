@@ -882,7 +882,7 @@ void CWdsListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
     // not autosize to fit the whole control width
     const CSetRedrawLock lock(this);
     const int falseColumn = InsertColumn(m_columnCount + 1, L"");
-    const size_t filterRate = static_cast<size_t>(COptions::AutofitColumnPrefilter);
+    const size_t filterRate = static_cast<size_t>(COptions::AutofitColumnFilterRate);
     SetColumnWidth(column, LVSCW_AUTOSIZE_USEHEADER);
     int width = GetColumnWidth(column);
     DeleteColumn(falseColumn);
