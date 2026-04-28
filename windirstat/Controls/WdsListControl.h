@@ -68,7 +68,9 @@ public:
     virtual void DrawAdditionalState(CDC* /*pdc*/, const CRect& /*rcLabel*/) const {}
     void DrawSelection(const CWdsListControl* list, CDC* pdc, CRect rc, UINT state) const;
     virtual HICON GetIcon() = 0;
+    // Draws the standard label (icon, text, selection and focus rect) for this item in the given rectangle.
     void DrawLabel(const CWdsListControl* list, CDC* pdc, CRect& rc, UINT state, int* width, int* focusLeft, bool indent = true);
+    // Draws a percentage bar in the given rectangle, filled according to the fraction (0.0 to 1.0)
     void DrawPercentage(CDC* pdc, CRect rc, double fraction, COLORREF color) const;
 };
 

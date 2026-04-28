@@ -218,10 +218,10 @@ void CWdsListItem::DrawPercentage(CDC* pdc, const CRect rc, const double fractio
         bg = RGB(40, 40, 40); // Background
     }
 
-    CRect rcLeft = rc;
+    CRect rcLeft = rc; // Percentage rectangle
     rcLeft.right = static_cast<int>(rcLeft.left + rc.Width() * fraction);
 
-    CRect rcRight = rc;
+    CRect rcRight = rc; // Remainder rectangle
     rcRight.left = rcLeft.right;
 
     if (rcLeft.right > rcLeft.left)
