@@ -591,19 +591,12 @@ bool CWdsListControl::HasFocus() const
 
 int CWdsListControl::GetSubItemWidth(CWdsListItem* item, const int subitem)
 {
-    thread_local CClientDC* dc = nullptr;
-    thread_local HFONT sofont = NULL;
-
-    if (!dc) {
-        dc = new CClientDC(this);
-        sofont = (HFONT)SelectObject(dc->GetSafeHdc(), GetFont());
-    }
-
+    CClientDC dc(this);
     const CRect rc(0, 0, DpiRest(3500), 0);
+
     int width;
     int dummy = rc.left;
-
-    if (item->DrawSubItem(subitem, dc, rc, 0, &width, &dummy))
+    if (item->DrawSubItem(subitem, &dc, rc, 0, &width, &dummy))
     {
         return width;
     }
@@ -614,10 +607,11 @@ int CWdsListControl::GetSubItemWidth(CWdsListItem* item, const int subitem)
         return 0;
     }
 
-    SIZE size;
-    GetTextExtentPoint32(dc->GetSafeHdc(), s.c_str(), static_cast<int>(s.size()), &size);
-    return TEXT_X_MARGIN + size.cx;
+    CSelectObject sofont(&dc, GetFont());
 
+    SIZE size;
+    GetTextExtentPoint32(dc, s.c_str(), static_cast<int>(s.size()), &size);
+    return TEXT_X_MARGIN + size.cx;
 }
 
 /////////////////////////////////////////////////////////////////////////////
