@@ -663,31 +663,35 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
 
     CWaitCursor wc;
 
-    bool isAutoResizeEnabled = COptions::AutomaticallyResizeColumns && scroll;
+    const bool isAutoResizeEnabled = COptions::AutomaticallyResizeColumns && scroll;
+    const auto childCount = item->GetTreeListChildCount();
     int count = 0; // count number of width calculations
     int maxWidth = GetSubItemWidth(item, 0); count++; // get width of selected item
-    const auto childCount = item->GetTreeListChildCount();
-    const int limit = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsPageLimit * max(GetCountPerPage(),50) : 0;
-    const size_t filterRate = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsFilterRate : 0;
+    size_t maxLength = 0; // trace the maximum text length in the first column
+
     thread_local std::vector<CWdsListItem*> children;
     children.clear();
     children.reserve(childCount); // reserve known number of children to avoid reallocations
-    size_t maxLength = 0; // trace the maximum text length in the first column
 
-    // find the maximum text length among the children
+    // add children to list and make them visible
     for (const int c : std::views::iota(0, childCount))
     {
         const auto child = item->GetTreeListChild(c);
         children.push_back(child);
         child->SetVisible(this, true);
+
+        // find the maximum text length in the first column for all children
         if (isAutoResizeEnabled)
         {
-            maxLength = max(maxLength, std::wstring_view(item->GetTreeListChild(c)->GetText(0)).length());
+            maxLength = max(maxLength, std::wstring_view(child->GetText(0)).length());
         }
     }
 
     if (isAutoResizeEnabled)
     {
+        const int limit = COptions::AutomaticallyResizeColumnsPageLimit * max(GetCountPerPage(),50);
+        const size_t filterRate = COptions::AutomaticallyResizeColumnsFilterRate;
+
         if (limit > 0)
         {
             std::sort(children.begin(), children.end(), [](CWdsListItem* a, CWdsListItem* b) {
@@ -700,15 +704,16 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
             const auto child = children[c];
             const size_t childLength = std::wstring_view(child->GetText(0)).length();
             if ((maxLength > 0 && (childLength * 100) < (maxLength * filterRate))
-                || (limit > 0 && count >= limit)) continue;
+                || (limit > 0 && count > limit)) continue;
+
             maxWidth = max(maxWidth, GetSubItemWidth(child, 0)); count++;
         }
     }
 
     if (scroll && GetColumnWidth(0) < maxWidth)
     {
-        constexpr int padding = 3;
-        SetColumnWidth(0, maxWidth + padding);
+        constexpr int padding = 2;
+        SetColumnWidth(0, maxWidth + DpiRest(padding));
     }
 
     InsertListItem(i + 1, children);
