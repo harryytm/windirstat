@@ -325,6 +325,49 @@ namespace Icons
         if (plus) g.FillRectangle(&blueBrush, 23, 14, 6, 24);
     }
 
+    void PaintWrench(Graphics& g, Color clr)
+    {
+        //g.SetSmoothingMode(SmoothingModeAntiAlias);
+
+        GraphicsPath totalPath;
+        totalPath.SetFillMode(FillModeWinding);
+
+        RectF headRect(14.0f, 2.0f, 36.0f, 36.0f);
+        totalPath.AddEllipse(headRect);
+
+        RectF handleRect(26.0f, 22.0f, 12.0f, 40.0f);
+        totalPath.AddRectangle(handleRect);
+
+        totalPath.AddEllipse(26.0f, 54.0f, 12.0f, 12.0f);
+
+        GraphicsPath jaw;
+        PointF jawPoints[] = {
+            PointF(26.0f, -12.0f),
+            PointF(38.0f, -12.0f),
+            PointF(38.0f, 20.0f),
+            PointF(32.0f, 25.0f),
+            PointF(26.0f, 20.0f)
+        };
+        jaw.AddPolygon(jawPoints, 5);
+
+        GraphicsPath hole;
+        RectF holeRect(28.5f, 56.5f, 7.0f, 7.0f);
+        hole.AddEllipse(holeRect);
+
+        Matrix matrix;
+        matrix.RotateAt(45.0f, PointF(32.0f, 32.0f));
+        totalPath.Transform(&matrix);
+        jaw.Transform(&matrix);
+        hole.Transform(&matrix);
+
+        Region wrenchRegion(&totalPath);
+        wrenchRegion.Exclude(&jaw);
+        wrenchRegion.Exclude(&hole);
+
+        SolidBrush brush(clr);
+        g.FillRegion(&brush, &wrenchRegion);
+    }
+
     void PaintCharacter(Graphics& g, WCHAR ch, COLORREF clr, bool bold, LPCWSTR fontName)
     {
         const WCHAR text[]{ ch, L'\0' };
