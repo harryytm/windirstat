@@ -971,7 +971,8 @@ void CWdsListControl::RemoveListItem(const int i, const int c)
     ASSERT(i + c <= itemCount);
 
     SelectionPreserver preserve(this);
-
+    ShouldScrollToSelectionOnUpdate();
+  
     for (const int x : std::views::iota(i, i + c))
     {
         CWdsListItem* item = m_items[x];

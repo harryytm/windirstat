@@ -625,6 +625,7 @@ void CTreeListControl::CollapseItem(const int i)
 
     if (todelete > 0) RemoveListItem(i + 1, todelete);
     item->SetExpanded(false);
+    SelectItem(item, true);
     RedrawItems(i, i);
 }
 
