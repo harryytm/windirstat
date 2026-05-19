@@ -368,6 +368,26 @@ namespace Icons
         g.FillRegion(&brush, &wrenchRegion);
     }
 
+    void PaintSettingsGear(Graphics& g)
+    {
+        SolidBrush gearBrush(Neutral());
+        Pen ringPen(Neutral(), 8); // Thick pen creates the structural ring
+        //g.DrawEllipse(&ringPen, 13, 13, 38, 38);
+        g.DrawEllipse(&ringPen, 15, 15, 34, 34); // Adjusted to better fit the teeth
+
+        GraphicsState state = g.Save();
+        g.TranslateTransform(32.0f, 32.0f);
+
+        const Point primaryTooth[] = { {-3, -27}, {3, -27}, {6, -17}, {-6, -17} };
+
+        for (int i = 0; i < 8; ++i)
+        {
+            g.FillPolygon(&gearBrush, primaryTooth, 4);
+            g.RotateTransform(45.0f);
+        }
+        g.Restore(state);
+    }
+
     void PaintCharacter(Graphics& g, WCHAR ch, COLORREF clr, bool bold, LPCWSTR fontName)
     {
         const WCHAR text[]{ ch, L'\0' };
