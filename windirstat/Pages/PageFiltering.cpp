@@ -157,6 +157,8 @@ void CPageFiltering::OnOK()
 
 void CPageFiltering::OnSettingChanged()
 {
+    ClampIntegerInputRange(this, IDC_FILTERING_SIZE_MIN, 0, wds::Gi);
+    ClampIntegerInputRange(this, IDC_FILTERING_MAX_AGE_DAYS, 0, 365);
     UpdateData();
     SetModified();
     SetToolTips();

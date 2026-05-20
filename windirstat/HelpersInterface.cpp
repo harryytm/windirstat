@@ -750,3 +750,26 @@ void DrawTreeNodeConnector(CDC* pdc, const CRect& nodeRect, const COLORREF bgCol
     // Plus sign
     if (showPlus) pdc->MoveTo(centerX, boxTop + margin), pdc->LineTo(centerX, boxBottom - margin);
 }
+
+// Integer input clamping helper
+void ClampIntegerInputRange(CWnd* pPage, const UINT nCtrlID, const int min, const int max)
+{
+    if (pPage == nullptr) return;
+
+    CWnd* pWnd = pPage->GetDlgItem(nCtrlID);
+    if (pWnd != nullptr)
+    {
+        CString currentText;
+        pWnd->GetWindowText(currentText);
+
+        if (currentText.IsEmpty())
+        {
+            pWnd->SetWindowText(std::to_wstring(min).c_str());
+            return;
+        }
+
+        const int currentValue = _ttoi(currentText);
+        const int clampedValue = std::clamp(currentValue, min, max);
+        if (clampedValue != currentValue) pWnd->SetWindowText(std::to_wstring(clampedValue).c_str());
+    }
+}

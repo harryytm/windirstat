@@ -74,6 +74,7 @@ bool ShellExecuteWrapper(const std::wstring& lpFile, const std::wstring& lpParam
 bool ExecuteCommandInConsole(const std::wstring& command, const std::wstring& title = L"");
 void SetMenuItem(CMenu* menu, int pos, bool enable, bool isCommand = false);
 bool IsMenuEnabled(const CMenu* menu, UINT pos, bool isCommand = false) noexcept;
+void ClampIntegerInputRange(CWnd* pPage, UINT nCtrlID, int min, int max);
 
 // DPI scaling
 int DpiRest(int value, const CWnd* wnd = nullptr) noexcept;
