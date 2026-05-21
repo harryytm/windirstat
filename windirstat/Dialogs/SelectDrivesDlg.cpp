@@ -788,9 +788,9 @@ bool CSelectDrivesDlg::OnInitDialog()
         CenterWindow();
     }
 
-    m_browseIcon = Icons::MakeIcon(ScaleForDpi(16), Icons::PaintFileSelect);
+    m_browseIcon = Icons::MakeIcon(ScaleForDpi(24), Icons::PaintFileSelect);
     m_browseButton.SetIcon(m_browseIcon);
-    m_addFolderIcon = Icons::MakeIcon(ScaleForDpi(16), Icons::PaintFolderAppend);
+    m_addFolderIcon = Icons::MakeIcon(ScaleForDpi(24), Icons::PaintFolderAppend);
     m_addFolderButton.SetIcon(m_addFolderIcon);
     UpdateFilterButton();
 
@@ -965,7 +965,7 @@ void CSelectDrivesDlg::UpdateButtons(const std::wstring* const folderOverride)
 void CSelectDrivesDlg::UpdateFilterButton()
 {
     const bool active = CFiltering::IsFilterActive();
-    m_filterIcon = Icons::MakeIcon(ScaleForDpi(20), [active](auto& g) { Icons::PaintFilter(g, active); });
+    m_filterIcon = Icons::MakeIcon(ScaleForDpi(24), [active](auto& g) { Icons::PaintFilter(g, active); });
     m_filterButton.SetIcon(m_filterIcon);
 }
 
