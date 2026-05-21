@@ -206,11 +206,11 @@ namespace Icons
     static void PaintBin(Graphics& g, Color body, Color bar)
     {
         SolidBrush bodyBrush(body), barBrush(bar);
-        g.FillRectangle(&bodyBrush, 24, 6,  16, 6);
-        g.FillRectangle(&bodyBrush,  6, 12, 52, 6);
-        g.FillRectangle(&bodyBrush, 12, 18,  4, 40);
-        g.FillRectangle(&bodyBrush, 48, 18,  4, 40);
-        g.FillRectangle(&bodyBrush, 12, 54, 40, 4);
+        g.FillRectangle(&bodyBrush, 24, 4,  16, 6);
+        g.FillRectangle(&bodyBrush,  6, 10, 52, 6);
+        g.FillRectangle(&bodyBrush, 12, 16,  4, 40);
+        g.FillRectangle(&bodyBrush, 48, 16,  4, 40);
+        g.FillRectangle(&bodyBrush, 12, 56, 40, 4);
         for (int i = 0; i < 3; ++i)
             g.FillRectangle(&barBrush, 23 + i * 8, 26, 3, 24);
     }
