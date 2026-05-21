@@ -467,6 +467,31 @@ bool ExecuteCommandInConsole(const std::wstring& command, const std::wstring& ti
     return ShellExecuteWrapper(cmd, cmdline, L"runas");
 }
 
+void EnforceIntegerInputValidRange(CWnd* pParent, const UINT nCtrlID, const int min, const int max)
+{
+    if (pParent == nullptr) return;
+
+    auto calculateDigitLength = [](const int i) -> int { return (i == 0) ? 1 : static_cast<int>(std::log10(i)) + 1; };
+
+    CWnd* pWnd = pParent->GetDlgItem(nCtrlID);
+    if (pWnd != nullptr)
+    {
+        CString string;
+        pWnd->GetWindowText(string);
+
+        if (string.IsEmpty())
+        {
+            pWnd->SetWindowText(std::to_wstring(min).c_str());
+            return;
+        }
+
+        const int input = _ttoi(string);
+        const int value = std::clamp(input, min, max);
+        const bool isTooLong = string.GetLength() > calculateDigitLength(max);
+        if (value != input || isTooLong) pWnd->SetWindowText(std::to_wstring(value).c_str());
+    }
+}
+
 // DPI scaling
 int DpiRest(const int value, const CWnd* wnd) noexcept
 {
