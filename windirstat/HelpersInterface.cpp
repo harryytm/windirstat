@@ -750,3 +750,32 @@ void DrawTreeNodeConnector(CDC* pdc, const CRect& nodeRect, const COLORREF bgCol
     // Plus sign
     if (showPlus) pdc->MoveTo(centerX, boxTop + margin), pdc->LineTo(centerX, boxBottom - margin);
 }
+
+void LimitIntegerInputRange(CWnd* pParent, const UINT nCtrlID, const int min, const int max)
+{
+    if (pParent == nullptr) return;
+
+    CWnd* pWnd = pParent->GetDlgItem(nCtrlID);
+    if (pWnd != nullptr)
+    {
+        CString string;
+        pWnd->GetWindowText(string);
+
+        if (string.IsEmpty())
+        {
+            pWnd->SetWindowText(std::to_wstring(min).c_str());
+            return;
+        }
+
+        const int input = _ttoi(string);
+        const bool isTooLong = string.GetLength() > FindNumberOfDigitsUsingLogarithm(max);
+        const int value = std::clamp(input, min, max);
+        if (value != input || isTooLong) pWnd->SetWindowText(std::to_wstring(value).c_str());
+    }
+}
+
+int FindNumberOfDigitsUsingLogarithm(const int inputNumber)
+{
+    if (inputNumber == 0) return 1;
+    return static_cast<int>(std::log10(std::abs(inputNumber))) + 1;
+}

@@ -157,6 +157,9 @@ void CPageFiltering::OnOK()
 
 void CPageFiltering::OnSettingChanged()
 {
+    const int unit = m_ctlFilteringSizeUnits.GetCurSel();
+    LimitIntegerInputRange(this, IDC_FILTERING_SIZE_MIN, 0, (unit == 4) ? (16 * wds::Mi) : (wds::Gi));
+    LimitIntegerInputRange(this, IDC_FILTERING_MAX_AGE_DAYS, 0, wds::maxFilteringAgeDays);
     UpdateData();
     SetModified();
     SetToolTips();
@@ -168,4 +171,3 @@ BOOL CPageFiltering::PreTranslateMessage(MSG* pMsg)
 
     return CMFCPropertyPage::PreTranslateMessage(pMsg);
 }
-
