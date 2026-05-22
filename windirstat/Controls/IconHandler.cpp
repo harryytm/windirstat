@@ -247,6 +247,8 @@ namespace Icons
         Point chevronPts[] = { {14, 26}, {22, 34}, {14, 42} };
         g.DrawLines(&chevronPen, chevronPts, static_cast<INT>(std::size(chevronPts)));
         g.DrawLine(&chevronPen, 26, 42, 38, 42);
+        Pen boderPen(Neutral(), 1);
+        g.DrawRectangle(&boderPen, 0, 0, 64, 64);
     }
 
     void PaintOpenSelected(Graphics& g)
