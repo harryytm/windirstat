@@ -1548,11 +1548,12 @@ void CMainFrame::OnUpdateViewShowFolderFramesOnTreeMap(CCmdUI* pCmdUI)
 
 void CMainFrame::RebuildToolBar()
 {
-    const auto imageSize = COptions::LargeToolBar ? 32 : 20;
-    const auto scale = COptions::LargeToolBar ? (32.0f / 20.0f) : 1.0f;
+    if (CDirStatApp::Get()->m_pMainWnd == nullptr) return;
+    const int imageSize = COptions::LargeToolBar ? COptions::ToolbarIconSizeLarge : COptions::ToolbarIconSizeSmall;
+    const float defaultSize = static_cast<float>(std::min(m_defaultButtonSize.cx, m_defaultButtonSize.cy));
+    const float scale = imageSize / defaultSize;
 
     // Remove all existing buttons
-    if (CDirStatApp::Get()->m_pMainWnd == nullptr) return;
     while (m_wndToolBar.GetCount() > 0)
         m_wndToolBar.RemoveButton(0);
 
