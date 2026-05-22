@@ -1382,11 +1382,16 @@ void CMainFrame::OnUpdateViewShowExtensionsOnTreeMap(CCmdUI* pCmdUI)
 
 void CMainFrame::RebuildToolBar()
 {
-    const auto imageSize = COptions::LargeToolBar ? 32 : 20;
-    const auto scale = COptions::LargeToolBar ? (32.0f / 20.0f) : 1.0f;
+    if (CDirStatApp::Get()->m_pMainWnd == nullptr) return;
+    const auto smallSize = 24;
+    const auto largeSize = 64;
+    const auto imageSize = COptions::LargeToolBar ? largeSize : smallSize;
+    const auto defaultSize = std::min(m_defaultButtonSize.cx, m_defaultButtonSize.cy);
+    const auto scale = COptions::LargeToolBar ?
+        (static_cast<float>(imageSize) / (static_cast<float>(defaultSize))) :
+        (static_cast<float>(smallSize) / (static_cast<float>(defaultSize)));
 
     // Remove all existing buttons
-    if (CDirStatApp::Get()->m_pMainWnd == nullptr) return;
     while (m_wndToolBar.GetCount() > 0)
         m_wndToolBar.RemoveButton(0);
 
