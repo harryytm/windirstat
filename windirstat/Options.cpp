@@ -143,6 +143,8 @@ Setting<int> COptions::FileTreeColorCount(OptionsFileTree, L"FileTreeColorCount"
 Setting<int> COptions::FilteringSizeMinimum(OptionsGeneral, L"FilteringSizeMinimum", 0);
 Setting<int> COptions::FilteringSizeUnits(OptionsGeneral, L"FilteringSizeUnits", 0);
 Setting<int> COptions::FilteringMaxAgeDays(OptionsGeneral, L"FilteringMaxAgeDays", 0);
+Setting<int> COptions::ToolBarIconSizeLarge(OptionsGeneral, L"ToolBarIconSizeLarge", 32, 16, 256);
+Setting<int> COptions::ToolBarIconSizeSmall(OptionsGeneral, L"ToolBarIconSizeSmall", 22, 16, 256);
 Setting<int> COptions::TreeMapAmbientLightPercent(OptionsTreeMap, L"TreeMapAmbientLightPercent", CTreeMap::GetDefaults().GetAmbientLightPercent(), 0, 100);
 Setting<int> COptions::TreeMapBrightness(OptionsTreeMap, L"TreeMapBrightness", CTreeMap::GetDefaults().GetBrightnessPercent(), 0, 100);
 Setting<int> COptions::TreeMapHeightFactor(OptionsTreeMap, L"TreeMapHeightFactor", CTreeMap::GetDefaults().GetHeightPercent(), 0, 100);
