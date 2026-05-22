@@ -203,6 +203,8 @@ public:
     static Setting<int> FilteringSizeMinimum;
     static Setting<int> FilteringSizeUnits;
     static Setting<int> FilteringMaxAgeDays;
+    static Setting<int> ToolBarIconSizeSmall;
+    static Setting<int> ToolBarIconSizeLarge;
     static Setting<int> TreeMapAmbientLightPercent;
     static Setting<int> TreeMapBrightness;
     static Setting<int> TreeMapHeightFactor;
