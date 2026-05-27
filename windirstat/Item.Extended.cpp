@@ -50,9 +50,11 @@ bool CItem::DrawSubItem(const int subitem, CDC* pdc, CRect rc, const UINT state,
         return false;
     }
 
+    const int indentWidth = GetIndent() * DpiRest(COptions::SizeProportionIndent);
+
     if (width != nullptr)
     {
-        *width = GetSizeProportionWidth();
+        *width = GetSizeProportionWidth() + indentWidth;
         return true;
     }
 
@@ -67,7 +69,7 @@ bool CItem::DrawSubItem(const int subitem, CDC* pdc, CRect rc, const UINT state,
     else
     {
         rc.DeflateRect(2, 4);
-        rc.left += GetIndent() * DpiRest(COptions::SizeProportionIndent);
+        rc.left += indentWidth;
         if (rc.Width() <= 0 || rc.Height() <= 0) return true;
 
         const bool dark = DarkMode::IsDarkModeActive();
@@ -184,14 +186,11 @@ std::wstring CItem::GetText(const int subitem) const
         break;
 
     case COL_SIZE_PROPORTION:
-        if (!IsDone())
+        if (!IsDone() && GetReadJobs() > 0)
         {
-            if (GetReadJobs() == 1)
-            {
-                return Localization::Lookup(IDS_ONEREADJOB);
-            }
-
-            return Localization::Format(IDS_sREADJOBS, FormatCount(GetReadJobs()));
+            return (GetReadJobs() == 1)  ?
+                Localization::Lookup(IDS_ONEREADJOB) :
+                Localization::Format(IDS_sREADJOBS, FormatCount(GetReadJobs()));
         }
         break;
 
