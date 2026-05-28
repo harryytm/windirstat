@@ -175,7 +175,7 @@ bool CDriveItem::DrawSubItem(const int subitem, CDC* pdc, CRect rc, const UINT s
 
         DrawSelection(m_driveList, pdc, rc, state);
         rc.DeflateRect(3, 5);
-        DrawPercentage(pdc, rc, m_used, RGB(80, 80, 170));
+        DrawPercentage(pdc, rc, m_used, RGB(0, 128, 255));
 
         return true;
     }
