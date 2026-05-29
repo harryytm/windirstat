@@ -907,7 +907,7 @@ void CWdsListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
 
     for (const int i : std::views::iota(0, GetItemCount()))
     {
-        maxLength = max(maxLength, GetItem(i)->GetText(subitem).length());
+        maxLength = std::max(maxLength, GetItem(i)->GetText(subitem).length());
     }
 
     // fetch size of sub-elements
