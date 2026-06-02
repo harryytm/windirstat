@@ -467,65 +467,6 @@ bool ExecuteCommandInConsole(const std::wstring& command, const std::wstring& ti
     return ShellExecuteWrapper(cmd, cmdline, L"runas");
 }
 
-void EnforceIntegerInputRangeInt(CWnd* pParent, const UINT nCtrlID, const int min, const int max)
-{
-    if (pParent == nullptr) return;
-
-    auto calculateDigitLength = [](const int i) -> int { return (i == 0) ? 1 : static_cast<int>(std::log10(i)) + 1; };
-
-    CWnd* pWnd = pParent->GetDlgItem(nCtrlID);
-    if (pWnd != nullptr)
-    {
-        CString string;
-        pWnd->GetWindowText(string);
-
-        if (string.IsEmpty())
-        {
-            pWnd->SetWindowText(std::to_wstring(min).c_str());
-            return;
-        }
-
-        const int input = _ttoi(string);
-        const int value = std::clamp(input, min, max);
-        const bool isTooLong = string.GetLength() > calculateDigitLength(max);
-        if (value != input || isTooLong) pWnd->SetWindowText(std::to_wstring(value).c_str());
-    }
-}
-
-void EnforceIntegerInputRangeOld(CWnd* pParent, const UINT nCtrlID, const ULONGLONG min, const ULONGLONG max)
-{
-    if (pParent == nullptr) return;
-
-    auto calculateDigitLength = [](const ULONGLONG i) -> int { return (i == 0) ? 1 : static_cast<int>(std::log10(static_cast<double>(i))) + 1; };
-
-    CWnd* pWnd = pParent->GetDlgItem(nCtrlID);
-    if (pWnd != nullptr)
-    {
-        CString string;
-        pWnd->GetWindowText(string);
-        string.Trim();
-
-        // Check for empty input or negative signs to prevent unsigned wrap-around
-        if (string.IsEmpty() || string.Find(_T('-')) != -1)
-        {
-            pWnd->SetWindowText(CString(std::to_wstring(min).c_str()));
-            return;
-        }
-
-        LPTSTR pEnd;
-        const ULONGLONG input = _tcstoull(string, &pEnd, 10);
-        const ULONGLONG value = std::clamp(input, min, max);
-
-        // Validation check for length and non-numeric garbage characters
-        const bool isTooLong = (string.GetLength() > calculateDigitLength(max)) || (*pEnd != _T('\0'));
-
-        if (value != input || isTooLong)
-        {
-            pWnd->SetWindowText(CString(std::to_wstring(value).c_str()));
-        }
-    }
-}
-
 void EnforceIntegerInputRange(CWnd* pParent, const UINT nCtrlID, const ULONGLONG min, const ULONGLONG max)
 {
     CWnd* pWnd;
