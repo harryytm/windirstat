@@ -467,7 +467,7 @@ bool ExecuteCommandInConsole(const std::wstring& command, const std::wstring& ti
     return ShellExecuteWrapper(cmd, cmdline, L"runas");
 }
 
-void EnforceIntegerInputValidRange(CWnd* pParent, const UINT nCtrlID, const int min, const int max)
+void EnforceIntegerInputRangeInt(CWnd* pParent, const UINT nCtrlID, const int min, const int max)
 {
     if (pParent == nullptr) return;
 
@@ -492,7 +492,7 @@ void EnforceIntegerInputValidRange(CWnd* pParent, const UINT nCtrlID, const int 
     }
 }
 
-void EnforceLargeIntegerInputValidRange(CWnd* pParent, const UINT nCtrlID, const ULONGLONG min, const ULONGLONG max)
+void EnforceIntegerInputRangeOld(CWnd* pParent, const UINT nCtrlID, const ULONGLONG min, const ULONGLONG max)
 {
     if (pParent == nullptr) return;
 
@@ -523,6 +523,25 @@ void EnforceLargeIntegerInputValidRange(CWnd* pParent, const UINT nCtrlID, const
         {
             pWnd->SetWindowText(CString(std::to_wstring(value).c_str()));
         }
+    }
+}
+
+void EnforceIntegerInputRange(CWnd* pParent, const UINT nCtrlID, const ULONGLONG min, const ULONGLONG max)
+{
+    CWnd* pWnd;
+    if (pParent == nullptr || (pWnd = pParent->GetDlgItem(nCtrlID)) == nullptr) return;
+    if (TCHAR szClass[32]{}; !::RealGetWindowClass(pWnd->GetSafeHwnd(), szClass, 32) || _tcsicmp(szClass, _T("Edit")) != 0) return;
+
+    CString text, target;
+    pWnd->GetWindowText(text);
+    text.Trim();
+
+    target.Format(_T("%I64u"), text.IsEmpty() ? min : std::clamp(_tcstoull(text, nullptr, 10), min, max));
+
+    if (text != target)
+    {
+        pWnd->SetWindowText(target);
+        pWnd->SendMessage(EM_SETSEL, 0, -1);
     }
 }
 
