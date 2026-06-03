@@ -469,10 +469,9 @@ bool ExecuteCommandInConsole(const std::wstring& command, const std::wstring& ti
 
 void NumericInputEnvelopeProtection(CWnd* pParent, const UINT nCtrlID, const ULONGLONG min, const ULONGLONG max)
 {
-    CWnd* pWnd;
-    if (pParent == nullptr || (pWnd = pParent->GetDlgItem(nCtrlID)) == nullptr) return;
-    if (TCHAR szClass[32]{}; !RealGetWindowClass(pWnd->GetSafeHwnd(), szClass, 32) ||
-        _tcsicmp(szClass, _T("Edit")) != 0 || !(GetWindowLongPtr(pWnd->GetSafeHwnd(), GWL_STYLE) & ES_NUMBER)) return;
+    CWnd* pWnd = (pParent != nullptr) ? pParent->GetDlgItem(nCtrlID) : nullptr;
+    ASSERT(pWnd != nullptr && (GetWindowLongPtr(pWnd->GetSafeHwnd(), GWL_STYLE) & ES_NUMBER));
+    if (pWnd == nullptr || !(GetWindowLongPtr(pWnd->GetSafeHwnd(), GWL_STYLE) & ES_NUMBER)) return;
 
     CString input, validInput;
     pWnd->GetWindowText(input);
