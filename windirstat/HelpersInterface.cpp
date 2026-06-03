@@ -517,6 +517,25 @@ bool ExecuteCommandInConsole(const std::wstring& command, const std::wstring& ti
     return ShellExecuteWrapper(cmd, cmdline, L"runas");
 }
 
+void NumericInputEnvelopeProtection(CWnd* pParent, const UINT nCtrlID, const ULONGLONG min, const ULONGLONG max)
+{
+    CWnd* pWnd = (pParent != nullptr) ? pParent->GetDlgItem(nCtrlID) : nullptr;
+    ASSERT(pWnd != nullptr && (GetWindowLongPtr(pWnd->GetSafeHwnd(), GWL_STYLE) & ES_NUMBER));
+    if (pWnd == nullptr || !(GetWindowLongPtr(pWnd->GetSafeHwnd(), GWL_STYLE) & ES_NUMBER)) return;
+
+    CString input, validInput;
+    pWnd->GetWindowText(input);
+
+    validInput.Format(_T("%I64u"), input.IsEmpty() ? min : std::clamp(_tcstoull(input, nullptr, 10), min, max));
+
+    if (input != validInput)
+    {
+        MessageBeep(MB_OK);
+        pWnd->SetWindowText(validInput);
+        pWnd->SendMessage(EM_SETSEL, 0, -1);
+    }
+}
+
 // DPI scaling
 static int GetWindowDpi(const CWnd* wnd) noexcept
 {
