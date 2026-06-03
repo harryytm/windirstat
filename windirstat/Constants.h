@@ -94,6 +94,7 @@ namespace wds
     inline constexpr auto strWinDirStat = L"WinDirStat";
     inline constexpr std::wstring_view strAlpha{ L"ABCDEFGHIJKLMNOPQRSTUVWXYZ" };
     inline constexpr int alphaSize = std::ssize(strAlpha);
+    inline constexpr int maxFilteringAgeDays = (303 * 365) + (97 * 366); // 303 non-leap years + 97 leap years in a 400-year Gregorian cycle
 
     // Font name constants
     inline constexpr auto strFontArial = L"Arial";
