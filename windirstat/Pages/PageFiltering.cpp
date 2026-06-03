@@ -150,7 +150,7 @@ void CPageFiltering::OnOK()
 void CPageFiltering::OnSettingChanged()
 {
     const int unit = m_ctlFilteringSizeUnits.GetCurSel();
-    EnforceIntegerInputRange(this, IDC_FILTERING_SIZE_MIN, 0, (unit == 4) ? 16ull * wds::Mi : 2ull * wds::Gi - 1);
+    EnforceIntegerInputRange(this, IDC_FILTERING_SIZE_MIN, 0, (unit == 4) ? 16ull * wds::Mi - 1 : 2ull * wds::Gi - 1);
     EnforceIntegerInputRange(this, IDC_FILTERING_MAX_AGE_DAYS, 0, wds::maxFilteringAgeDays);
     UpdateData();
     SetModified();
