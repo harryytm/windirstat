@@ -74,6 +74,14 @@ public:
     virtual bool IsVisible() const { return true; }
     void DrawLabel(const CWdsListControl* list, CDC* pdc, CRect& rc, UINT state, int* width, int* focusLeft, bool indent = true);
     void DrawPercentage(CDC* pdc, CRect rc, double fraction, COLORREF color) const;
+    bool HasNameColumnWidth() const { return m_nameColumnWidth.has_value(); };
+    void SetNameColumnWidth(int width) { m_nameColumnWidth = width; };
+    void ClearNameColumnWidth() { m_nameColumnWidth.reset(); };
+    int GetNameColumnWidth() const { return m_nameColumnWidth.value_or(0); };
+
+private:
+    //int m_nameColumnWidth = -1;
+    std::optional<int> m_nameColumnWidth;
 };
 
 //
