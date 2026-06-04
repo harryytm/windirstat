@@ -52,7 +52,7 @@ void CExtensionListControl::CListItem::DrawColor(CDC* pdc, CRect rc, const UINT 
 {
     if (width != nullptr)
     {
-        *width = 40;
+        *width = 60;
         return;
     }
 
