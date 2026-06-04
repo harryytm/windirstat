@@ -593,6 +593,7 @@ void CItem::UpdateFreeSpaceItem()
     }
     else if (IsTypeOrFlag(IT_DRIVE))
     {
+        ClearNameColumnWidth();
         auto [total, free] = CDirStatApp::GetFreeDiskSpace(GetPath());
 
         // Recreate name based on updated free space and percentage

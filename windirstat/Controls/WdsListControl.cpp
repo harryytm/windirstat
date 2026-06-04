@@ -609,6 +609,11 @@ bool CWdsListControl::HasFocus() const
 
 int CWdsListControl::GetSubItemWidth(CWdsListItem* item, const int subitem)
 {
+    if (subitem == COL_NAME && item->HasNameColumnWidth())
+    {
+        return item->GetNameColumnWidth();
+    }
+
     CClientDC dc(this);
     const CRect rc(0, 0, DpiRest(3500), 0);
 
@@ -616,6 +621,7 @@ int CWdsListControl::GetSubItemWidth(CWdsListItem* item, const int subitem)
     int dummy = rc.left;
     if (item->DrawSubItem(subitem, &dc, rc, 0, &width, &dummy))
     {
+        if (subitem == COL_NAME) item->SetNameColumnWidth(width);
         return width;
     }
 
