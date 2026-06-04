@@ -80,7 +80,6 @@ public:
     int GetNameColumnWidth() const { return m_nameColumnWidth.value_or(0); };
 
 private:
-    //int m_nameColumnWidth = -1;
     std::optional<int> m_nameColumnWidth;
 };
 
