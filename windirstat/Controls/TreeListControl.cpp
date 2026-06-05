@@ -759,11 +759,12 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     if (isAutoResizeEnabled && childCount > limit)
     {
         globalCacheStopSource = std::stop_source();
-        const void* parentId = static_cast<const void*>(item);
+        //const void* parentId = static_cast<const void*>(item);
 
-        std::jthread([this, parentId, childCount, limit](std::stop_token stopToken) {
+        std::jthread([this, item, childCount, limit](std::stop_token stopToken) {
             ::SetThreadPriority(::GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
             ::SetThreadPriority(::GetCurrentThread(), THREAD_PRIORITY_IDLE);
+/*
             for (const int c : std::views::iota(limit, childCount))
             {
                 if (stopToken.stop_requested()) break;
@@ -801,6 +802,17 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
 
                 if (!isParentStillValid) break;
             }
+*/
+
+            for (int c = limit; c < childCount; ++c)
+            {
+                if (stopToken.stop_requested() || !item || !item->IsExpanded()) break;
+                CTreeListItem* child = item->GetTreeListChild(c);
+                if (!child || !item->IsExpanded() || item->GetTreeListChildCount() != childCount) break;
+                if (!child->HasNameColumnWidth()) this->GetSubItemWidth(child, 0);
+            }
+
+            ::SetThreadPriority(::GetCurrentThread(), THREAD_MODE_BACKGROUND_END);
         }, globalCacheStopSource.get_token()).detach();
     }
 
