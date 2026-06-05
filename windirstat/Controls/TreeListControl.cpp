@@ -767,6 +767,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
 
             for (int c = limit; c < childCount; ++c)
             {
+                if (this->m_itemMap.find(item) == this->m_itemMap.end()) break;
                 if (stopToken.stop_requested() || !item || !item->IsExpanded()) break;
                 CTreeListItem* child = item->GetTreeListChild(c);
                 if (!child || !item->IsExpanded() || item->GetTreeListChildCount() != childCount) break;
