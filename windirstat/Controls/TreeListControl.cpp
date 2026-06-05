@@ -756,22 +756,25 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     // Sort at end so we do not invalidate position data
     if (childCount > 0) SortItems();
 
-    if (isAutoResizeEnabled && childCount > limit)
+    if (isAutoResizeEnabled)
     {
         globalCacheStopSource = std::stop_source();
 
         std::jthread([this, item, childCount, limit](std::stop_token stopToken) {
             ::SetThreadPriority(::GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
             ::SetThreadPriority(::GetCurrentThread(), THREAD_PRIORITY_IDLE);
+            int count = 0;
 
             for (int c = limit; c < childCount; ++c)
             {
                 if (stopToken.stop_requested() || !item || !item->IsExpanded()) break;
                 CTreeListItem* child = item->GetTreeListChild(c);
                 if (!child || !item->IsExpanded() || item->GetTreeListChildCount() != childCount) break;
-                if (!child->HasNameColumnWidth()) this->GetSubItemWidth(child, 0);
+                if (child->HasNameColumnWidth()) count--;
+                if (!child->HasNameColumnWidth()) this->GetSubItemWidth(child, 0); count++;
             }
 
+            if (count > 0) CMainFrame::Get()->SetWindowText(std::format(L"Background width calculation completed, total calculations: {}", count).c_str());
             ::SetThreadPriority(::GetCurrentThread(), THREAD_MODE_BACKGROUND_END);
         }, globalCacheStopSource.get_token()).detach();
     }
