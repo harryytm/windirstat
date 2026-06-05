@@ -694,7 +694,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     children.clear();
     children.reserve(childCount); // reserve known number of children to avoid reallocations
     size_t maxLength = 0; // trace the maximum text length in the first column
-    int sizeProportionMaxWidth = isFileTreeView ? GetSubItemWidth(item, 1) : 0;
+    int sizePropMaxWidth = isFileTreeView ? GetSubItemWidth(item, 1) : 0;
 
     // find the maximum text length among the children
     if (isAutoResizeEnabled)
@@ -721,10 +721,13 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
         if (isAutoResizeEnabled)
         {
             if (isFileTreeView)
-                sizeProportionMaxWidth = std::max(sizeProportionMaxWidth, GetSubItemWidth(item->GetTreeListChild(c), 1));
-            const size_t childLen = std::wstring_view(child->GetText(0)).length();
+            {
+                sizePropMaxWidth = std::max(sizePropMaxWidth, GetSubItemWidth(item->GetTreeListChild(c), 1));
+            }
+
             // Skip width calculation for items with text length filtered out
             // or when the limit of page-based calculations is reached
+            const size_t childLen = std::wstring_view(child->GetText(0)).length();
             if ((maxLength > 0 && (childLen * 100) < (maxLength * filterRate))
                 || (limit > 0 && count >= limit)) continue;
             maxWidth = std::max(maxWidth, GetSubItemWidth(child, 0)); count++;
@@ -737,9 +740,9 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
         SetColumnWidth(0, maxWidth + padding);
     }
 
-    if (isFileTreeView && GetColumnWidth(1) < sizeProportionMaxWidth)
+    if (isFileTreeView && GetColumnWidth(1) < sizePropMaxWidth)
     {
-        SetColumnWidth(1, sizeProportionMaxWidth + padding);
+        SetColumnWidth(1, sizePropMaxWidth + padding);
     }
 
     InsertListItem(i + 1, children);
