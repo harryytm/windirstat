@@ -684,6 +684,9 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
 
     CWaitCursor wc;
 
+    static std::stop_source globalCacheStopSource;
+    globalCacheStopSource.request_stop();
+
     bool isAutoResizeEnabled = COptions::AutomaticallyResizeColumns && scroll;
     int count = 0; // count number of actual width calculations
     if (item->HasNameColumnWidth()) count--;
@@ -753,6 +756,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     // Sort at end so we do not invalidate position data
     if (childCount > 0) SortItems();
 
+    /*
     if (isAutoResizeEnabled && childCount > limit)
     {
         std::jthread([this, item, childCount, limit](std::stop_token stopToken) {
@@ -769,6 +773,55 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
                 }
             }
         }).detach();
+    }
+    */
+
+    if (isAutoResizeEnabled && childCount > limit)
+    {
+        globalCacheStopSource = std::stop_source();
+        const void* parentId = static_cast<const void*>(item);
+
+        std::jthread([this, parentId, childCount, limit](std::stop_token stopToken) {
+            ::SetThreadPriority(::GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
+            ::SetThreadPriority(::GetCurrentThread(), THREAD_PRIORITY_IDLE);
+            for (const int c : std::views::iota(limit, childCount))
+            {
+                if (stopToken.stop_requested()) break;
+
+                if (::IsWindow(this->GetSafeHwnd()) == FALSE) break;
+
+                const auto doc = CDirStatDoc::Get();
+                if (doc == nullptr) break;
+
+                bool isParentStillValid = false;
+                const int totalRows = this->GetItemCount();
+
+                for (int i = 0; i < totalRows; ++i)
+                {
+                    CTreeListItem* liveItem = this->GetItem(i);
+                    if (liveItem == nullptr) continue;
+
+                    if (static_cast<const void*>(liveItem) == parentId)
+                    {
+                        if (liveItem->IsExpanded() && liveItem->GetTreeListChildCount() == childCount)
+                        {
+                            isParentStillValid = true;
+
+                            if (const auto child = liveItem->GetTreeListChild(c))
+                            {
+                                if (!child->HasNameColumnWidth())
+                                {
+                                    this->GetSubItemWidth(child, 0);
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                if (!isParentStillValid) break;
+            }
+        }, globalCacheStopSource.get_token()).detach();
     }
 
     // show the count result as benchmark info in title bar
