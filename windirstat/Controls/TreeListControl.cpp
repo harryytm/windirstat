@@ -753,6 +753,24 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     // Sort at end so we do not invalidate position data
     if (childCount > 0) SortItems();
 
+    if (isAutoResizeEnabled && childCount > limit)
+    {
+        std::jthread([this, item, childCount, limit](std::stop_token stopToken) {
+            for (const int c : std::views::iota(limit, childCount))
+            {
+                if (stopToken.stop_requested()) break;
+
+                if (const auto child = item->GetTreeListChild(c))
+                {
+                    if (!child->HasNameColumnWidth())
+                    {
+                        GetSubItemWidth(child, 0);
+                    }
+                }
+            }
+        }).detach();
+    }
+
     // show the count result as benchmark info in title bar
     CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [BENCHMARK] Expanded {} children, {} width calculations, {}%", childCount, count, FormatDouble(static_cast<double>(count) / childCount * 100)).c_str());
 }
