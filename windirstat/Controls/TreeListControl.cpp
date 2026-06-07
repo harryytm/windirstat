@@ -762,7 +762,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
 
         std::jthread([this, item, childCount, limit](std::stop_token stopToken) {
             using namespace std::chrono_literals;
-            int count = 0;
+            int count = 0, cached = 0;
             SetThreadPriority(::GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
             SetThreadPriority(::GetCurrentThread(), THREAD_PRIORITY_IDLE);
 
@@ -772,21 +772,21 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
                 if (stopToken.stop_requested() || !item || !item->IsExpanded()) break;
                 CTreeListItem* child = item->GetTreeListChild(c);
                 if (!child || !item->IsExpanded() || item->GetTreeListChildCount() != childCount) break;
+                (child->HasNameColumnWidth()) ? cached++ : count++;
                 if (!child->HasNameColumnWidth())
                 {
-                    this->GetSubItemWidth(child, 0), count++;
+                    this->GetSubItemWidth(child, 0);
                     if (true) std::this_thread::sleep_for(2ms);
-                    CMainFrame::Get()->SetWindowText(std::format(L"ExpandItem: Background width calculations: {}/{} {}%", count, childCount, FormatDouble(static_cast<double>(count) / childCount * 100)).c_str());
+                    CMainFrame::Get()->SetWindowText(std::format(L"ExpandItem: Background width calculations (cached): {}({})/{} {}%", count, cached, childCount, FormatDouble(static_cast<double>(count + cached) / childCount * 100)).c_str());
                 }
             }
 
-            if (count > 0) CMainFrame::Get()->SetWindowText(std::format(L"Background width calculation completed, total calculations: {}", count).c_str());
-            ::SetThreadPriority(::GetCurrentThread(), THREAD_MODE_BACKGROUND_END);
+            SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_END);
         }, globalCacheStopSource.get_token()).detach();
     }
 
     // show the count result as benchmark info in title bar
-    CMainFrame::Get()->SetWindowText(std::format(L"WinDirStat [BENCHMARK] Expanded {} children, {} width calculations, {}%", childCount, count, FormatDouble(static_cast<double>(count) / childCount * 100)).c_str());
+    CMainFrame::Get()->SetWindowText(std::format(L"ExpandItem: Expanded {} children, {} width calculations, {}%", childCount, count, FormatDouble(static_cast<double>(count) / childCount * 100)).c_str());
 }
 
 void CTreeListControl::OnKeyDown(const UINT nChar, const UINT nRepCnt, const UINT nFlags)
