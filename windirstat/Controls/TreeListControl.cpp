@@ -734,8 +734,8 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
             const size_t childLen = std::wstring_view(child->GetText(0)).length();
             if ((maxLength > 0 && (childLen * 100) < (maxLength * filterRate))
                 || (limit > 0 && count >= limit)) continue;
-            if (child->HasNameColumnWidth()) count--;
-            maxWidth = std::max(maxWidth, GetSubItemWidth(child, 0)); count++;
+            if (!child->HasNameColumnWidth()) count++;
+            maxWidth = std::max(maxWidth, GetSubItemWidth(child, 0));
         }
     }
 
@@ -771,8 +771,11 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
                 if (stopToken.stop_requested() || !item || !item->IsExpanded()) break;
                 CTreeListItem* child = item->GetTreeListChild(c);
                 if (!child || !item->IsExpanded() || item->GetTreeListChildCount() != childCount) break;
-                if (child->HasNameColumnWidth()) count--;
-                if (!child->HasNameColumnWidth()) this->GetSubItemWidth(child, 0); count++;
+                if (!child->HasNameColumnWidth())
+                {
+                    this->GetSubItemWidth(child, 0), count++;
+                    CMainFrame::Get()->SetWindowText(std::format(L"ExpandItem: Background width calculations: {}/{} {}%", count, childCount, FormatDouble(static_cast<double>(count) / childCount * 100)).c_str());
+                }
             }
 
             if (count > 0) CMainFrame::Get()->SetWindowText(std::format(L"Background width calculation completed, total calculations: {}", count).c_str());

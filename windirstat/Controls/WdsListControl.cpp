@@ -915,6 +915,7 @@ void CWdsListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
     {
         const size_t length = GetItem(i)->GetText(subitem).length();
         if ((maxLength > 0 && (length * 100) < (maxLength * filterRate))) continue;
+        if (GetItem(i)->HasNameColumnWidth()) count--;
         width = std::max(width, GetSubItemWidth(GetItem(i), subitem)); count++;
     }
 
