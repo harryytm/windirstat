@@ -761,6 +761,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
         globalCacheStopSource = std::stop_source();
 
         std::jthread([this, item, childCount, limit](std::stop_token stopToken) {
+            using namespace std::chrono_literals;
             int count = 0;
             SetThreadPriority(::GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
             SetThreadPriority(::GetCurrentThread(), THREAD_PRIORITY_IDLE);
@@ -774,6 +775,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
                 if (!child->HasNameColumnWidth())
                 {
                     this->GetSubItemWidth(child, 0), count++;
+                    if (true) std::this_thread::sleep_for(2ms);
                     CMainFrame::Get()->SetWindowText(std::format(L"ExpandItem: Background width calculations: {}/{} {}%", count, childCount, FormatDouble(static_cast<double>(count) / childCount * 100)).c_str());
                 }
             }
