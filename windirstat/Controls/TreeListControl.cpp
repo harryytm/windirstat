@@ -761,9 +761,9 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
         globalCacheStopSource = std::stop_source();
 
         std::jthread([this, item, childCount, limit](std::stop_token stopToken) {
-            ::SetThreadPriority(::GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
-            ::SetThreadPriority(::GetCurrentThread(), THREAD_PRIORITY_IDLE);
             int count = 0;
+            SetThreadPriority(::GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
+            SetThreadPriority(::GetCurrentThread(), THREAD_PRIORITY_IDLE);
 
             for (int c = limit; c < childCount; ++c)
             {
