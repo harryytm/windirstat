@@ -760,7 +760,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     {
         globalCacheStopSource = std::stop_source();
 
-        std::jthread([this, item, childCount, limit](std::stop_token stopToken) {
+        std::jthread([this, item, childCount](std::stop_token stopToken) {
             using namespace std::chrono_literals;
             int count = 0, cached = 0;
             SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
