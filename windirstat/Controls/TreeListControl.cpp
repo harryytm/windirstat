@@ -763,15 +763,14 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
         std::jthread([this, item, childCount, limit](std::stop_token stopToken) {
             using namespace std::chrono_literals;
             int count = 0, cached = 0;
-            SetThreadPriority(::GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
-            SetThreadPriority(::GetCurrentThread(), THREAD_PRIORITY_IDLE);
+            SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
+            SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
 
             for (const int c : std::views::iota(0, childCount))
             {
-                if (this->m_itemMap.find(item) == this->m_itemMap.end()) break;
-                if (stopToken.stop_requested() || !item || !item->IsExpanded()) break;
+                if (stopToken.stop_requested() || this->m_itemMap.find(item) == this->m_itemMap.end() || !item->IsExpanded()) break;
                 CTreeListItem* child = item->GetTreeListChild(c);
-                if (!child || !item->IsExpanded() || item->GetTreeListChildCount() != childCount) break;
+                if (child == nullptr || item->GetTreeListChildCount() != childCount) break;
                 (child->HasNameColumnWidth()) ? cached++ : count++;
                 if (!child->HasNameColumnWidth())
                 {
