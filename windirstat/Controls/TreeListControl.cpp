@@ -766,7 +766,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
             SetThreadPriority(::GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
             SetThreadPriority(::GetCurrentThread(), THREAD_PRIORITY_IDLE);
 
-            for (int c = limit; c < childCount; ++c)
+            for (const int c : std::views::iota(0, childCount))
             {
                 if (this->m_itemMap.find(item) == this->m_itemMap.end()) break;
                 if (stopToken.stop_requested() || !item || !item->IsExpanded()) break;
