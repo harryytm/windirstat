@@ -760,9 +760,9 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     {
         globalCacheStopSource = std::stop_source();
 
-        std::jthread([this, item, childCount](std::stop_token stopToken) {
+        std::jthread([this, item, childCount, maxWidth](std::stop_token stopToken) {
             using namespace std::chrono_literals;
-            int count = 0, cached = 0;
+            int count = 0, cached = 0, maxWidthBg = 0;
             SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
             SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
 
@@ -772,11 +772,21 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
                 CTreeListItem* child = item->GetTreeListChild(c);
                 if (child == nullptr || item->GetTreeListChildCount() != childCount) break;
                 (child->HasNameColumnWidth()) ? cached++ : count++;
+
                 if (!child->HasNameColumnWidth())
                 {
-                    this->GetSubItemWidth(child, 0);
                     if (true) std::this_thread::sleep_for(2ms);
                     CMainFrame::Get()->SetWindowText(std::format(L"ExpandItem: Background width calculations (cached): {}({})/{} {}%", count, cached, childCount, FormatDouble(static_cast<double>(count + cached) / childCount * 100)).c_str());
+                }
+
+                if (item->IsExpanded())
+                {
+                    maxWidthBg = std::max(maxWidthBg, this->GetSubItemWidth(child, 0));
+
+                    if (GetColumnWidth(0) == maxWidth + padding && maxWidth < maxWidthBg)
+                    {
+                        SetColumnWidth(0, maxWidthBg + padding);
+                    }
                 }
             }
 
