@@ -689,8 +689,8 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
 
     bool isAutoResizeEnabled = COptions::AutomaticallyResizeColumns && scroll;
     int count = 0; // count number of actual width calculations
-    if (item->HasNameColumnWidth()) count--;
-    int maxWidth = GetSubItemWidth(item, 0); count++; // get width of selected item
+    if (!item->HasNameColumnWidth()) count++;
+    int maxWidth = GetSubItemWidth(item, 0); // get width of selected item
     const auto childCount = item->GetTreeListChildCount();
     const int limit = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsPageLimit * GetCountPerPage() : 0;
     const size_t filterRate = isAutoResizeEnabled ? COptions::AutomaticallyResizeColumnsFilterRate : 0;
