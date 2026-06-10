@@ -732,9 +732,10 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
             // Skip width calculation for items with text length filtered out
             // or when the limit of page-based calculations is reached
             const size_t childLen = std::wstring_view(child->GetText(0)).length();
-            if ((maxLength > 0 && (childLen * 100) < (maxLength * filterRate))
+            const bool hasNameColumnWidth = child->HasNameColumnWidth();
+            if ((maxLength > 0 && (childLen * 100) < (maxLength * filterRate) && !hasNameColumnWidth)
                 || (limit > 0 && count >= limit)) continue;
-            if (!child->HasNameColumnWidth()) count++;
+            if (!hasNameColumnWidth) count++;
             maxWidth = std::max(maxWidth, GetSubItemWidth(child, 0));
         }
     }
@@ -775,18 +776,14 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
 
                 if (!child->HasNameColumnWidth() && child->IsVisible() && item->IsExpanded())
                 {
-                    if (true) std::this_thread::sleep_for(2ms);
+                    maxWidthBg = std::max(maxWidthBg, this->GetSubItemWidth(child, 0));
                     CMainFrame::Get()->SetWindowText(std::format(L"ExpandItem: Background width calculations (cached): {}({})/{} {}%", count, cached, childCount, FormatDouble(static_cast<double>(count + cached) / childCount * 100)).c_str());
+                    if (true) std::this_thread::sleep_for(2ms);
                 }
 
                 if (item->IsVisible() && item->IsExpanded() && maxWidth < maxWidthBg && GetColumnWidth(0) == maxWidth + padding)
                 {
-                    maxWidthBg = std::max(maxWidthBg, this->GetSubItemWidth(child, 0));
-
-                    if (GetColumnWidth(0) == maxWidth + padding && maxWidth < maxWidthBg)
-                    {
-                        SetColumnWidth(0, maxWidthBg + padding);
-                    }
+                    SetColumnWidth(0, maxWidthBg + padding);
                 }
             }
 
