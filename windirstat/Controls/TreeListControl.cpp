@@ -768,18 +768,18 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
 
             for (const int c : std::views::iota(0, childCount))
             {
-                if (stopToken.stop_requested() || this->m_itemMap.find(item) == this->m_itemMap.end() || !item->IsExpanded()) break;
+                if (stopToken.stop_requested() || !item->IsVisible()) break;
                 CTreeListItem* child = item->GetTreeListChild(c);
-                if (child == nullptr || item->GetTreeListChildCount() != childCount) break;
+                if (child == nullptr || !child->IsVisible()) break;
                 (child->HasNameColumnWidth()) ? cached++ : count++;
 
-                if (!child->HasNameColumnWidth())
+                if (!child->HasNameColumnWidth() && child->IsVisible() && item->IsExpanded())
                 {
                     if (true) std::this_thread::sleep_for(2ms);
                     CMainFrame::Get()->SetWindowText(std::format(L"ExpandItem: Background width calculations (cached): {}({})/{} {}%", count, cached, childCount, FormatDouble(static_cast<double>(count + cached) / childCount * 100)).c_str());
                 }
 
-                if (item->IsExpanded())
+                if (item->IsVisible() && item->IsExpanded() && maxWidth < maxWidthBg && GetColumnWidth(0) == maxWidth + padding)
                 {
                     maxWidthBg = std::max(maxWidthBg, this->GetSubItemWidth(child, 0));
 
