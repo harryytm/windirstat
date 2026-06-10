@@ -53,10 +53,21 @@ void CFileTabbedView::OnInitialUpdate()
     CTabCtrlHelper::SetupTabControl(GetTabControl());
     Localization::UpdateTabControl(GetTabControl());
 
-    SetSearchTabVisibility(false);
-    SetWatcherTabVisibility(false);
+    SetExtraTabsVisibility(false);
     SetDupeTabVisibility(COptions::ScanForDuplicates &&
         CDirStatDoc::Get()->GetRootItem() != nullptr);
+}
+
+void CFileTabbedView::SetExtraTabsVisibility(const bool show)
+{
+    SetTopViewTabVisibility(show);
+    SetSearchTabVisibility(show);
+    SetWatcherTabVisibility(show);
+}
+
+void CFileTabbedView::SetTopViewTabVisibility(const bool show)
+{
+    GetTabControl().ShowTab(m_fileTopViewIndex, show);
 }
 
 void CFileTabbedView::SetDupeTabVisibility(const bool show)

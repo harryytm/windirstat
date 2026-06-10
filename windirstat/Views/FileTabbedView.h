@@ -38,6 +38,8 @@ public:
     void SetActiveDupeView() { SetActiveView(m_fileDupeViewIndex); }
     void SetActiveSearchView() { SetActiveView(m_fileSearchViewIndex); }
     void SetActiveWatcherView() { SetActiveView(m_fileWatcherViewIndex); }
+    void SetExtraTabsVisibility(bool show = true);
+    void SetTopViewTabVisibility(bool show = true);
     void SetDupeTabVisibility(bool show = true);
     void SetSearchTabVisibility(bool show = true);
     void SetWatcherTabVisibility(bool show = true);
