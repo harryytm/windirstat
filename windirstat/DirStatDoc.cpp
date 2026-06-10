@@ -96,8 +96,14 @@ BOOL CDirStatDoc::OnNewDocument()
 
 BOOL CDirStatDoc::OnOpenDocument(LPCWSTR lpszPathName)
 {
+    // Set tab focus to the file tree view
+    CMainFrame::Get()->GetFileTabbedView()->SetActiveFileTreeView();
+
     // Expand All Files view to full window during scan
     CMainFrame::Get()->ExpandFileTabbedView();
+
+    // Hide utility tabs during scan
+    CMainFrame::Get()->GetFileTabbedView()->SetUtilityTabsVisibility(false);
 
     // Decode list of folders to scan
     const std::wstring spec = lpszPathName;
@@ -2204,6 +2210,7 @@ void CDirStatDoc::StartScanningEngine(std::vector<CItem*> items)
             CMainFrame::Get()->RestoreExtensionView();
             CMainFrame::Get()->RestoreTreeMapView();
             CMainFrame::Get()->GetTreeMapView()->SuspendRecalculationDrawing(false);
+            CMainFrame::Get()->GetFileTabbedView()->SetTopViewTabVisibility(true);
             CMainFrame::Get()->UnlockWindowUpdate();
 
             // Restore pre-scan visual orientation
