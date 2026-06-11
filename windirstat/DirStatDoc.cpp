@@ -92,6 +92,7 @@ BOOL CDirStatDoc::OnNewDocument()
 
 BOOL CDirStatDoc::OnOpenDocument(LPCWSTR lpszPathName)
 {
+    CTreeListControl::GetBackgroundWidthCalculationStopSource()->request_stop();
     // Set tab focus to the file tree view
     CMainFrame::Get()->GetFileTabbedView()->SetActiveFileTreeView();
 

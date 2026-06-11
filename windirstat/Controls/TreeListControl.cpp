@@ -18,6 +18,8 @@
 #include "pch.h"
 #include "TreeListControl.h"
 
+std::stop_source CTreeListControl::backgroundWidthCalculationStopSource;
+
 bool CTreeListItem::DrawSubItem(const int subitem, CDC* pdc, CRect rc, const UINT state, int* width, int* focusLeft)
 {
     if (subitem != 0)
@@ -684,8 +686,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
 
     CWaitCursor wc;
 
-    static std::stop_source globalCacheStopSource;
-    globalCacheStopSource.request_stop();
+    backgroundWidthCalculationStopSource.request_stop();
 
     bool isAutoResizeEnabled = COptions::AutomaticallyResizeColumns && scroll;
     int count = 0; // count number of actual width calculations
@@ -759,7 +760,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
 
     if (isAutoResizeEnabled)
     {
-        globalCacheStopSource = std::stop_source();
+        backgroundWidthCalculationStopSource = std::stop_source();
 
         std::jthread([this, item, childCount, maxWidth](std::stop_token stopToken) {
             using namespace std::chrono_literals;
@@ -788,7 +789,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
             }
 
             SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_END);
-        }, globalCacheStopSource.get_token()).detach();
+        }, backgroundWidthCalculationStopSource.get_token()).detach();
     }
 
     // show the count result as benchmark info in title bar

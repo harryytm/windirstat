@@ -119,6 +119,7 @@ class CTreeListControl : public CWdsListControl
     bool SelectedItemCanToggle();
     void ToggleSelectedItem();
     void EmulateInteractiveSelection(const CTreeListItem* item);
+    static std::stop_source* GetBackgroundWidthCalculationStopSource() { return &backgroundWidthCalculationStopSource; }
 
     template <class T = CTreeListItem> std::vector<T*> GetAllSelected(bool visual = false)
     {
@@ -158,6 +159,7 @@ protected:
     bool m_lButtonDownOnPlusMinusRect = false; // Set in OnLButtonDown(). True, if plus-minus-rect hit.
     LOGICAL_FOCUS m_logicalFocus = static_cast<LOGICAL_FOCUS>(0);
     bool m_blockFirstColumnReorder = false;
+    static std::stop_source backgroundWidthCalculationStopSource;
 
     DECLARE_MESSAGE_MAP()
     afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint /*point*/);
