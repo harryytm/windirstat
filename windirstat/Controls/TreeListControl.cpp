@@ -770,12 +770,13 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
 
             for (const int c : std::views::iota(0, childCount))
             {
-                if (stopToken.stop_requested() || !item->IsVisible()) break;
+                if (stopToken.stop_requested() || item == nullptr || !item->IsVisible()) break;
+                if (this->m_itemMap.find(item) == this->m_itemMap.end()) break;
                 CTreeListItem* child = item->GetTreeListChild(c);
                 if (child == nullptr || !child->IsVisible()) break;
                 (child->HasNameColumnWidth()) ? cached++ : count++;
 
-                if (!child->HasNameColumnWidth() && child->IsVisible() && item->IsExpanded())
+                if (!child->HasNameColumnWidth() && item->IsExpanded() && item->HasChildren() && child->IsVisible())
                 {
                     maxWidthBg = std::max(maxWidthBg, this->GetSubItemWidth(child, 0));
                     CMainFrame::Get()->SetWindowText(std::format(L"ExpandItem: Background width calculations (cached): {}({})/{} {}%", count, cached, childCount, FormatDouble(static_cast<double>(count + cached) / childCount * 100)).c_str());
