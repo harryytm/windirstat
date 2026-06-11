@@ -1244,6 +1244,12 @@ void CMainFrame::UpdatePaneText()
                 const auto path = items.front()->GetPath();
                 if (!path.empty()) fileSelectionText = path;
             }
+            else if (items.size() > 1)
+            {
+                // If multiple items are selected, show the count of items selected
+                fileSelectionText = Localization::Format(IDS_sITEMS_SELECTED, items.size());
+            }
+
             for (size = 0; const auto& item : items)
             {
                 size += item->GetSizePhysical();
