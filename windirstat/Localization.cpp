@@ -116,10 +116,10 @@ bool Localization::LoadResource(const WORD language)
     if (LoadExternalLanguage(LOCALE_SNAME, language) ||
         LoadExternalLanguage(LOCALE_SISO639LANGNAME, language)) return true;
 
-    // Try to load built-in resource
-    CrackStrings(sResourceData, GetLocaleString(LOCALE_SNAME, language));
-    CrackStrings(sResourceData, GetLocaleString(LOCALE_SISO639LANGNAME, language));
-    return true;
+    // Try to load built-in resource with short-circuit return evaluation fallback logic
+    // to prevent loaded BCP 47 resource from being overwritten by ISO 639-1 resource
+    return CrackStrings(sResourceData, GetLocaleString(LOCALE_SNAME, language)) ||
+        CrackStrings(sResourceData, GetLocaleString(LOCALE_SISO639LANGNAME, language));
 }
 
 void Localization::UpdateMenu(CMenu& menu)
