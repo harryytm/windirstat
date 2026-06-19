@@ -88,13 +88,15 @@ void CControlView::OnSize(UINT nType, int cx, int cy)
     }
 }
 
-BOOL CControlView::OnEraseBkgnd(CDC* /*pDC*/)
+BOOL CControlView::OnEraseBkgnd(CDC* pDC)
 {
+    UNREFERENCED_PARAMETER(pDC);
     return TRUE;
 }
 
-void CControlView::OnSetFocus(CWnd* /*pOldWnd*/)
+void CControlView::OnSetFocus(CWnd* pOldWnd)
 {
+    UNREFERENCED_PARAMETER(pOldWnd);
     GetControl().SetFocus();
 }
 

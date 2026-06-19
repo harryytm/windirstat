@@ -453,8 +453,9 @@ void CTreeMapView::EmptyView()
     }
 }
 
-void CTreeMapView::OnSetFocus(CWnd* /*pOldWnd*/)
+void CTreeMapView::OnSetFocus(CWnd* pOldWnd)
 {
+    UNREFERENCED_PARAMETER(pOldWnd);
     CMainFrame::Get()->GetFileTreeView()->SetFocus();
 }
 
@@ -519,8 +520,10 @@ std::tuple<std::wstring, ULONGLONG>  CTreeMapView::GetTreeMapHoverInfo()
     return { m_paneTextOverride, m_paneSizeOverride };
 }
 
-void CTreeMapView::OnContextMenu(CWnd* /*pWnd*/, const CPoint point)
+void CTreeMapView::OnContextMenu(CWnd* pWnd, const CPoint point)
 {
+    UNREFERENCED_PARAMETER(pWnd);
+
     // List of context menu command IDs and whether the menu
     // should remain open after executing the command
     static constexpr struct {
@@ -570,8 +573,10 @@ void CTreeMapView::OnContextMenu(CWnd* /*pWnd*/, const CPoint point)
     }
 }
 
-void CTreeMapView::OnMouseMove(UINT /*nFlags*/, const CPoint point)
+void CTreeMapView::OnMouseMove(UINT nFlags, const CPoint point)
 {
+    UNREFERENCED_PARAMETER(nFlags);
+
     if (auto* item = ResolveItemAtPoint(point))
     {
         m_paneTextOverride = item->GetPath();
