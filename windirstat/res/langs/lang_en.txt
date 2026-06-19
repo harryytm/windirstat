@@ -7,6 +7,7 @@ IDS_ABOUT_TITLE=About WinDirStat
 IDS_ADMIN=Administrator
 IDS_ALL_FILES=All Files
 IDS_ANALYTICS_CONFIG=Parameters
+IDS_ANALYTICS_NO_STATISTICS_AVAILABLE=No statistics available.\n\nPlease scan a drive or folder, then click Recalculate to view the dashboard.
 IDS_ANALYTICS_TITLE=Storage Analytics & Cost Optimization
 IDS_ANALYTICS_UNIT=Unit:
 IDS_ARCHIVE_COST=Archive Cost ($/{}/mo):

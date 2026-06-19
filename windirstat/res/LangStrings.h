@@ -9,6 +9,7 @@ constexpr std::wstring_view IDS_ABOUT_TITLE = L"IDS_ABOUT_TITLE";
 constexpr std::wstring_view IDS_ADMIN = L"IDS_ADMIN";
 constexpr std::wstring_view IDS_ALL_FILES = L"IDS_ALL_FILES";
 constexpr std::wstring_view IDS_ANALYTICS_CONFIG = L"IDS_ANALYTICS_CONFIG";
+constexpr std::wstring_view IDS_ANALYTICS_NO_STATISTICS_AVAILABLE = L"IDS_ANALYTICS_NO_STATISTICS_AVAILABLE";
 constexpr std::wstring_view IDS_ANALYTICS_TITLE = L"IDS_ANALYTICS_TITLE";
 constexpr std::wstring_view IDS_ANALYTICS_UNIT = L"IDS_ANALYTICS_UNIT";
 constexpr std::wstring_view IDS_ARCHIVE_COST = L"IDS_ARCHIVE_COST";
