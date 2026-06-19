@@ -180,8 +180,9 @@ BEGIN_MESSAGE_MAP(CWdsProgressCtrl, CProgressCtrl)
     ON_WM_ERASEBKGND()
 END_MESSAGE_MAP()
 
-BOOL CWdsProgressCtrl::OnEraseBkgnd(CDC* /*pDC*/)
+BOOL CWdsProgressCtrl::OnEraseBkgnd(CDC* pDC)
 {
+    UNREFERENCED_PARAMETER(pDC);
     return TRUE;
 }
 

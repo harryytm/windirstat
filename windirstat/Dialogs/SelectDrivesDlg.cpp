@@ -269,8 +269,10 @@ bool CDrivesList::IsItemSelected(const int i) const
     return LVIS_SELECTED == GetItemState(i, LVIS_SELECTED);
 }
 
-void CDrivesList::OnDoubleClick(NMHDR* /*pNMHDR*/, LRESULT* pResult)
+void CDrivesList::OnDoubleClick(NMHDR* pNMHDR, LRESULT* pResult)
 {
+    UNREFERENCED_PARAMETER(pNMHDR);
+
     *pResult = FALSE;
 
     CPoint point = GetCurrentMessage()->pt;
@@ -626,8 +628,10 @@ void CSelectDrivesDlg::OnBnDoubleclickedRadio()
     }
 }
 
-void CSelectDrivesDlg::OnLvnItemChangedDrives(NMHDR* /*pNMHDR*/, LRESULT* pResult)
+void CSelectDrivesDlg::OnLvnItemChangedDrives(NMHDR* pNMHDR, LRESULT* pResult)
 {
+    UNREFERENCED_PARAMETER(pNMHDR);
+
     if (m_suppressItemChanged) { *pResult = FALSE; return; }
     SetActiveRadio(IDC_RADIO_TARGET_DRIVES_SUBSET);
     UpdateButtons();

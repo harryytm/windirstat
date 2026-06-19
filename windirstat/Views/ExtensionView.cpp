@@ -76,8 +76,10 @@ int CExtensionView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
     return 0;
 }
 
-void CExtensionView::OnUpdate(CView* /*pSender*/, const LPARAM lHint, CObject*)
+void CExtensionView::OnUpdate(CView* pSender, const LPARAM lHint, CObject*)
 {
+    UNREFERENCED_PARAMETER(pSender);
+
     switch (lHint)
     {
     case HINT_NEWROOT:
@@ -165,12 +167,14 @@ void CExtensionView::OnSize(const UINT nType, const int cx, const int cy)
     }
 }
 
-void CExtensionView::OnSetFocus(CWnd* /*pOldWnd*/)
+void CExtensionView::OnSetFocus(CWnd* pOldWnd)
 {
+    UNREFERENCED_PARAMETER(pOldWnd);
     m_extensionListControl.SetFocus();
 }
 
-BOOL CExtensionView::OnEraseBkgnd(CDC* /*pDC*/)
+BOOL CExtensionView::OnEraseBkgnd(CDC* pDC)
 {
+    UNREFERENCED_PARAMETER(pDC);
     return TRUE;
 }

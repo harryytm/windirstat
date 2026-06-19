@@ -393,8 +393,11 @@ void CStorageAnalyticsView::OnEditChangeRange(UINT)
     OnEditChange();
 }
 
-void CStorageAnalyticsView::OnUpdate(CView* /*pSender*/, const LPARAM lHint, CObject* /*pHint*/)
+void CStorageAnalyticsView::OnUpdate(CView* pSender, const LPARAM lHint, CObject* pHint)
 {
+    UNREFERENCED_PARAMETER(pSender);
+    UNREFERENCED_PARAMETER(pHint);
+
     if (lHint == HINT_NEWROOT || lHint == HINT_NULL)
     {
         const auto* doc = CDirStatDoc::Get();

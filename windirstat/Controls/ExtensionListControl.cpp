@@ -367,8 +367,10 @@ void CExtensionListControl::OnKeyDown(const UINT nChar, const UINT nRepCnt, cons
     CWdsListControl::OnKeyDown(nChar, nRepCnt, nFlags);
 }
 
-void CExtensionListControl::OnContextMenu(CWnd* /*pWnd*/, CPoint point)
+void CExtensionListControl::OnContextMenu(CWnd* pWnd, CPoint point)
 {
+    UNREFERENCED_PARAMETER(pWnd);
+
     if (point == CPoint(-1, -1))
     {
         const int i = GetNextItem(-1, LVNI_FOCUSED);

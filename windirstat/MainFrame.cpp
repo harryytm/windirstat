@@ -368,8 +368,11 @@ BEGIN_MESSAGE_MAP(CDeadFocusWnd, CWnd)
     ON_WM_KEYDOWN()
 END_MESSAGE_MAP()
 
-void CDeadFocusWnd::OnKeyDown(const UINT nChar, UINT /*nRepCnt*/, UINT /*nFlags*/ )
+void CDeadFocusWnd::OnKeyDown(const UINT nChar, UINT nRepCnt, UINT nFlags )
 {
+    UNREFERENCED_PARAMETER(nRepCnt);
+    UNREFERENCED_PARAMETER(nFlags);
+
     if (nChar == VK_TAB)
     {
         CMainFrame::Get()->MoveFocus(LF_FILETREE);
@@ -768,8 +771,10 @@ void CMainFrame::OnDestroy()
     PersistedSetting::WritePersistedProperties();
 }
 
-BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT /*lpcs*/, CCreateContext* pContext)
+BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 {
+    UNREFERENCED_PARAMETER(lpcs);
+
     m_splitter.CreateStatic(this, 2, 1);
     m_splitter.CreateView(1, 0, RUNTIME_CLASS(CTreeMapView), CSize(100, 100), pContext);
     m_subSplitter.CreateStatic(&m_splitter, 1, 2, WS_CHILD | WS_VISIBLE | WS_BORDER, m_splitter.IdFromRowCol(0, 0));

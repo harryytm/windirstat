@@ -443,8 +443,10 @@ void CDarkModeVisualManager::OnDrawStatusBarPaneBorder(CDC* pDC, CMFCStatusBar* 
     pDC->FillSolidRect(rectPane.right - 1, rectPane.top, 1, rectPane.Height(), DarkMode::WdsSysColor(COLOR_WINDOWFRAME));
 }
 
-void CDarkModeVisualManager::OnFillSplitterBackground(CDC* pDC, CSplitterWndEx* /*pSplitterWnd*/, CRect rect)
+void CDarkModeVisualManager::OnFillSplitterBackground(CDC* pDC, CSplitterWndEx* pSplitterWnd, CRect rect)
 {
+    UNREFERENCED_PARAMETER(pSplitterWnd);
+
     pDC->FillSolidRect(rect, DarkMode::WdsSysColor(COLOR_WINDOWFRAME));
 }
 

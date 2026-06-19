@@ -101,8 +101,10 @@ void CFileTabbedView::SetStorageAnalyticsTabVisibility(const bool show)
     GetTabControl().ShowTab(m_storageAnalyticsViewIndex, show);
 }
 
-BOOL CFileTabbedView::OnEraseBkgnd(CDC* /*pDC*/)
+BOOL CFileTabbedView::OnEraseBkgnd(CDC* pDC)
 {
+    UNREFERENCED_PARAMETER(pDC);
+
     return TRUE;
 }
 

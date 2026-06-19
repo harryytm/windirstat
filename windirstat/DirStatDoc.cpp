@@ -198,8 +198,10 @@ BOOL CDirStatDoc::OnOpenDocument(CItem* newroot)
 // We don't want MFC's AfxFullPath() logic, because lpszPathName
 // is not a path. So we have overridden this.
 //
-void CDirStatDoc::SetPathName(LPCWSTR lpszPathName, BOOL /*bAddToMRU*/)
+void CDirStatDoc::SetPathName(LPCWSTR lpszPathName, BOOL bAddToMRU)
 {
+    UNREFERENCED_PARAMETER(bAddToMRU);
+
     // MRU would be fine but is not implemented yet.
     m_strPathName = lpszPathName;
     m_bEmbedded = FALSE;
