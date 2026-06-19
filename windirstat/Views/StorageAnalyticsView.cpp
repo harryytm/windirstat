@@ -164,10 +164,10 @@ int CStorageAnalyticsView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
         m_tiers.push_back(std::move(tier));
     }
 
-    m_lblUnit.Create(L"Unit:", WS_CHILD | WS_VISIBLE | SS_LEFT, rect, this);
+    m_lblUnit.Create(Localization::Lookup(IDS_ANALYTICS_UNIT).c_str(), WS_CHILD | WS_VISIBLE | SS_LEFT, rect, this);
     m_comboUnit.Create(WS_CHILD | WS_VISIBLE | WS_TABSTOP | CBS_DROPDOWNLIST, rect, this, 1007);
 
-    m_btnRecalculate.Create(L"Recalculate", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, rect, this, 1001);
+    m_btnRecalculate.Create(Localization::Lookup(IDS_RECALCULATE).c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, rect, this, 1001);
 
     m_comboUnit.AddString(Localization::Lookup(IDS_SPEC_TiB).c_str());
     m_comboUnit.AddString(Localization::Lookup(IDS_SPEC_GiB).c_str());
@@ -214,7 +214,7 @@ void CStorageAnalyticsView::OnSize(const UINT nType, const int cx, const int cy)
     CView::OnSize(nType, cx, cy);
 
     const int panelX = DpiRest(15, this);
-    const int panelW = DpiRest(180, this);
+    const int panelW = DpiRest(200, this);
     const int controlH = DpiRest(20, this);
     const int labelH = DpiRest(18, this);
     const int spacing = DpiRest(5, this);
@@ -603,7 +603,7 @@ void CStorageAnalyticsView::OnDraw(CDC* pDC)
 
     memDC.FillSolidRect(&clientRect, bgControl);
 
-    const int leftWidth = DpiRest(210, this);
+    const int leftWidth = DpiRest(230, this);
     CRect rightRect = clientRect;
     rightRect.left = leftWidth;
     memDC.FillSolidRect(&rightRect, isDark ? RGB(26, 26, 28) : RGB(246, 246, 249));
@@ -646,7 +646,8 @@ void CStorageAnalyticsView::OnDraw(CDC* pDC)
         CSetTextColor setMuted(&memDC, fgMuted);
         CRect msgRect = rightRect;
         msgRect.DeflateRect(DpiRest(50, this), DpiRest(150, this));
-        memDC.DrawTextW(L"No statistics available.\n\nPlease scan a drive or folder, then click Recalculate to view the dashboard.", &msgRect, DT_CENTER | DT_WORDBREAK);
+        memDC.DrawTextW(Localization::Lookup(IDS_ANALYTICS_NO_STATISTICS_AVAILABLE).c_str(), &msgRect, DT_CENTER | DT_WORDBREAK);
+        //memDC.DrawTextW(L"No statistics available.\n\nPlease scan a drive or folder, then click Recalculate to view the dashboard.", &msgRect, DT_CENTER | DT_WORDBREAK);
     }
     else
     {
