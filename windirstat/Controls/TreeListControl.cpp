@@ -697,7 +697,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
         // The calculation of item width is very expensive for
         // very large lists so limit calculation based on the
         // first few bunch of visible items
-        if (COptions::AutomaticallyResizeColumns && scroll && c < 50)
+        if (COptions::AutomaticallyResizeColumns && scroll /*&& c < 50*/)
         {
             maxwidth = std::max(maxwidth, GetSubItemWidth(child, 0, &dc));
         }
