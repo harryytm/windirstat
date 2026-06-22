@@ -635,12 +635,13 @@ int CWdsListControl::GetSubItemWidth(CWdsListItem* item, const int subitem, CDC*
     }
 
     const CRect rc(0, 0, DpiRest(3500), 0);
+    constexpr int padding = 2;
 
     int width;
     int dummy = rc.left;
     if (item->DrawSubItem(subitem, pDC, rc, 0, &width, &dummy))
     {
-        return width;
+        return width + DpiRest(padding);
     }
 
     const std::wstring s = item->GetText(subitem);
@@ -929,8 +930,7 @@ void CWdsListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
     }
 
     // update final column width
-    constexpr int padding = 3;
-    SetColumnWidth(column, width + padding);
+    SetColumnWidth(column, width);
     *pResult = FALSE;
 }
 
