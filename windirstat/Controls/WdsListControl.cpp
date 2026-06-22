@@ -906,6 +906,7 @@ BOOL CWdsListControl::OnEraseBkgnd(CDC* pDC)
 
 void CWdsListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
 {
+    CWaitCursor wc;
     const int column = reinterpret_cast<LPNMHEADER>(pNMHDR)->iItem;
     const int subitem = ColumnToSubItem(column);
 
