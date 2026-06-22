@@ -634,7 +634,7 @@ int CWdsListControl::GetSubItemWidth(CWdsListItem* item, const int subitem, CDC*
         return GetSubItemWidth(item, subitem, &dc);
     }
 
-    const CRect rc(0, 0, 3500, 20);
+    const CRect rc(0, 0, DpiRest(3500), 0);
 
     int width;
     int dummy = rc.left;
