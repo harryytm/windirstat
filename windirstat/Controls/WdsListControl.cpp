@@ -655,6 +655,21 @@ int CWdsListControl::GetSubItemWidth(CWdsListItem* item, const int subitem, CDC*
     return TEXT_X_MARGIN + size.cx;
 }
 
+int CWdsListControl::GetSubItemHeaderWidth(int column)
+{
+    // fetch size of rendered column header text
+    // temporarily insert a false column to the finalize column does
+    // not autosize to fit the whole control width
+    const CSetRedrawLock lock(this);
+    const int columnWidth = GetColumnWidth(column);
+    const int falseColumn = InsertColumn(m_columnCount + 1, L"");
+    SetColumnWidth(column, LVSCW_AUTOSIZE_USEHEADER);
+    const int headerWidth = GetColumnWidth(column);
+    DeleteColumn(falseColumn);
+    SetColumnWidth(column, columnWidth);
+    return headerWidth;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // Sorting functionality (merged from CSortingListControl)
 
@@ -910,15 +925,7 @@ void CWdsListControl::OnHdnDividerdblclick(NMHDR* pNMHDR, LRESULT* pResult)
     CWaitCursor wc;
     const int column = reinterpret_cast<LPNMHEADER>(pNMHDR)->iItem;
     const int subitem = ColumnToSubItem(column);
-
-    // fetch size of rendered column header text
-    // temporarily insert a false column to the finalize column does
-    // not autosize to fit the whole control width
-    const CSetRedrawLock lock(this);
-    const int falseColumn = InsertColumn(m_columnCount + 1, L"");
-    SetColumnWidth(column, LVSCW_AUTOSIZE_USEHEADER);
-    int width = GetColumnWidth(column);
-    DeleteColumn(falseColumn);
+    int width = GetSubItemHeaderWidth(column);
 
     CClientDC dc(this);
     CSelectObject sofont(&dc, GetFont());
