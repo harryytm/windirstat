@@ -211,6 +211,7 @@ public:
     static Setting<int> TreeMapScaleFactor;
     static Setting<int> TreeMapStyle;
     static Setting<int> DarkMode;
+    static Setting<int> FolderFrameDrawThreshold;
     static Setting<int> FolderHistoryCount;
     static Setting<RECT> AboutWindowRect;
     static Setting<RECT> DriveSelectWindowRect;

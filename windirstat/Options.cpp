@@ -131,6 +131,7 @@ Setting<double> COptions::MainSplitterPos(OptionsGeneral, L"MainSplitterPos", -1
 Setting<double> COptions::SubSplitterPos(OptionsGeneral, L"SubSplitterPos", -1.0, 0.0, 1.0);
 Setting<int> COptions::ConfigPage(OptionsGeneral, L"ConfigPage", 0);
 Setting<int> COptions::DarkMode(OptionsGeneral, L"DarkMode", DM_USE_WINDOWS, DM_DISABLED, DM_USE_WINDOWS);
+Setting<int> COptions::FolderFrameDrawThreshold(OptionsTreeMap, L"FolderFrameDrawThreshold", 10, 3, 32);
 Setting<int> COptions::LanguageId(OptionsGeneral, L"LanguageId", 0);
 Setting<int> COptions::FileHashAlgorithm(OptionsGeneral, L"FileHashAlgorithm",
     HASH_XXHASH, HASH_MD5, HASH_XXHASH);
