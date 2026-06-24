@@ -164,6 +164,7 @@ protected:
     void InitializeColors();
     void DrawItem(LPDRAWITEMSTRUCT pdis) override;
     int GetSubItemWidth(CWdsListItem* item, int subitem, CDC* pDC = nullptr);
+    int GetSubItemHeaderWidth(int subitem);
     void SavePersistentAttributes() const;
 
     // Owner-drawn related members
