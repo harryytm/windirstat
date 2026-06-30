@@ -784,7 +784,7 @@ std::wstring ComputeFileHashes(const std::wstring& filePath, CProgressDlg* pProg
                 if (ctx.isXxHash && ctx.xxHash.IsValid()) XXH3_64bits_update(ctx.xxHash, buffer.data(), bytesRead);
                 else (void)BCryptHashData(ctx.hHash, buffer.data(), bytesRead, 0);
             });
-        pProgressDlg->Increment();
+        (void)pProgressDlg->Increment();
     }
 
     // Finalize all hashes and convert to hex strings
