@@ -566,11 +566,12 @@ static void PaintWatcherAutoScroll(Gdiplus::Graphics& g)
 
 void CMainFrame::RebuildToolBar()
 {
-    const auto imageSize = COptions::LargeToolBar ? 32 : 20;
-    const auto scale = COptions::LargeToolBar ? (32.0f / 20.0f) : 1.0f;
+    if (CDirStatApp::Get()->m_pMainWnd == nullptr) return;
+    const long defaultButtonSize = std::min(m_defaultButtonSize.cx, m_defaultButtonSize.cy);
+    const int imageSize = COptions::LargeToolBar ? COptions::ToolBarIconSizeLarge : COptions::ToolBarIconSizeDefault;
+    const float scale = imageSize / static_cast<float>(defaultButtonSize);
 
     // Remove all existing buttons
-    if (CDirStatApp::Get()->m_pMainWnd == nullptr) return;
     while (m_wndToolBar.GetCount() > 0)
         m_wndToolBar.RemoveButton(0);
 
