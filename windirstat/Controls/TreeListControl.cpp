@@ -647,10 +647,18 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
         }
     }
 
-    if (scroll && GetColumnWidth(0) < maxwidth)
+    constexpr int padding = 3;
+    bool isFileTreeView = CWinDirStatModel::Get()->FileTreeHasFocus();
+    int sizePropMaxWidth = isFileTreeView ? GetSubItemWidth(item, COL_SIZE_PROPORTION) : 0;
+
+    if (scroll && GetColumnWidth(COL_NAME) < maxwidth)
     {
-        constexpr int padding = 3;
-        SetColumnWidth(0, maxwidth + padding);
+        SetColumnWidth(COL_NAME, maxwidth + padding);
+    }
+
+    if (isFileTreeView && GetColumnWidth(COL_SIZE_PROPORTION) < sizePropMaxWidth)
+    {
+        SetColumnWidth(COL_SIZE_PROPORTION, sizePropMaxWidth + padding);
     }
 
     InsertListItem(i + 1, children);
