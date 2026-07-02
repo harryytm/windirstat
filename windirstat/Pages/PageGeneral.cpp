@@ -67,43 +67,47 @@ HBRUSH CPageGeneral::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
     const HBRUSH brush = DarkMode::OnCtlColor(pDC, nCtlColor);
     return brush ? brush : CMFCPropertyPage::OnCtlColor(pDC, pWnd, nCtlColor);
 }
-bool CPageGeneral::IsContextMenuRegistered()
+
+bool CPageGeneral::IsContextMenuRegistered(bool systemWide)
 {
-    return CRegKey().Open(HKEY_CLASSES_ROOT, std::format(L"Drive\\shell\\{}",
-        wds::strWinDirStat).c_str(), KEY_READ) == ERROR_SUCCESS;
+    const HKEY hKey = systemWide ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER;
+    const std::wstring subKeyPath = std::format(L"Software\\Classes\\Drive\\shell\\{}", wds::strWinDirStat);
+    return CRegKey().Open(hKey, subKeyPath.c_str(), KEY_READ) == ERROR_SUCCESS;
 }
 
-bool CPageGeneral::SetContextMenuRegistration(bool enable)
+bool CPageGeneral::SetContextMenuRegistration(bool enable, bool systemWide)
 {
+    const HKEY hKey = systemWide ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER;
+
     for (const std::wstring& rootSubKey : { L"Drive", L"Directory" })
     {
-        const std::wstring baseKey = rootSubKey + L"\\shell\\" + wds::strWinDirStat;
+        const std::wstring baseKey = std::format(L"Software\\Classes\\{}\\shell\\{}", rootSubKey, wds::strWinDirStat);
 
         if (!enable)
         {
             // Remove the context menu entries
-            RegDeleteTree(HKEY_CLASSES_ROOT, baseKey.c_str());
+            RegDeleteTree(hKey, baseKey.c_str());
             continue;
         }
 
         // Create/open the base key
         CRegKey key;
         const std::wstring exePath = GetAppFileName();
-        if (key.Create(HKEY_CLASSES_ROOT, baseKey.c_str()) != ERROR_SUCCESS ||
+        if (key.Create(hKey, baseKey.c_str()) != ERROR_SUCCESS ||
             key.SetStringValue(nullptr, wds::strWinDirStat) != ERROR_SUCCESS ||
             key.SetStringValue(L"Icon", exePath.c_str()) != ERROR_SUCCESS)
         {
-            SetContextMenuRegistration(false);
+            SetContextMenuRegistration(false, systemWide);
             return false;
         }
 
         // Create/open the command key
         const std::wstring cmdKey = baseKey + L"\\command";
         const std::wstring cmdVal = std::format(LR"("{}" "%1")", exePath);
-        if (key.Create(HKEY_CLASSES_ROOT, cmdKey.c_str()) != ERROR_SUCCESS ||
+        if (key.Create(hKey, cmdKey.c_str()) != ERROR_SUCCESS ||
             key.SetStringValue(nullptr, cmdVal.c_str()) != ERROR_SUCCESS)
         {
-            SetContextMenuRegistration(false);
+            SetContextMenuRegistration(false, systemWide);
             return false;
         }
     }
@@ -127,13 +131,12 @@ BOOL CPageGeneral::OnInitDialog()
     m_useWindowsLocale = COptions::UseWindowsLocaleSetting;
     m_portableMode = CDirStatApp::InPortableMode();
     m_darkModeRadio = COptions::DarkMode;
+    m_contextMenuIntegration = IsContextMenuRegistered(IsElevationActive()) ? TRUE : FALSE;
 
-    // Query checkbox status and then gray out if not elevated
-    m_contextMenuIntegration = IsContextMenuRegistered() ? TRUE : FALSE;
-    if (CWnd* pWnd = GetDlgItem(IDC_CONTEXT_MENU); pWnd != nullptr && !IsElevationActive())
-    {
-        pWnd->EnableWindow(FALSE);
-    }
+    // Update the context menu checkbox text to indicate whether it is registered for all users or just the current user
+    GetDlgItem(IDC_CONTEXT_MENU)->SetWindowText(std::format(L"{} ({})",
+        Localization::Lookup(IDS_PAGE_GENERAL_CONTEXT_MENU), IsElevationActive() ? L"for all users" : L"for this user only").c_str());
+    // todo: localize the "all users" and "this user only" strings
 
     for (const auto& language : Localization::GetLanguageList())
     {
@@ -175,9 +178,9 @@ void CPageGeneral::OnOK()
 
     // Update context menu registration if elevated
     const bool shouldBeRegistered = (m_contextMenuIntegration != FALSE);
-    if (IsContextMenuRegistered() != shouldBeRegistered && IsElevationActive())
+    if (IsContextMenuRegistered(IsElevationActive()) != shouldBeRegistered)
     {
-        SetContextMenuRegistration(shouldBeRegistered);
+        SetContextMenuRegistration(shouldBeRegistered, IsElevationActive());
     }
 
     // force general user interface update if anything changes
