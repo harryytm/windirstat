@@ -50,6 +50,14 @@ enum LAYOUT_TOPOLOGY : int
     LT_COLS_TM_FULL  = 4, // Main = 2 cols; treemap fills one col; sub-splitter = 2 rows in the other
 };
 
+enum VIEW_TYPE : int
+{
+    VT_ABSENT  = -1,
+    VT_ALLFILES    = 0,
+    VT_FILETYPES     = 1,
+    VT_TREEMAP = 2
+};
+
 struct USERDEFINEDCLEANUP
 {
     USERDEFINEDCLEANUP() : USERDEFINEDCLEANUP(L"") {}
