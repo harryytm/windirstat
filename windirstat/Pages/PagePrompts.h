@@ -49,7 +49,6 @@ protected:
     BOOL m_showDismCleanupPrompt = FALSE;
     BOOL m_showDismResetPrompt = FALSE;
     BOOL m_showSetDatesPrompt = FALSE;
-    BOOL m_showRemoveEmptyFoldersPrompt = FALSE;
 
     DECLARE_MESSAGE_MAP()
 };
