@@ -187,7 +187,7 @@ BEGIN_MESSAGE_MAP(CWinDirStatModel, CCmdTarget)
     ON_COMMAND_UPDATE_WRAPPER(ID_CLEANUP_DELETE_BIN, OnCleanupDeleteToBin)
     ON_COMMAND_UPDATE_WRAPPER(ID_CLEANUP_DELETE, OnCleanupDelete)
     ON_COMMAND_UPDATE_WRAPPER(ID_CLEANUP_EMPTY_FOLDER, OnCleanupEmptyFolder)
-    ON_COMMAND_UPDATE_WRAPPER(ID_CLEANUP_REMOVE_EMPTY, OnCleanupRemoveEmpty)
+    ON_COMMAND_UPDATE_WRAPPER(ID_CLEANUP_REMOVE_EMPTY, OnSearchEmptyFolders)
     ON_COMMAND_UPDATE_WRAPPER(ID_CLEANUP_REMOVE_SHADOW, OnRemoveShadowCopies)
     ON_COMMAND_UPDATE_WRAPPER(ID_SEARCH, OnSearch)
     ON_COMMAND_UPDATE_WRAPPER(ID_CLEANUP_DISM_ANALYZE, OnExecuteDismAnalyze)
@@ -1430,139 +1430,9 @@ void CWinDirStatModel::OnToolsSetDates()
     }).DoModal();
 }
 
-namespace
-{
-    // GetFilesCount() reflects the scanned model, which silently skips hidden/protected
-    // files and directories, symlinks, and anything matching a user filter rule (Item.cpp,
-    // ScanItems) - so a directory can read as "wholly empty" there while still holding real
-    // files on disk. RemoveDirectory() used to catch this at deletion time since Windows
-    // itself refuses to remove a directory that still has any entry, hidden or not; that
-    // guarantee is gone once deletion goes through the generic recursive Delete path, so it
-    // has to be re-verified here against the real filesystem instead of the model. A nested
-    // empty subdirectory is fine (matches how this feature treats nested empty branches);
-    // an actual file, a directory symlink/reparse point (is_directory() follows it could
-    // hide real files a plain listing wouldn't reveal), or anything that can't be verified
-    // (e.g. access denied), is not.
-    //
-    // std::filesystem::is_empty() - the same single-level check already used elsewhere in
-    // this file (see WinDirStat.cpp) - covers the common case (an actual leaf directory) in
-    // one call. A directory that isn't itself empty only needs one non-recursive listing of
-    // its own immediate entries, deferring to the memo for any subdirectory rather than
-    // rescanning it: every directory in a selected tree ends up checked at most once this
-    // way, however many candidates end up calling into it, instead of a chain of N nested
-    // empty directories costing O(N^2) from each candidate re-walking its own subtree.
-    bool IsWhollyEmptyOnDisk(const std::wstring& path, std::unordered_map<std::wstring, bool>& memo)
-    {
-        if (const auto found = memo.find(path); found != memo.end()) return found->second;
-
-        std::error_code ec;
-        const bool empty = std::filesystem::is_empty(path, ec);
-        bool result = !ec && empty;
-        if (!ec && !empty)
-        {
-            result = true;
-            for (const auto& entry : std::filesystem::directory_iterator(path, ec))
-            {
-                if (ec) { result = false; break; }
-                if (entry.is_symlink(ec) || ec) { result = false; break; }
-                if (!entry.is_directory(ec) || ec) { result = false; break; }
-                if (!IsWhollyEmptyOnDisk(entry.path().wstring(), memo)) { result = false; break; }
-            }
-            if (ec) result = false;
-        }
-
-        memo.emplace(path, result);
-        return result;
-    }
-}
-
-void CWinDirStatModel::OnCleanupRemoveEmpty()
+void CWinDirStatModel::OnSearchEmptyFolders()
 {
     const auto& roots = GetAllSelected();
     if (roots.empty()) return;
-
-    // If the user directly multi-selected both a folder and one of its own subfolders,
-    // drop the subfolder from the seed set. Otherwise, if the subfolder happens to be
-    // visited before its selected ancestor (stack order), it could be recorded as its
-    // own topmost entry, and then the ancestor - also wholly empty - gets recorded as a
-    // second, overlapping topmost entry that would delete the same branch again.
-    std::vector<CItem*> seeds;
-    for (CItem* root : roots)
-    {
-        const bool hasSelectedAncestor = std::ranges::any_of(roots, [&](const CItem* other)
-        {
-            return other != root && other->IsAncestorOf(root);
-        });
-        if (!hasSelectedAncestor) seeds.push_back(root);
-    }
-
-    // Collect only the topmost directory of each empty branch: a directory whose entire
-    // subtree contains no files (GetFilesCount() == 0) is wholly empty, so every folder
-    // below it is empty too and does not need its own entry - removing the topmost one
-    // (via the normal Delete / Delete to Recycle Bin path) takes the whole branch with it.
-    // Listing descendants separately would make the result count misleading: picking N
-    // entries to delete could remove more than N items once nested branches are involved.
-    // Wrapped in the same progress dialog the text search uses: IsWhollyEmptyOnDisk touches
-    // the real filesystem for every candidate, which can take a while on a large or deeply
-    // nested tree, so this keeps the UI responsive and lets the user cancel instead of the
-    // app appearing to hang.
-    std::vector<CItem*> emptyDirs;
-    ULONGLONG totalItems = 0;
-    for (const CItem* seed : seeds) totalItems += seed->GetItemsCount();
-    CProgressDlg(static_cast<size_t>(totalItems), CProgressDlg::Flags::None, AfxGetMainWnd(), [&](CProgressDlg* pdlg)
-    {
-        std::vector<CItem*> stack(seeds.begin(), seeds.end());
-        std::unordered_set<CItem*> visited;
-        std::unordered_map<std::wstring, bool> emptyOnDiskMemo;
-        while (!stack.empty() && !pdlg->IsCancelled())
-        {
-            pdlg->Increment();
-            CItem* item = stack.back();
-            stack.pop_back();
-            if (!visited.insert(item).second) continue;
-            if (item->IsTypeOrFlag(IT_DIRECTORY) && !item->IsRootItem() && item->GetFilesCount() == 0
-                && IsWhollyEmptyOnDisk(item->GetPathLong(), emptyOnDiskMemo))
-            {
-                emptyDirs.push_back(item);
-                continue;
-            }
-            if (item->HasChildren())
-            {
-                stack.insert(stack.end(), item->GetChildren().begin(), item->GetChildren().end());
-            }
-        }
-    }).DoModal();
-
-    // The old code deleted every match directly, so an unbounded count never showed up
-    // anywhere. Now that matches are shown in a list instead, a drive full of thousands
-    // of empty folders (e.g. leftover build/cache directories) would otherwise dump all
-    // of them into the result view at once. Capped the same way and using the same
-    // options key (COptions::SearchMaxResults) as the existing text search, so behavior
-    // is consistent and the largest folders (by logical size) are kept when the cap is
-    // hit - SetLimitExceeded() below then lets the result view show its usual
-    // "more results than shown" notice.
-    bool limitExceeded = false;
-    if (const size_t maxResults = COptions::SearchMaxResults; emptyDirs.size() > maxResults)
-    {
-        std::ranges::partial_sort(emptyDirs, emptyDirs.begin() + maxResults,
-            std::ranges::greater{}, &CItem::GetSizeLogical);
-        emptyDirs.resize(maxResults);
-        limitExceeded = true;
-    }
-
-    // Show the found empty folders in the search results view instead of deleting them
-    // directly. From there, the user picks which ones to keep and removes the rest via
-    // the normal Delete / Delete to Recycle Bin commands, same as any other search result.
-    // Known limitation: a result stays in this list until the user acts on it, so a folder
-    // that received a new file after this scan (e.g. an active cache directory) but before
-    // the user deletes it would still be deleted along with that new file. This is the same
-    // race any "browse a list, act later" UI has - including the file tree itself - and
-    // fixing it here would mean re-verifying emptiness inside DeletePhysicalItems, which is
-    // the shared delete path for every file and folder in the app, not just this feature.
-    CFileSearchControl::Get()->SetRootItem();
-    CFileSearchControl::Get()->GetRootItem()->SetLimitExceeded(limitExceeded);
-    CFileSearchControl::Get()->PopulateSearchResults(emptyDirs);
-
-    CMainFrame::Get()->GetFileTabbedView()->SetSearchTabVisibility(true);
-    CMainFrame::Get()->GetFileTabbedView()->SetActiveSearchView();
+    CFileSearchControl::Get()->SearchEmptyFolders(roots);
 }
