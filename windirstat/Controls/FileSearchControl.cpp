@@ -118,6 +118,11 @@ void CFileSearchControl::ProcessSearch(CItem* item,
         }
     }).DoModal();
 
+    PopulateSearchResults(matchedItems);
+}
+
+void CFileSearchControl::PopulateSearchResults(const std::vector<CItem*>& matchedItems)
+{
     // Add found items to the interface
     CWaitCursor wait;
     CollapseItem(0);
