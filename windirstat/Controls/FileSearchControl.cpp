@@ -167,6 +167,15 @@ void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
     // (via the normal Delete / Delete to Recycle Bin path) takes the whole branch with it.
     // Listing descendants separately would make the result count misleading: picking N
     // entries to delete could remove more than N items once nested branches are involved.
+    //
+    // GetFilesCount() reflects the scanned model, which silently skips hidden/protected
+    // files and directories, symlinks, and anything matching a user filter rule (Item.cpp,
+    // ScanItems) - so a directory can read as "wholly empty" there while still holding
+    // real files on disk. RemoveDirectory() used to catch this at deletion time since
+    // Windows itself refuses to remove a directory that still has any entry, hidden or
+    // not; that guarantee is gone once deletion goes through the generic recursive Delete
+    // path, so IsWhollyEmptyOnDisk() re-verifies against the real filesystem instead.
+    //
     // Wrapped in the same progress dialog ProcessSearch uses: IsWhollyEmptyOnDisk touches
     // the real filesystem for every candidate, which can take a while on a large or deeply
     // nested tree, so this keeps the UI responsive and lets the user cancel instead of the
