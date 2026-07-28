@@ -253,6 +253,48 @@ std::wstring GlobToRegex(const std::wstring& glob, const bool useAnchors)
     return useAnchors ? (L"^" + regex + L"$") : regex;
 }
 
+// GetFilesCount() reflects the scanned model, which silently skips hidden/protected files
+// and directories, symlinks, and anything matching a user filter rule (Item.cpp, ScanItems)
+// - so a directory can read as "wholly empty" there while still holding real files on disk.
+// RemoveDirectory() used to catch this at deletion time since Windows itself refuses to
+// remove a directory that still has any entry, hidden or not; that guarantee is gone once
+// deletion goes through the generic recursive Delete path, so it has to be re-verified here
+// against the real filesystem instead of the model. A nested empty subdirectory is fine
+// (matches how the empty-folder search treats nested empty branches); an actual file, a
+// directory symlink/reparse point (is_directory() following it could hide real files a
+// plain listing wouldn't reveal), or anything that can't be verified (e.g. access denied),
+// is not.
+//
+// std::filesystem::is_empty() covers the common case (an actual leaf directory) in one
+// call. A directory that isn't itself empty only needs one non-recursive listing of its own
+// immediate entries, deferring to the memo for any subdirectory rather than rescanning it:
+// every directory in a selected tree ends up checked at most once this way, however many
+// candidates end up calling into it, instead of a chain of N nested empty directories
+// costing O(N^2) from each candidate re-walking its own subtree.
+bool IsWhollyEmptyOnDisk(const std::wstring& path, std::unordered_map<std::wstring, bool>& memo)
+{
+    if (const auto found = memo.find(path); found != memo.end()) return found->second;
+
+    std::error_code ec;
+    const bool empty = std::filesystem::is_empty(path, ec);
+    bool result = !ec && empty;
+    if (!ec && !empty)
+    {
+        result = true;
+        for (const auto& entry : std::filesystem::directory_iterator(path, ec))
+        {
+            if (ec) { result = false; break; }
+            if (entry.is_symlink(ec) || ec) { result = false; break; }
+            if (!entry.is_directory(ec) || ec) { result = false; break; }
+            if (!IsWhollyEmptyOnDisk(entry.path().wstring(), memo)) { result = false; break; }
+        }
+        if (ec) result = false;
+    }
+
+    memo.emplace(path, result);
+    return result;
+}
+
 // String helpers
 void ReplaceString(std::wstring& subject, std::wstring_view search, std::wstring_view replace)
 {
