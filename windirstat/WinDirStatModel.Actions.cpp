@@ -1430,6 +1430,30 @@ void CWinDirStatModel::OnToolsSetDates()
     }).DoModal();
 }
 
+namespace
+{
+    // GetFilesCount() reflects the scanned model, which silently skips hidden/protected
+    // files and directories, symlinks, and anything matching a user filter rule (Item.cpp,
+    // ScanItems) - so a directory can read as "wholly empty" there while still holding real
+    // files on disk. RemoveDirectory() used to catch this at deletion time since Windows
+    // itself refuses to remove a directory that still has any entry, hidden or not; that
+    // guarantee is gone once deletion goes through the generic recursive Delete path, so it
+    // has to be re-verified here against the real filesystem instead of the model. A nested
+    // empty subdirectory is fine (matches how this feature treats nested empty branches);
+    // an actual file, or anything that can't be verified (e.g. access denied), is not.
+    bool IsWhollyEmptyOnDisk(const std::wstring& path)
+    {
+        std::error_code ec;
+        std::filesystem::recursive_directory_iterator it(path, ec);
+        if (ec) return false;
+        for (; it != std::filesystem::recursive_directory_iterator(); it.increment(ec))
+        {
+            if (ec || !it->is_directory(ec) || ec) return false;
+        }
+        return true;
+    }
+}
+
 void CWinDirStatModel::OnCleanupRemoveEmpty()
 {
     const auto& roots = GetAllSelected();
@@ -1449,7 +1473,8 @@ void CWinDirStatModel::OnCleanupRemoveEmpty()
         CItem* item = stack.back();
         stack.pop_back();
         if (!visited.insert(item).second) continue;
-        if (item->IsTypeOrFlag(IT_DIRECTORY) && !item->IsRootItem() && item->GetFilesCount() == 0)
+        if (item->IsTypeOrFlag(IT_DIRECTORY) && !item->IsRootItem() && item->GetFilesCount() == 0
+            && IsWhollyEmptyOnDisk(item->GetPathLong()))
         {
             emptyDirs.push_back(item);
             continue;

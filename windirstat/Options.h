@@ -193,7 +193,6 @@ public:
     inline static Setting<bool> ShowDismCleanupPrompt{ OptionsGeneral, L"ShowDismCleanupPrompt", true };
     inline static Setting<bool> ShowDismResetPrompt{ OptionsGeneral, L"ShowDismResetPrompt", true };
     inline static Setting<bool> ShowSetDatesPrompt{ OptionsGeneral, L"ShowSetDatesPrompt", true };
-    inline static Setting<bool> ShowRemoveEmptyFoldersPrompt{ OptionsGeneral, L"ShowRemoveEmptyFoldersPrompt", true };
     inline static Setting<bool> ShowMicrosoftProgress{ OptionsGeneral, L"ShowMicrosoftProgress", false };
     inline static Setting<bool> ShowFileTypes{ OptionsGeneral, L"ShowFileTypes", true };
     inline static Setting<bool> GroupUnregisteredTypes{ OptionsGeneral, L"GroupUnregisteredTypes", false };

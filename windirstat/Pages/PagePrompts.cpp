@@ -36,7 +36,6 @@ CPagePrompts::CPagePrompts() : COptionsPage(IDD)
     BindCheck(IDC_PROMPT_DISM_NORMAL, COptions::ShowDismCleanupPrompt, m_showDismCleanupPrompt);
     BindCheck(IDC_PROMPT_DISM_RESET, COptions::ShowDismResetPrompt, m_showDismResetPrompt);
     BindCheck(IDC_PROMPT_SET_DATES, COptions::ShowSetDatesPrompt, m_showSetDatesPrompt);
-    BindCheck(IDC_PROMPT_REMOVE_EMPTY, COptions::ShowRemoveEmptyFoldersPrompt, m_showRemoveEmptyFoldersPrompt);
 }
 
 BEGIN_MESSAGE_MAP(CPagePrompts, COptionsPage)
@@ -45,7 +44,7 @@ BEGIN_MESSAGE_MAP(CPagePrompts, COptionsPage)
     ON_BN_CLICKED(IDC_ELEVATION_PROMPT, OnSettingChanged)
     ON_BN_CLICKED(IDC_CLOUD_LINKS_WARNING, OnSettingChanged)
     ON_BN_CLICKED(IDC_SHOW_MICROSOFT_PROGRESS, OnSettingChanged)
-    ON_CONTROL_RANGE(BN_CLICKED, IDC_PROMPT_EMPTY_BIN, IDC_PROMPT_REMOVE_EMPTY, OnSettingRangeChanged)
+    ON_CONTROL_RANGE(BN_CLICKED, IDC_PROMPT_EMPTY_BIN, IDC_PROMPT_SET_DATES, OnSettingRangeChanged)
 END_MESSAGE_MAP()
 
 void CPagePrompts::InitializePage()
@@ -68,7 +67,6 @@ void CPagePrompts::InitializePage()
         { IDC_PROMPT_DISM_NORMAL,       IDS_MENU_DISM,               L"/StartComponentCleanup" },
         { IDC_PROMPT_DISM_RESET,        IDS_MENU_DISM,               L"/StartComponentCleanup /ResetBase" },
         { IDC_PROMPT_SET_DATES,         IDS_MENU_SET_DATES,         {} },
-        { IDC_PROMPT_REMOVE_EMPTY,      IDS_MENU_REMOVE_EMPTY,      {} },
     };
 
     for (const auto& [controlId, operationId, detail] : promptControls)
