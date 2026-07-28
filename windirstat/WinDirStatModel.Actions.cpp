@@ -1440,7 +1440,11 @@ namespace
     // guarantee is gone once deletion goes through the generic recursive Delete path, so it
     // has to be re-verified here against the real filesystem instead of the model. A nested
     // empty subdirectory is fine (matches how this feature treats nested empty branches);
-    // an actual file, or anything that can't be verified (e.g. access denied), is not.
+    // an actual file, a directory symlink/reparse point (is_directory() follows it to a
+    // target this iterator never descends into, so it could hide real files), or anything
+    // that can't be verified (e.g. access denied), is not. The error code is also checked
+    // once more after the loop: increment() can set it on the very call that also advances
+    // the iterator to the end, in which case the loop body never sees it.
     bool IsWhollyEmptyOnDisk(const std::wstring& path)
     {
         std::error_code ec;
@@ -1448,9 +1452,11 @@ namespace
         if (ec) return false;
         for (; it != std::filesystem::recursive_directory_iterator(); it.increment(ec))
         {
-            if (ec || !it->is_directory(ec)) return false;
+            if (ec) return false;
+            if (it->is_symlink(ec) || ec) return false;
+            if (!it->is_directory(ec) || ec) return false;
         }
-        return true;
+        return !ec;
     }
 }
 
@@ -1459,6 +1465,21 @@ void CWinDirStatModel::OnCleanupRemoveEmpty()
     const auto& roots = GetAllSelected();
     if (roots.empty()) return;
 
+    // If the user directly multi-selected both a folder and one of its own subfolders,
+    // drop the subfolder from the seed set. Otherwise, if the subfolder happens to be
+    // visited before its selected ancestor (stack order), it could be recorded as its
+    // own topmost entry, and then the ancestor - also wholly empty - gets recorded as a
+    // second, overlapping topmost entry that would delete the same branch again.
+    std::vector<CItem*> seeds;
+    for (CItem* root : roots)
+    {
+        const bool hasSelectedAncestor = std::ranges::any_of(roots, [&](const CItem* other)
+        {
+            return other != root && other->IsAncestorOf(root);
+        });
+        if (!hasSelectedAncestor) seeds.push_back(root);
+    }
+
     // Collect only the topmost directory of each empty branch: a directory whose entire
     // subtree contains no files (GetFilesCount() == 0) is wholly empty, so every folder
     // below it is empty too and does not need its own entry - removing the topmost one
@@ -1466,7 +1487,7 @@ void CWinDirStatModel::OnCleanupRemoveEmpty()
     // Listing descendants separately would make the result count misleading: picking N
     // entries to delete could remove more than N items once nested branches are involved.
     std::vector<CItem*> emptyDirs;
-    std::vector<CItem*> stack(roots.begin(), roots.end());
+    std::vector<CItem*> stack(seeds.begin(), seeds.end());
     std::unordered_set<CItem*> visited;
     for (CWaitCursor wc; !stack.empty();)
     {
