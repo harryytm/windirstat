@@ -1448,7 +1448,7 @@ namespace
         if (ec) return false;
         for (; it != std::filesystem::recursive_directory_iterator(); it.increment(ec))
         {
-            if (ec || !it->is_directory(ec) || ec) return false;
+            if (ec || !it->is_directory(ec)) return false;
         }
         return true;
     }
