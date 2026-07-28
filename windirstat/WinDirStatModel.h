@@ -235,7 +235,7 @@ private:
     afx_msg void OnCleanupCompress(UINT id);
     afx_msg void OnCleanupOptimizeVhd();
     afx_msg void OnCleanupSparsifyFile();
-    afx_msg void OnCleanupRemoveEmpty();
+    afx_msg void OnSearchEmptyFolders();
     afx_msg void OnToolsSetDates();
     afx_msg void OnScanSuspend();
     afx_msg void OnScanResume();

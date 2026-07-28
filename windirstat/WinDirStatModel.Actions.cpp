@@ -187,7 +187,7 @@ BEGIN_MESSAGE_MAP(CWinDirStatModel, CCmdTarget)
     ON_COMMAND_UPDATE_WRAPPER(ID_CLEANUP_DELETE_BIN, OnCleanupDeleteToBin)
     ON_COMMAND_UPDATE_WRAPPER(ID_CLEANUP_DELETE, OnCleanupDelete)
     ON_COMMAND_UPDATE_WRAPPER(ID_CLEANUP_EMPTY_FOLDER, OnCleanupEmptyFolder)
-    ON_COMMAND_UPDATE_WRAPPER(ID_CLEANUP_REMOVE_EMPTY, OnCleanupRemoveEmpty)
+    ON_COMMAND_UPDATE_WRAPPER(ID_CLEANUP_REMOVE_EMPTY, OnSearchEmptyFolders)
     ON_COMMAND_UPDATE_WRAPPER(ID_CLEANUP_REMOVE_SHADOW, OnRemoveShadowCopies)
     ON_COMMAND_UPDATE_WRAPPER(ID_SEARCH, OnSearch)
     ON_COMMAND_UPDATE_WRAPPER(ID_CLEANUP_DISM_ANALYZE, OnExecuteDismAnalyze)
@@ -1430,71 +1430,10 @@ void CWinDirStatModel::OnToolsSetDates()
     }).DoModal();
 }
 
-void CWinDirStatModel::OnCleanupRemoveEmpty()
+void CWinDirStatModel::OnSearchEmptyFolders()
 {
-    const auto& roots = GetAllSelected();
-    if (roots.empty()) return;
-
-    // Collect every directory whose entire subtree contains no files (GetFilesCount() == 0).
-    // Such a directory is wholly empty, so all of its descendants qualify as well. Each item is
-    // recorded before its children are pushed, so ancestors precede descendants; reversing then
-    // yields a bottom-up order suitable for RemoveDirectory, which only removes empty folders and
-    // so is guaranteed to find each parent empty once its children have been processed.
-    std::vector<CItem*> emptyDirs;
-    std::vector<CItem*> stack(roots.begin(), roots.end());
-    std::unordered_set<CItem*> visited;
-    for (CWaitCursor wc; !stack.empty();)
-    {
-        CItem* item = stack.back();
-        stack.pop_back();
-        if (!visited.insert(item).second) continue;
-        if (item->IsTypeOrFlag(IT_DIRECTORY) && !item->IsRootItem() && item->GetFilesCount() == 0)
-        {
-            emptyDirs.push_back(item);
-        }
-        if (item->HasChildren())
-        {
-            stack.insert(stack.end(), item->GetChildren().begin(), item->GetChildren().end());
-        }
-    }
-
-    if (emptyDirs.empty()) return;
-    if (!ConfirmOperation(IDS_MENU_REMOVE_EMPTY, COptions::ShowRemoveEmptyFoldersPrompt, emptyDirs)) return;
-
-    size_t deletedCount = 0;
-    std::unordered_set<const CItem*> deletedDirs;
-    std::unordered_set<CItem*> parentsToRefresh;
-    std::reverse(emptyDirs.begin(), emptyDirs.end());
-    CProgressDlg(emptyDirs.size(), CProgressDlg::Flags::None, AfxGetMainWnd(), [&](CProgressDlg* pdlg)
-    {
-        for (CItem* item : emptyDirs)
-        {
-            if (pdlg->IsCancelled()) break;
-
-            if (RemoveDirectory(item->GetPathLong().c_str()))
-            {
-                deletedCount++;
-                deletedDirs.insert(item);
-                if (CItem* parent = item->GetParent())
-                {
-                    parentsToRefresh.insert(parent);
-                }
-                pdlg->Increment();
-            }
-        }
-    }).DoModal();
-
-    // Refresh parents of deleted items that were not themselves deleted
-    std::erase_if(parentsToRefresh, [&](const CItem* parent) {
-        return deletedDirs.contains(parent);
-    });
-
-    if (!parentsToRefresh.empty())
-    {
-        RefreshItem(std::vector<CItem*>(parentsToRefresh.begin(), parentsToRefresh.end()));
-    }
-    else if (deletedCount > 0)
-    {
-        RefreshItem(roots);
-    }
+    const auto& items = GetAllSelected();
+    if (items.empty()) return;
+    CFileSearchControl::Get()->SearchEmptyFolders(items);
+    CMainFrame::Get()->GetFileTabbedView()->SetActiveSearchView();
 }
