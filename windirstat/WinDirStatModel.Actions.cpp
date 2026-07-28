@@ -1486,25 +1486,35 @@ void CWinDirStatModel::OnCleanupRemoveEmpty()
     // (via the normal Delete / Delete to Recycle Bin path) takes the whole branch with it.
     // Listing descendants separately would make the result count misleading: picking N
     // entries to delete could remove more than N items once nested branches are involved.
+    // Wrapped in the same progress dialog the text search uses: IsWhollyEmptyOnDisk touches
+    // the real filesystem for every candidate, which can take a while on a large or deeply
+    // nested tree, so this keeps the UI responsive and lets the user cancel instead of the
+    // app appearing to hang.
     std::vector<CItem*> emptyDirs;
-    std::vector<CItem*> stack(seeds.begin(), seeds.end());
-    std::unordered_set<CItem*> visited;
-    for (CWaitCursor wc; !stack.empty();)
+    ULONGLONG totalItems = 0;
+    for (const CItem* seed : seeds) totalItems += seed->GetItemsCount();
+    CProgressDlg(static_cast<size_t>(totalItems), CProgressDlg::Flags::None, AfxGetMainWnd(), [&](CProgressDlg* pdlg)
     {
-        CItem* item = stack.back();
-        stack.pop_back();
-        if (!visited.insert(item).second) continue;
-        if (item->IsTypeOrFlag(IT_DIRECTORY) && !item->IsRootItem() && item->GetFilesCount() == 0
-            && IsWhollyEmptyOnDisk(item->GetPathLong()))
+        std::vector<CItem*> stack(seeds.begin(), seeds.end());
+        std::unordered_set<CItem*> visited;
+        while (!stack.empty() && !pdlg->IsCancelled())
         {
-            emptyDirs.push_back(item);
-            continue;
+            pdlg->Increment();
+            CItem* item = stack.back();
+            stack.pop_back();
+            if (!visited.insert(item).second) continue;
+            if (item->IsTypeOrFlag(IT_DIRECTORY) && !item->IsRootItem() && item->GetFilesCount() == 0
+                && IsWhollyEmptyOnDisk(item->GetPathLong()))
+            {
+                emptyDirs.push_back(item);
+                continue;
+            }
+            if (item->HasChildren())
+            {
+                stack.insert(stack.end(), item->GetChildren().begin(), item->GetChildren().end());
+            }
         }
-        if (item->HasChildren())
-        {
-            stack.insert(stack.end(), item->GetChildren().begin(), item->GetChildren().end());
-        }
-    }
+    }).DoModal();
 
     // The old code deleted every match directly, so an unbounded count never showed up
     // anywhere. Now that matches are shown in a list instead, a drive full of thousands
@@ -1526,6 +1536,12 @@ void CWinDirStatModel::OnCleanupRemoveEmpty()
     // Show the found empty folders in the search results view instead of deleting them
     // directly. From there, the user picks which ones to keep and removes the rest via
     // the normal Delete / Delete to Recycle Bin commands, same as any other search result.
+    // Known limitation: a result stays in this list until the user acts on it, so a folder
+    // that received a new file after this scan (e.g. an active cache directory) but before
+    // the user deletes it would still be deleted along with that new file. This is the same
+    // race any "browse a list, act later" UI has - including the file tree itself - and
+    // fixing it here would mean re-verifying emptiness inside DeletePhysicalItems, which is
+    // the shared delete path for every file and folder in the app, not just this feature.
     CFileSearchControl::Get()->SetRootItem();
     CFileSearchControl::Get()->GetRootItem()->SetLimitExceeded(limitExceeded);
     CFileSearchControl::Get()->PopulateSearchResults(emptyDirs);
