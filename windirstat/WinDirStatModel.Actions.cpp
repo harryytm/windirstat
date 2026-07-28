@@ -1440,23 +1440,39 @@ namespace
     // guarantee is gone once deletion goes through the generic recursive Delete path, so it
     // has to be re-verified here against the real filesystem instead of the model. A nested
     // empty subdirectory is fine (matches how this feature treats nested empty branches);
-    // an actual file, a directory symlink/reparse point (is_directory() follows it to a
-    // target this iterator never descends into, so it could hide real files), or anything
-    // that can't be verified (e.g. access denied), is not. The error code is also checked
-    // once more after the loop: increment() can set it on the very call that also advances
-    // the iterator to the end, in which case the loop body never sees it.
-    bool IsWhollyEmptyOnDisk(const std::wstring& path)
+    // an actual file, a directory symlink/reparse point (is_directory() follows it could
+    // hide real files a plain listing wouldn't reveal), or anything that can't be verified
+    // (e.g. access denied), is not.
+    //
+    // std::filesystem::is_empty() - the same single-level check already used elsewhere in
+    // this file (see WinDirStat.cpp) - covers the common case (an actual leaf directory) in
+    // one call. A directory that isn't itself empty only needs one non-recursive listing of
+    // its own immediate entries, deferring to the memo for any subdirectory rather than
+    // rescanning it: every directory in a selected tree ends up checked at most once this
+    // way, however many candidates end up calling into it, instead of a chain of N nested
+    // empty directories costing O(N^2) from each candidate re-walking its own subtree.
+    bool IsWhollyEmptyOnDisk(const std::wstring& path, std::unordered_map<std::wstring, bool>& memo)
     {
+        if (const auto found = memo.find(path); found != memo.end()) return found->second;
+
         std::error_code ec;
-        std::filesystem::recursive_directory_iterator it(path, ec);
-        if (ec) return false;
-        for (; it != std::filesystem::recursive_directory_iterator(); it.increment(ec))
+        const bool empty = std::filesystem::is_empty(path, ec);
+        bool result = !ec && empty;
+        if (!ec && !empty)
         {
-            if (ec) return false;
-            if (it->is_symlink(ec) || ec) return false;
-            if (!it->is_directory(ec) || ec) return false;
+            result = true;
+            for (const auto& entry : std::filesystem::directory_iterator(path, ec))
+            {
+                if (ec) { result = false; break; }
+                if (entry.is_symlink(ec) || ec) { result = false; break; }
+                if (!entry.is_directory(ec) || ec) { result = false; break; }
+                if (!IsWhollyEmptyOnDisk(entry.path().wstring(), memo)) { result = false; break; }
+            }
+            if (ec) result = false;
         }
-        return !ec;
+
+        memo.emplace(path, result);
+        return result;
     }
 }
 
@@ -1497,6 +1513,7 @@ void CWinDirStatModel::OnCleanupRemoveEmpty()
     {
         std::vector<CItem*> stack(seeds.begin(), seeds.end());
         std::unordered_set<CItem*> visited;
+        std::unordered_map<std::wstring, bool> emptyOnDiskMemo;
         while (!stack.empty() && !pdlg->IsCancelled())
         {
             pdlg->Increment();
@@ -1504,7 +1521,7 @@ void CWinDirStatModel::OnCleanupRemoveEmpty()
             stack.pop_back();
             if (!visited.insert(item).second) continue;
             if (item->IsTypeOrFlag(IT_DIRECTORY) && !item->IsRootItem() && item->GetFilesCount() == 0
-                && IsWhollyEmptyOnDisk(item->GetPathLong()))
+                && IsWhollyEmptyOnDisk(item->GetPathLong(), emptyOnDiskMemo))
             {
                 emptyDirs.push_back(item);
                 continue;
