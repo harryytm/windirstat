@@ -811,7 +811,6 @@ function New-BaseIniSections {
         ShowDismCleanupPrompt = 0
         ShowDismResetPrompt = 0
         ShowSetDatesPrompt = 0
-        ShowRemoveEmptyFoldersPrompt = 0
         AutoElevate = 0
         ShowFreeSpace = 0
         ShowUnknown = 0
@@ -2993,7 +2992,7 @@ function New-PortableIni {
         'ShowDeletePermanentlyWarning=0', 'ShowDeleteToRecycleBinWarning=0',
         'ShowEmptyRecycleBinPrompt=0', 'ShowCreateHardlinkPrompt=0', 'ShowRemoveMotwPrompt=0',
         'ShowDisableHibernatePrompt=0', 'ShowRemoveShadowCopiesPrompt=0', 'ShowDismCleanupPrompt=0',
-        'ShowDismResetPrompt=0', 'ShowSetDatesPrompt=0', 'ShowRemoveEmptyFoldersPrompt=0',
+        'ShowDismResetPrompt=0', 'ShowSetDatesPrompt=0',
         'ScanForDuplicates=1', 'ProcessHardlinks=0',
         'MainWindowPlacement=2C0000000200000003000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF32000000320000003204000032030000'
     )
@@ -9067,7 +9066,7 @@ function Add-SettingsTestHarness {
         'ShowDeletePermanentlyWarning', 'ShowDeleteToRecycleBinWarning', 'ShowElevationPrompt',
         'ShowEmptyRecycleBinPrompt', 'ShowCreateHardlinkPrompt', 'ShowRemoveMotwPrompt',
         'ShowDisableHibernatePrompt', 'ShowRemoveShadowCopiesPrompt', 'ShowDismCleanupPrompt',
-        'ShowDismResetPrompt', 'ShowSetDatesPrompt', 'ShowRemoveEmptyFoldersPrompt',
+        'ShowDismResetPrompt', 'ShowSetDatesPrompt',
         'ShowMicrosoftProgress', 'ShowFileTypes', 'ShowFreeSpace', 'ShowStatusBar'
         'ShowTimeSpent', 'ShowToolBar', 'LargeToolBar', 'ShowVisualization', 'ShowUnknown'
         'SkipDupeDetectionCloudLinks', 'ShowDupeDetectionCloudLinksWarning', 'AutoElevate', 'TreeMapGrid'
@@ -9701,7 +9700,7 @@ $settingCases = @(
     New-SettingCase @(
         'ShowEmptyRecycleBinPrompt', 'ShowCreateHardlinkPrompt', 'ShowRemoveMotwPrompt',
         'ShowDisableHibernatePrompt', 'ShowRemoveShadowCopiesPrompt', 'ShowDismCleanupPrompt',
-        'ShowDismResetPrompt', 'ShowSetDatesPrompt', 'ShowRemoveEmptyFoldersPrompt'
+        'ShowDismResetPrompt', 'ShowSetDatesPrompt'
     ) -Default $true -ExplicitInput 0 -ExplicitExpected $false
     New-SettingCase ShowMicrosoftProgress -Default $false -ExplicitInput 1 -ExplicitExpected $true
     New-SettingCase ShowVisualization -Section TreeMapView -Default $true `
