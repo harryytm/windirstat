@@ -42,6 +42,7 @@ std::wstring FormatVolumeName(const std::wstring& rootPath, const std::wstring& 
 std::wstring GetFolderNameFromPath(std::wstring_view path);
 std::wstring GetBaseNameFromPath(std::wstring_view path);
 std::wstring GlobToRegex(const std::wstring& glob, bool useAnchors = true);
+bool IsWhollyEmptyOnDisk(const std::wstring& path, std::unordered_map<std::wstring, bool>& memo);
 
 // String helpers
 void ReplaceString(std::wstring& subject, std::wstring_view search, std::wstring_view replace);
