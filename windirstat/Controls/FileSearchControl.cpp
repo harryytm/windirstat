@@ -271,8 +271,6 @@ void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
     // fixing it here would mean re-verifying emptiness inside DeletePhysicalItems, which is
     // the shared delete path for every file and folder in the app, not just this feature.
     PopulateSearchResults(emptyDirs);
-
-    CMainFrame::Get()->GetFileTabbedView()->SetActiveSearchView();
 }
 
 void CFileSearchControl::RemoveItem(CItem* item)
