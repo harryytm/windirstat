@@ -153,26 +153,25 @@ void CFileSearchControl::PopulateSearchResults(const std::vector<CItem*>& matche
 // of O(N^2) from each caller re-walking its own subtree.
 inline bool CFileSearchControl::IsWhollyEmptyOnDisk(const std::wstring& path, std::unordered_map<std::wstring, bool>& memo)
 {
-    if (const auto found = memo.find(path); found != memo.end()) return found->second;
+    const std::unordered_map<std::wstring, bool>::const_iterator found = memo.find(path);
+    if (found != memo.end()) return found->second;
 
     std::error_code ec;
-    const bool empty = std::filesystem::is_empty(path, ec);
-    bool result = !ec && empty;
-    if (!ec && !empty)
+    std::filesystem::directory_iterator it(path, ec);
+    if (ec) return memo.emplace(path, false).first->second;
+
+    bool result = true;
+    for (; it != std::filesystem::directory_iterator(); it.increment(ec))
     {
-        result = true;
-        for (const auto& entry : std::filesystem::directory_iterator(path, ec))
+        if (ec || it->symlink_status(ec).type() != std::filesystem::file_type::directory ||
+            !IsWhollyEmptyOnDisk(it->path().native(), memo))
         {
-            if (ec) { result = false; break; }
-            if (entry.is_symlink(ec) || ec) { result = false; break; }
-            if (!entry.is_directory(ec) || ec) { result = false; break; }
-            if (!IsWhollyEmptyOnDisk(entry.path().wstring(), memo)) { result = false; break; }
+            result = false;
+            break;
         }
-        if (ec) result = false;
     }
 
-    memo.emplace(path, result);
-    return result;
+    return memo.emplace(path, result && !ec).first->second;
 }
 
 void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
@@ -186,6 +185,7 @@ void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
     // own topmost entry, and then the ancestor - also wholly empty - gets recorded as a
     // second, overlapping topmost entry that would delete the same branch again.
     std::vector<CItem*> seeds;
+    seeds.reserve(roots.size());
     for (CItem* root : roots)
     {
         const bool hasSelectedAncestor = std::ranges::any_of(roots, [&](const CItem* other)
