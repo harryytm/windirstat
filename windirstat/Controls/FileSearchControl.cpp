@@ -151,7 +151,7 @@ void CFileSearchControl::PopulateSearchResults(const std::vector<CItem*>& matche
 // own immediate entries, deferring to the memo for any subdirectory rather than
 // rescanning it, so a chain of N nested empty directories costs O(N) total here instead
 // of O(N^2) from each caller re-walking its own subtree.
-bool CFileSearchControl::IsWhollyEmptyOnDisk(const std::wstring& path, std::unordered_map<std::wstring, bool>& memo)
+inline bool CFileSearchControl::IsWhollyEmptyOnDisk(const std::wstring& path, std::unordered_map<std::wstring, bool>& memo)
 {
     if (const auto found = memo.find(path); found != memo.end()) return found->second;
 
