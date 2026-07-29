@@ -141,16 +141,6 @@ void CFileSearchControl::PopulateSearchResults(const std::vector<CItem*>& matche
     ExpandItem(0);
 }
 
-// Recursively checks whether a directory contains no files anywhere in its subtree. A
-// nested empty subdirectory still counts as empty; an actual file, a directory
-// symlink/reparse point (following it could hide real files a plain listing wouldn't
-// reveal), or anything that can't be verified (e.g. access denied), does not.
-//
-// std::filesystem::is_empty() covers the common case (an actual leaf directory) in one
-// call. A directory that isn't itself empty only needs one non-recursive listing of its
-// own immediate entries, deferring to the memo for any subdirectory rather than
-// rescanning it, so a chain of N nested empty directories costs O(N) total here instead
-// of O(N^2) from each caller re-walking its own subtree.
 inline bool CFileSearchControl::IsWhollyEmptyOnDisk(const std::wstring& path, std::unordered_map<std::wstring, bool>& memo)
 {
     const std::unordered_map<std::wstring, bool>::const_iterator found = memo.find(path);
@@ -179,11 +169,6 @@ void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
     // Update tab visibility to show search tab if results exist
     CMainFrame::Get()->GetFileTabbedView()->SetSearchTabVisibility(true);
 
-    // If the user directly multi-selected both a folder and one of its own subfolders,
-    // drop the subfolder from the seed set. Otherwise, if the subfolder happens to be
-    // visited before its selected ancestor (stack order), it could be recorded as its
-    // own topmost entry, and then the ancestor - also wholly empty - gets recorded as a
-    // second, overlapping topmost entry that would delete the same branch again.
     std::vector<CItem*> seeds;
     seeds.reserve(roots.size());
     for (CItem* root : roots)
@@ -195,25 +180,6 @@ void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
         if (!hasSelectedAncestor) seeds.push_back(root);
     }
 
-    // Collect only the topmost directory of each empty branch: a directory whose entire
-    // subtree contains no files (GetFilesCount() == 0) is wholly empty, so every folder
-    // below it is empty too and does not need its own entry - removing the topmost one
-    // (via the normal Delete / Delete to Recycle Bin path) takes the whole branch with it.
-    // Listing descendants separately would make the result count misleading: picking N
-    // entries to delete could remove more than N items once nested branches are involved.
-    //
-    // GetFilesCount() reflects the scanned model, which silently skips hidden/protected
-    // files and directories, symlinks, and anything matching a user filter rule (Item.cpp,
-    // ScanItems) - so a directory can read as "wholly empty" there while still holding
-    // real files on disk. RemoveDirectory() used to catch this at deletion time since
-    // Windows itself refuses to remove a directory that still has any entry, hidden or
-    // not; that guarantee is gone once deletion goes through the generic recursive Delete
-    // path, so IsWhollyEmptyOnDisk() re-verifies against the real filesystem instead.
-    //
-    // Wrapped in the same progress dialog ProcessSearch uses: IsWhollyEmptyOnDisk touches
-    // the real filesystem for every candidate, which can take a while on a large or deeply
-    // nested tree, so this keeps the UI responsive and lets the user cancel instead of the
-    // app appearing to hang.
     std::vector<CItem*> emptyDirs;
     ULONGLONG totalItems = 0;
     for (const CItem* seed : seeds) totalItems += seed->GetItemsCount();
@@ -245,14 +211,6 @@ void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
         }
     }).DoModal();
 
-    // The old code deleted every match directly, so an unbounded count never showed up
-    // anywhere. Now that matches are shown in a list instead, a drive full of thousands
-    // of empty folders (e.g. leftover build/cache directories) would otherwise dump all
-    // of them into the result view at once. Capped the same way and using the same
-    // options key (COptions::SearchMaxResults) as the existing text search, so behavior
-    // is consistent and the largest folders (by logical size) are kept when the cap is
-    // hit - SetLimitExceeded() below then lets the result view show its usual
-    // "more results than shown" notice.
     if (const size_t maxResults = COptions::SearchMaxResults; emptyDirs.size() > maxResults)
     {
         std::ranges::partial_sort(emptyDirs, emptyDirs.begin() + maxResults,
@@ -261,15 +219,6 @@ void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
         m_rootItem->SetLimitExceeded(true);
     }
 
-    // Show the found empty folders in the search results view instead of deleting them
-    // directly. From there, the user picks which ones to keep and removes the rest via
-    // the normal Delete / Delete to Recycle Bin commands, same as any other search result.
-    // Known limitation: a result stays in this list until the user acts on it, so a folder
-    // that received a new file after this scan (e.g. an active cache directory) but before
-    // the user deletes it would still be deleted along with that new file. This is the same
-    // race any "browse a list, act later" UI has - including the file tree itself - and
-    // fixing it here would mean re-verifying emptiness inside DeletePhysicalItems, which is
-    // the shared delete path for every file and folder in the app, not just this feature.
     PopulateSearchResults(emptyDirs);
 }
 
