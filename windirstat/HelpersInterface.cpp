@@ -253,40 +253,6 @@ std::wstring GlobToRegex(const std::wstring& glob, const bool useAnchors)
     return useAnchors ? (L"^" + regex + L"$") : regex;
 }
 
-// Recursively checks whether a directory contains no files anywhere in its subtree. A
-// nested empty subdirectory still counts as empty; an actual file, a directory
-// symlink/reparse point (following it could hide real files a plain listing wouldn't
-// reveal), or anything that can't be verified (e.g. access denied), does not.
-//
-// std::filesystem::is_empty() covers the common case (an actual leaf directory) in one
-// call. A directory that isn't itself empty only needs one non-recursive listing of its
-// own immediate entries, deferring to the memo for any subdirectory rather than
-// rescanning it, so a chain of N nested empty directories costs O(N) total here instead
-// of O(N^2) from each caller re-walking its own subtree.
-bool IsWhollyEmptyOnDisk(const std::wstring& path, std::unordered_map<std::wstring, bool>& memo)
-{
-    if (const auto found = memo.find(path); found != memo.end()) return found->second;
-
-    std::error_code ec;
-    const bool empty = std::filesystem::is_empty(path, ec);
-    bool result = !ec && empty;
-    if (!ec && !empty)
-    {
-        result = true;
-        for (const auto& entry : std::filesystem::directory_iterator(path, ec))
-        {
-            if (ec) { result = false; break; }
-            if (entry.is_symlink(ec) || ec) { result = false; break; }
-            if (!entry.is_directory(ec) || ec) { result = false; break; }
-            if (!IsWhollyEmptyOnDisk(entry.path().wstring(), memo)) { result = false; break; }
-        }
-        if (ec) result = false;
-    }
-
-    memo.emplace(path, result);
-    return result;
-}
-
 // String helpers
 void ReplaceString(std::wstring& subject, std::wstring_view search, std::wstring_view replace)
 {

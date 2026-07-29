@@ -44,4 +44,7 @@ protected:
     std::unordered_map<CItem*, CItemSearch*> m_itemTracker;
 
     DECLARE_MESSAGE_MAP()
+
+private:
+    static bool IsWhollyEmptyOnDisk(const std::wstring& path, std::unordered_map<std::wstring, bool>& memo);
 };
