@@ -1435,4 +1435,5 @@ void CWinDirStatModel::OnSearchEmptyFolders()
     const auto& roots = GetAllSelected();
     if (roots.empty()) return;
     CFileSearchControl::Get()->SearchEmptyFolders(roots);
+    CMainFrame::Get()->GetFileTabbedView()->SetActiveSearchView();
 }
