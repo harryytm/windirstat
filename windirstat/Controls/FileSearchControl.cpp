@@ -141,30 +141,6 @@ void CFileSearchControl::PopulateSearchResults(const std::vector<CItem*>& matche
     ExpandItem(0);
 }
 
-bool CFileSearchControl::IsWhollyEmptyOnDisk(const std::wstring& path, std::unordered_map<std::wstring, bool>& memo)
-{
-    if (const auto found = memo.find(path); found != memo.end()) return found->second;
-
-    std::error_code ec;
-    const bool empty = std::filesystem::is_empty(path, ec);
-    bool result = !ec && empty;
-    if (!ec && !empty)
-    {
-        result = true;
-        for (const auto& entry : std::filesystem::directory_iterator(path, ec))
-        {
-            if (ec) { result = false; break; }
-            if (entry.is_symlink(ec) || ec) { result = false; break; }
-            if (!entry.is_directory(ec) || ec) { result = false; break; }
-            if (!IsWhollyEmptyOnDisk(entry.path().wstring(), memo)) { result = false; break; }
-        }
-        if (ec) result = false;
-    }
-
-    memo.emplace(path, result);
-    return result;
-}
-
 void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
 {
     // Update tab visibility to show search tab if results exist
@@ -192,6 +168,32 @@ void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
         std::vector<CItem*> stack(seeds.begin(), seeds.end());
         std::unordered_set<CItem*> visited;
         std::unordered_map<std::wstring, bool> emptyOnDiskMemo;
+
+        // Lambda function to check if a folder is actually empty on disk
+        const std::function<bool(const std::wstring&, std::unordered_map<std::wstring, bool>&)> IsWhollyEmptyOnDisk =
+            [&IsWhollyEmptyOnDisk](const std::wstring& path, std::unordered_map<std::wstring, bool>& memo) -> bool
+        {
+            const auto found = memo.find(path);
+            if (found != memo.end()) return found->second;
+
+            std::error_code ec;
+            std::filesystem::directory_iterator it(path, ec);
+            if (ec) return memo.emplace(path, false).first->second;
+
+            bool result = true;
+            for (; it != std::filesystem::directory_iterator(); it.increment(ec))
+            {
+                if (ec || it->symlink_status(ec).type() != std::filesystem::file_type::directory ||
+                    !IsWhollyEmptyOnDisk(it->path().native(), memo))
+                {
+                    result = false;
+                    break;
+                }
+            }
+
+            return memo.emplace(path, result && !ec).first->second;
+        };
+
         while (!stack.empty() && !pdlg->IsCancelled())
         {
             pdlg->Increment();
