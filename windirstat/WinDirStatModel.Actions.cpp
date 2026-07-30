@@ -1432,8 +1432,8 @@ void CWinDirStatModel::OnToolsSetDates()
 
 void CWinDirStatModel::OnSearchEmptyFolders()
 {
-    const auto& roots = GetAllSelected();
-    if (roots.empty()) return;
-    CFileSearchControl::Get()->SearchEmptyFolders(roots);
+    const std::vector<CItem*>& items = GetAllSelected();
+    if (items.empty()) return;
+    CFileSearchControl::Get()->SearchEmptyFolders(items);
     CMainFrame::Get()->GetFileTabbedView()->SetActiveSearchView();
 }
