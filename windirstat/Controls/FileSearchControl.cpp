@@ -141,57 +141,62 @@ void CFileSearchControl::PopulateSearchResults(const std::vector<CItem*>& matche
     ExpandItem(0);
 }
 
-void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
+void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& items)
 {
     // Update tab visibility to show search tab if results exist
     CMainFrame::Get()->GetFileTabbedView()->SetSearchTabVisibility(true);
 
-    std::vector<CItem*> seeds;
-    for (CItem* root : roots)
+    ULONGLONG totalSearchItems = 0;
+    std::vector<CItem*> stack;
+    stack.reserve(items.size());
+
+    // Filter out items that are descendants of another selected item
+    for (CItem* const item : items)
     {
-        const bool hasSelectedAncestor = std::ranges::any_of(roots, [&](const CItem* other)
-        {
-            return other != root && other->IsAncestorOf(root);
+        const bool hasSelectedAncestor = std::ranges::any_of(items, [item](const CItem* const otherItem) {
+            return otherItem != item && otherItem->IsAncestorOf(item);
         });
-        if (!hasSelectedAncestor) seeds.push_back(root);
+
+        if (!hasSelectedAncestor)
+        {
+            totalSearchItems += item->GetItemsCount();
+            stack.push_back(item);
+        }
     }
 
-    std::vector<CItem*> emptyDirs;
-    ULONGLONG totalItems = 0;
-    for (const CItem* seed : seeds) totalItems += seed->GetItemsCount();
-    CProgressDlg(static_cast<size_t>(totalItems), CProgressDlg::Flags::None, AfxGetMainWnd(), [&](CProgressDlg* pdlg)
+    std::vector<CItem*> results;
+
+    CProgressDlg(static_cast<size_t>(totalSearchItems), CProgressDlg::Flags::None, AfxGetMainWnd(), [&](CProgressDlg* pdlg)
     {
         // Remove previous results
         SetRootItem();
         m_rootItem->SetLimitExceeded(false);
 
-        std::vector<CItem*> stack(seeds.begin(), seeds.end());
-        std::unordered_set<CItem*> visited;
-        std::unordered_map<std::wstring, bool> emptyOnDiskMemo;
+        std::unordered_map<std::wstring, bool> emptyFoldersMap;
 
         // Lambda function to check if a folder is actually empty on disk
         const std::function<bool(const std::wstring&, std::unordered_map<std::wstring, bool>&)> IsWhollyEmptyOnDisk =
-            [&IsWhollyEmptyOnDisk](const std::wstring& path, std::unordered_map<std::wstring, bool>& memo) -> bool
+            [&IsWhollyEmptyOnDisk](const std::wstring& path, std::unordered_map<std::wstring, bool>& map) -> bool
         {
-            const auto found = memo.find(path);
-            if (found != memo.end()) return found->second;
+            const auto found = map.find(path);
+            if (found != map.end()) return found->second;
 
             std::error_code ec;
             std::filesystem::directory_iterator it(path, ec);
-            if (ec) return memo.emplace(path, false).first->second;
+            if (ec) return map.emplace(path, false).first->second;
 
             bool result = true;
             for (; it != std::filesystem::directory_iterator(); it.increment(ec))
             {
                 if (ec || it->symlink_status(ec).type() != std::filesystem::file_type::directory ||
-                    !IsWhollyEmptyOnDisk(it->path().native(), memo))
+                    !IsWhollyEmptyOnDisk(it->path().native(), map))
                 {
                     result = false;
                     break;
                 }
             }
 
-            return memo.emplace(path, result && !ec).first->second;
+            return map.emplace(path, result && !ec).first->second;
         };
 
         while (!stack.empty() && !pdlg->IsCancelled())
@@ -199,29 +204,31 @@ void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
             pdlg->Increment();
             CItem* item = stack.back();
             stack.pop_back();
-            if (!visited.insert(item).second) continue;
+
             if (item->IsTypeOrFlag(IT_DIRECTORY) && !item->IsRootItem() && item->GetFilesCount() == 0
-                && IsWhollyEmptyOnDisk(item->GetPathLong(), emptyOnDiskMemo))
+                && IsWhollyEmptyOnDisk(item->GetPathLong(), emptyFoldersMap))
             {
-                emptyDirs.push_back(item);
+                results.push_back(item);
                 continue;
             }
+
             if (item->HasChildren())
             {
-                stack.insert(stack.end(), item->GetChildren().begin(), item->GetChildren().end());
+                const auto& children = item->GetChildren();
+                stack.insert(stack.end(), children.begin(), children.end());
             }
         }
     }).DoModal();
 
-    if (const size_t maxResults = COptions::SearchMaxResults; emptyDirs.size() > maxResults)
+    if (const size_t maxResults = COptions::SearchMaxResults; results.size() > maxResults)
     {
-        std::ranges::partial_sort(emptyDirs, emptyDirs.begin() + maxResults,
+        std::ranges::partial_sort(results, results.begin() + maxResults,
             std::ranges::greater{}, &CItem::GetSizeLogical);
-        emptyDirs.resize(maxResults);
+        results.resize(maxResults);
         m_rootItem->SetLimitExceeded(true);
     }
 
-    PopulateSearchResults(emptyDirs);
+    PopulateSearchResults(results);
 }
 
 void CFileSearchControl::RemoveItem(CItem* item)
