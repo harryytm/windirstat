@@ -156,23 +156,21 @@ bool CFileSearchControl::IsWhollyEmptyOnDisk(const std::wstring& path, std::unor
     if (const auto found = memo.find(path); found != memo.end()) return found->second;
 
     std::error_code ec;
-    const bool empty = std::filesystem::is_empty(path, ec);
-    bool result = !ec && empty;
-    if (!ec && !empty)
+    std::filesystem::directory_iterator it(path, ec);
+    if (ec) return memo.emplace(path, false).first->second;
+
+    bool result = true;
+    for (; it != std::filesystem::directory_iterator(); it.increment(ec))
     {
-        result = true;
-        for (const auto& entry : std::filesystem::directory_iterator(path, ec))
+        if (ec || it->symlink_status(ec).type() != std::filesystem::file_type::directory ||
+            !IsWhollyEmptyOnDisk(it->path().native(), memo))
         {
-            if (ec) { result = false; break; }
-            if (entry.is_symlink(ec) || ec) { result = false; break; }
-            if (!entry.is_directory(ec) || ec) { result = false; break; }
-            if (!IsWhollyEmptyOnDisk(entry.path().wstring(), memo)) { result = false; break; }
+            result = false;
+            break;
         }
-        if (ec) result = false;
     }
 
-    memo.emplace(path, result);
-    return result;
+    return memo.emplace(path, result && !ec).first->second;
 }
 
 void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
@@ -184,15 +182,25 @@ void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
     // drop the subfolder from the seed set. Otherwise, if the subfolder happens to be
     // visited before its selected ancestor (stack order), it could be recorded as its
     // own topmost entry, and then the ancestor - also wholly empty - gets recorded as a
-    // second, overlapping topmost entry that would delete the same branch again.
-    std::vector<CItem*> seeds;
+    // second, overlapping topmost entry that would delete the same branch again. Once
+    // pruned this way, no two seeds can be ancestor/descendant of each other, so the
+    // stack-based traversal below can never re-visit the same item from two different
+    // seeds - a duplicate-tracking set would only ever cost memory without catching
+    // anything reachable from here.
+    std::vector<CItem*> stack;
+    stack.reserve(roots.size());
+    ULONGLONG totalItems = 0;
     for (CItem* root : roots)
     {
         const bool hasSelectedAncestor = std::ranges::any_of(roots, [&](const CItem* other)
         {
             return other != root && other->IsAncestorOf(root);
         });
-        if (!hasSelectedAncestor) seeds.push_back(root);
+        if (!hasSelectedAncestor)
+        {
+            totalItems += root->GetItemsCount();
+            stack.push_back(root);
+        }
     }
 
     // Collect only the topmost directory of each empty branch: a directory whose entire
@@ -215,23 +223,18 @@ void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
     // nested tree, so this keeps the UI responsive and lets the user cancel instead of the
     // app appearing to hang.
     std::vector<CItem*> emptyDirs;
-    ULONGLONG totalItems = 0;
-    for (const CItem* seed : seeds) totalItems += seed->GetItemsCount();
     CProgressDlg(static_cast<size_t>(totalItems), CProgressDlg::Flags::None, AfxGetMainWnd(), [&](CProgressDlg* pdlg)
     {
         // Remove previous results
         SetRootItem();
         m_rootItem->SetLimitExceeded(false);
 
-        std::vector<CItem*> stack(seeds.begin(), seeds.end());
-        std::unordered_set<CItem*> visited;
         std::unordered_map<std::wstring, bool> emptyOnDiskMemo;
         while (!stack.empty() && !pdlg->IsCancelled())
         {
             pdlg->Increment();
             CItem* item = stack.back();
             stack.pop_back();
-            if (!visited.insert(item).second) continue;
             if (item->IsTypeOrFlag(IT_DIRECTORY) && !item->IsRootItem() && item->GetFilesCount() == 0
                 && IsWhollyEmptyOnDisk(item->GetPathLong(), emptyOnDiskMemo))
             {
