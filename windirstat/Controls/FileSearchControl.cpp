@@ -210,9 +210,10 @@ void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
     // Listing descendants separately would make the result count misleading: picking N
     // entries to delete could remove more than N items once nested branches are involved.
     //
-    // GetFilesCount() reflects the scanned model, which silently skips hidden/protected
-    // files and directories, symlinks, and anything matching a user filter rule (Item.cpp,
-    // ScanItems) - so a directory can read as "wholly empty" there while still holding
+    // GetFilesCount() reflects the scanned model, which can silently skip real files: if
+    // the user has "Exclude Hidden/Protected/Symbolic Link Files" enabled, or a filter
+    // rule matches (Item.cpp, ScanItems), those files never entered the count in the
+    // first place - so a directory can read as "wholly empty" there while still holding
     // real files on disk. RemoveDirectory() used to catch this at deletion time since
     // Windows itself refuses to remove a directory that still has any entry, hidden or
     // not; that guarantee is gone once deletion goes through the generic recursive Delete
