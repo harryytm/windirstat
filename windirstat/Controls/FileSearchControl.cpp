@@ -18,6 +18,7 @@
 #include "pch.h"
 #include "ItemSearch.h"
 #include "FileTreeView.h"
+#include "FinderBasic.h"
 
 CFileSearchControl::CFileSearchControl() : CTreeListControl(COptions::SearchViewColumnOrder.Ptr(), COptions::SearchViewColumnWidths.Ptr(), COptions::SearchViewColumnVisibility.Ptr(), LF_SEARCHLIST, false)
 {
@@ -141,30 +142,6 @@ void CFileSearchControl::PopulateSearchResults(const std::vector<CItem*>& matche
     ExpandItem(0);
 }
 
-bool CFileSearchControl::IsWhollyEmptyOnDisk(const std::wstring& path, std::unordered_map<std::wstring, bool>& memo)
-{
-    if (const auto found = memo.find(path); found != memo.end()) return found->second;
-
-    std::error_code ec;
-    const bool empty = std::filesystem::is_empty(path, ec);
-    bool result = !ec && empty;
-    if (!ec && !empty)
-    {
-        result = true;
-        for (const auto& entry : std::filesystem::directory_iterator(path, ec))
-        {
-            if (ec) { result = false; break; }
-            if (entry.is_symlink(ec) || ec) { result = false; break; }
-            if (!entry.is_directory(ec) || ec) { result = false; break; }
-            if (!IsWhollyEmptyOnDisk(entry.path().wstring(), memo)) { result = false; break; }
-        }
-        if (ec) result = false;
-    }
-
-    memo.emplace(path, result);
-    return result;
-}
-
 void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
 {
     // Update tab visibility to show search tab if results exist
@@ -199,7 +176,7 @@ void CFileSearchControl::SearchEmptyFolders(const std::vector<CItem*>& roots)
             stack.pop_back();
             if (!visited.insert(item).second) continue;
             if (item->IsTypeOrFlag(IT_DIRECTORY) && !item->IsRootItem() && item->GetFilesCount() == 0
-                && IsWhollyEmptyOnDisk(item->GetPathLong(), emptyOnDiskMemo))
+                && FinderBasic::IsEmptyFolderOnDisk(item->GetPathLong(), emptyFolders))
             {
                 emptyDirs.push_back(item);
                 continue;
