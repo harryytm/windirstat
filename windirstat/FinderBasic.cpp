@@ -333,3 +333,27 @@ bool FinderBasic::DoesFileExist(const std::wstring& folder, const std::wstring& 
         p.parent_path().wstring(),
         p.filename().wstring());
 }
+
+bool FinderBasic::IsEmptyFolderOnDisk(const std::wstring& path, std::unordered_map<std::wstring, bool>& memo)
+{
+    if (const auto found = memo.find(path); found != memo.end()) return found->second;
+
+    std::error_code ec;
+    const bool empty = std::filesystem::is_empty(path, ec);
+    bool result = !ec && empty;
+    if (!ec && !empty)
+    {
+        result = true;
+        for (const auto& entry : std::filesystem::directory_iterator(path, ec))
+        {
+            if (ec) { result = false; break; }
+            if (entry.is_symlink(ec) || ec) { result = false; break; }
+            if (!entry.is_directory(ec) || ec) { result = false; break; }
+            if (!IsEmptyFolderOnDisk(entry.path().wstring(), memo)) { result = false; break; }
+        }
+        if (ec) result = false;
+    }
+
+    memo.emplace(path, result);
+    return result;
+}
