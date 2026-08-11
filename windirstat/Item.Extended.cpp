@@ -743,7 +743,7 @@ void CItem::CreateHardlinksItem()
     // Create 20 Index Set subfolders (Index Set 1 through Index 20)
     // On file systems with many hardlinks, this helps reduce the items
     // to expand in the interface when viewing hardlink structures
-    constexpr char INDEX_SET_COUNT = 20;
+    constexpr char INDEX_SET_COUNT = 1;
     for (const int i : std::views::iota(1, INDEX_SET_COUNT + 1))
     {
         const auto indexSet = new CItem(IT_HLINKS_SET, std::format(L"{} ≡ 0x{:02X}", Localization::Lookup(IDS_COL_INDEX), i));
@@ -871,7 +871,7 @@ void CItem::DoHardlinkAdjustment()
         }
 
         // Determine which Index Set this belongs to (modulus 20, 0-based index)
-        constexpr auto INDEX_SET_COUNT = 20u;
+        constexpr auto INDEX_SET_COUNT = 1u;
         const size_t setIndex = index % INDEX_SET_COUNT;  // 0-19
         CItem* indexSetItem = setIndex < indexSets.size() ? indexSets[setIndex] : nullptr;
 
