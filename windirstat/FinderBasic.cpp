@@ -333,3 +333,27 @@ bool FinderBasic::DoesFileExist(const std::wstring& folder, const std::wstring& 
         p.parent_path().wstring(),
         p.filename().wstring());
 }
+
+// A directory counts as empty only if its entire subtree is free of files and directory
+// symlinks; memoized so a chain of N nested empty directories costs O(N), not O(N^2).
+bool FinderBasic::IsEmptyFolderOnDisk(const std::wstring& path, std::unordered_map<std::wstring, bool>& memo)
+{
+    if (const auto found = memo.find(path); found != memo.end()) return found->second;
+
+    std::error_code ec;
+    std::filesystem::directory_iterator it(path, ec);
+    if (ec) return memo.emplace(path, false).first->second;
+
+    bool result = true;
+    for (; it != std::filesystem::directory_iterator(); it.increment(ec))
+    {
+        if (ec || it->symlink_status(ec).type() != std::filesystem::file_type::directory ||
+            !IsEmptyFolderOnDisk(it->path().native(), memo))
+        {
+            result = false;
+            break;
+        }
+    }
+
+    return memo.emplace(path, result && !ec).first->second;
+}
