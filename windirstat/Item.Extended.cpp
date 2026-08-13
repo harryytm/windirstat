@@ -265,88 +265,93 @@ int CItem::CompareSibling(const CTreeListItem* tlib, const int subitem) const
 {
     const CItem* other = reinterpret_cast<const CItem*>(tlib);
 
+    // Isolate drive stats and folder grouping logic to reduce performance impact when disabled
+    if (COptions::GroupDriveStatsFirst || COptions::GroupFoldersBeforeFiles)
+    {
+        // Handle sorting direction for name and last change columns which sort in ascending order by default
+        const bool isDefaultAscendingSort = (subitem == COL_NAME || subitem == COL_LAST_CHANGE);
+
+        // Show <Free Space> <Unknown> and <Hardlinks> on top or bottom in a fixed order if the option is enabled
+        if (COptions::GroupDriveStatsFirst)
+        {
+            // Define a mask for drive stats types to simplify checks below
+            constexpr ITEMTYPE driveStatsMask = (IT_FREESPACE | IT_UNKNOWN | IT_HLINKS);
+            const bool thisIsStat = IsTypeOrFlag(driveStatsMask);
+            const bool otherIsStat = other->IsTypeOrFlag(driveStatsMask);
+
+            if (thisIsStat || otherIsStat)
+            {
+                if (thisIsStat != otherIsStat)
+                {
+                    return (thisIsStat) ? (isDefaultAscendingSort ? -1 : 1) : (isDefaultAscendingSort ? 1 : -1);
+                }
+
+                if (GetItemType() != other->GetItemType())
+                {
+                    return isDefaultAscendingSort ? usignum(GetItemType(), other->GetItemType()) :
+                        usignum(other->GetItemType(), GetItemType());
+                }
+
+                return 0;
+            }
+        }
+
+        // Group folders before files if the option is enabled and the item types differ
+        if (COptions::GroupFoldersBeforeFiles && (GetItemType() != other->GetItemType()))
+        {
+            return isDefaultAscendingSort ? usignum(GetItemType(), other->GetItemType()) :
+                usignum(other->GetItemType(), GetItemType());
+        }
+    }
+
     switch (subitem)
     {
     case COL_NAME:
-    {
         if (GetItemType() != other->GetItemType())
         {
             return usignum(GetItemType(), other->GetItemType());
         }
         return signum(_wcsicmp(m_name.get(), other->m_name.get()));
-    }
 
     case COL_SIZE_PROPORTION:
-    {
         if (MustShowReadJobs())
         {
             return usignum(GetReadJobs(), other->GetReadJobs());
         }
-        else
-        {
-            return signum(GetFraction() - other->GetFraction());
-        }
-    }
+        [[fallthrough]];
 
     case COL_PERCENTAGE:
-    {
         // Siblings have the same parent and root, so both percentage modes have identical sort order.
         return signum(GetFraction() - other->GetFraction());
-    }
 
     case COL_SIZE_PHYSICAL:
-    {
         return usignum(GetSizePhysical(), other->GetSizePhysical());
-    }
 
     case COL_SIZE_LOGICAL:
-    {
         return usignum(GetSizeLogical(), other->GetSizeLogical());
-    }
 
     case COL_ITEMS:
-    {
         return usignum(GetItemsCount(), other->GetItemsCount());
-    }
 
     case COL_FILES:
-    {
         return usignum(GetFilesCount(), other->GetFilesCount());
-    }
 
     case COL_FOLDERS:
-    {
         return usignum(GetFoldersCount(), other->GetFoldersCount());
-    }
 
     case COL_LAST_CHANGE:
-    {
-        if (m_lastChange < other->m_lastChange)
-        {
-            return -1;
-        }
-        if (m_lastChange == other->m_lastChange)
-        {
-            return 0;
-        }
-
-        return 1;
-    }
+        if (m_lastChange < other->m_lastChange) return -1;
+        if (m_lastChange > other->m_lastChange) return 1;
+        return 0;
 
     case COL_ATTRIBUTES:
-    {
         return signum(GetSortAttributes() - other->GetSortAttributes());
-    }
 
     case COL_OWNER:
-    {
         return signum(_wcsicmp(GetOwner().c_str(), other->GetOwner().c_str()));
-    }
 
     default:
-    {
         return 0;
-    }
     }
 }
 

@@ -62,6 +62,7 @@ void CControlView::OnUpdate(CWnd* sender, MODEL_CHANGE change, CItem* item)
     }
     break;
 
+    case MODEL_CHANGE_SORT_ORDER:
     case MODEL_CHANGE_SIZE_MODE:
     {
         control.SortItems();

@@ -225,6 +225,10 @@ BEGIN_MESSAGE_MAP(CWinDirStatModel, CCmdTarget)
     ON_UPDATE_COMMAND_UI(ID_INDICATOR_SIZE, OnUpdateCentralHandler)
     ON_UPDATE_COMMAND_UI(ID_CLEANUP_DISK_CLEANUP, OnUpdateCentralHandler)
     ON_COMMAND_RANGE(CONTENT_MENU_MINCMD, CONTENT_MENU_MAXCMD, OnContextMenuExplore)
+    ON_COMMAND(ID_GROUPFOLDERSBEFOREFILES, OnGroupFoldersBeforeFiles)
+    ON_UPDATE_COMMAND_UI(ID_GROUPFOLDERSBEFOREFILES, OnUpdateGroupFoldersBeforeFiles)
+    ON_COMMAND(ID_GROUPDRIVESTATSFIRSRT, OnGroupDriveStatsFirst)
+    ON_UPDATE_COMMAND_UI(ID_GROUPDRIVESTATSFIRSRT, OnUpdateGroupDriveStatsFirst)
 END_MESSAGE_MAP()
 
 void CWinDirStatModel::OnFilterExcludeItem()
@@ -242,6 +246,28 @@ void CWinDirStatModel::OnFilterExcludeItem()
 
     CFiltering::CompileFilters();
     RefreshItem(selected);
+}
+
+void CWinDirStatModel::OnGroupFoldersBeforeFiles()
+{
+    COptions::GroupFoldersBeforeFiles = !COptions::GroupFoldersBeforeFiles;
+    NotifyPanes(MODEL_CHANGE_SORT_ORDER);
+}
+
+void CWinDirStatModel::OnUpdateGroupFoldersBeforeFiles(CCmdUI* pCmdUI)
+{
+    pCmdUI->SetCheck(COptions::GroupFoldersBeforeFiles);
+}
+
+void CWinDirStatModel::OnGroupDriveStatsFirst()
+{
+    COptions::GroupDriveStatsFirst = !COptions::GroupDriveStatsFirst;
+    NotifyPanes(MODEL_CHANGE_SORT_ORDER);
+}
+
+void CWinDirStatModel::OnUpdateGroupDriveStatsFirst(CCmdUI * pCmdUI)
+{
+    pCmdUI->SetCheck(COptions::GroupDriveStatsFirst);
 }
 
 void CWinDirStatModel::OnCleanupSparsifyFile()
