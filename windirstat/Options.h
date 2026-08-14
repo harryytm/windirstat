@@ -174,6 +174,8 @@ public:
     inline static Setting<bool> ExcludeProtectedFile{ OptionsGeneral, L"ExcludeProtectedFile", false };
     inline static Setting<bool> FilteringUseRegex{ OptionsGeneral, L"FilteringUseRegex", false };
     inline static Setting<bool> FollowVolumeMountPoints{ OptionsGeneral, L"FollowVolumeMountPoints", false };
+    inline static Setting<bool> GroupDriveStatsFirst{ OptionsGeneral, L"GroupDriveStatsFirst", true };
+    inline static Setting<bool> GroupFoldersBeforeFiles{ OptionsGeneral, L"GroupFoldersBeforeFiles", true };
     inline static Setting<bool> UseSizeSuffixes{ OptionsGeneral, L"UseSizeSuffixes", true };
     inline static Setting<bool> ListFullRowSelection{ OptionsGeneral, L"ListFullRowSelection", true };
     inline static Setting<bool> ListGrid{ OptionsGeneral, L"ListGrid", false };

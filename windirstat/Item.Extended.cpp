@@ -295,6 +295,45 @@ int CItem::CompareSibling(const CTreeListItem* tlib, const int subitem) const
 {
     const CItem* other = reinterpret_cast<const CItem*>(tlib);
 
+    // Isolate drive stats and folder grouping logic to reduce performance impact when disabled
+    if (COptions::GroupDriveStatsFirst || COptions::GroupFoldersBeforeFiles)
+    {
+        // Handle sorting direction for name and last change columns which sort in ascending order by default
+        const bool isDefaultAscendingSort = (subitem == COL_NAME || subitem == COL_LAST_CHANGE);
+
+        // Show <Free Space> <Unknown> and <Hardlinks> on top or bottom in a fixed order if the option is enabled
+        if (COptions::GroupDriveStatsFirst)
+        {
+            // Define a mask for drive stats types to simplify checks below
+            constexpr ITEMTYPE driveStatsMask = (IT_FREESPACE | IT_UNKNOWN | IT_HLINKS);
+            const bool thisIsStat = IsTypeOrFlag(driveStatsMask);
+            const bool otherIsStat = other->IsTypeOrFlag(driveStatsMask);
+
+            if (thisIsStat || otherIsStat)
+            {
+                if (thisIsStat != otherIsStat)
+                {
+                    return (thisIsStat) ? (isDefaultAscendingSort ? -1 : 1) : (isDefaultAscendingSort ? 1 : -1);
+                }
+
+                if (GetItemType() != other->GetItemType())
+                {
+                    return isDefaultAscendingSort ?
+                        usignum(GetItemType(), other->GetItemType()) : usignum(other->GetItemType(), GetItemType());
+                }
+
+                return 0;
+            }
+        }
+
+        // Group folders before files if the option is enabled and the item types differ
+        if (COptions::GroupFoldersBeforeFiles && (GetItemType() != other->GetItemType()))
+        {
+            return isDefaultAscendingSort ?
+                usignum(GetItemType(), other->GetItemType()) : usignum(other->GetItemType(), GetItemType());
+        }
+    }
+
     switch (subitem)
     {
     case COL_NAME:
@@ -345,16 +384,9 @@ int CItem::CompareSibling(const CTreeListItem* tlib, const int subitem) const
 
     case COL_LAST_CHANGE:
     {
-        if (m_lastChange < other->m_lastChange)
-        {
-            return -1;
-        }
-        if (m_lastChange == other->m_lastChange)
-        {
-            return 0;
-        }
-
-        return 1;
+        if (m_lastChange < other->m_lastChange) return -1;
+        if (m_lastChange > other->m_lastChange) return 1;
+        return 0;
     }
 
     case COL_ATTRIBUTES:
