@@ -68,6 +68,7 @@ enum MODEL_CHANGE : std::uint8_t
     MODEL_CHANGE_SELECTION_ACTION,    // Inform central selection handler to update selection (uses item)
     MODEL_CHANGE_SELECTION_REFRESH,   // Inform all views to redraw based on current selections
     MODEL_CHANGE_SELECTION_STYLE,     // Only update selection in TreeMapView
+    MODEL_CHANGE_SORT_ORDER,          // Inform all views to update sort order
     MODEL_CHANGE_EXTENSION_SELECTION, // Type list selected a new extension
     MODEL_CHANGE_ZOOM,                // Only zoom item has changed.
     MODEL_CHANGE_LIST_STYLE,          // Options: List style (grid/stripes) or treelist colors changed
@@ -255,6 +256,10 @@ protected:
     void OnUpdateCreateHardlink(CCmdUI* pCmdUI);
     void OnCreateHardlink();
     void OnFilterExcludeItem();
+    void OnGroupFoldersBeforeFiles();
+    void OnUpdateGroupFoldersBeforeFiles(CCmdUI* pCmdUI);
+    void OnGroupDriveStatsFirst();
+    void OnUpdateGroupDriveStatsFirst(CCmdUI* pCmdUI);
 };
 
 inline std::span<const RouteEntry> CWinDirStatModel::Routes()
@@ -363,6 +368,10 @@ inline std::span<const RouteEntry> CWinDirStatModel::Routes()
         Route::Update<&ThisClass::OnUpdateCentralHandler>(ID_INDICATOR_IDLE),
         Route::Update<&ThisClass::OnUpdateCentralHandler>(ID_INDICATOR_SIZE),
         Route::Command<&ThisClass::OnContextMenuExplore>(CONTENT_MENU_MINCMD, CONTENT_MENU_MAXCMD),
+        Route::Command<&ThisClass::OnGroupFoldersBeforeFiles>(ID_GROUPFOLDERSBEFOREFILES),
+        Route::Update<&ThisClass::OnUpdateGroupFoldersBeforeFiles>(ID_GROUPFOLDERSBEFOREFILES),
+        Route::Command<&ThisClass::OnGroupDriveStatsFirst>(ID_GROUPDRIVESTATSFIRSRT),
+        Route::Update<&ThisClass::OnUpdateGroupDriveStatsFirst>(ID_GROUPDRIVESTATSFIRSRT)
     };
     return entries;
 }
