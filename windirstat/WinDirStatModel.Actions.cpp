@@ -215,6 +215,28 @@ void CWinDirStatModel::OnFilterExcludeItem()
     RefreshItem(selected);
 }
 
+void CWinDirStatModel::OnGroupFoldersBeforeFiles()
+{
+    COptions::GroupFoldersBeforeFiles = !COptions::GroupFoldersBeforeFiles;
+    NotifyPanes(MODEL_CHANGE_SORT_ORDER);
+}
+
+void CWinDirStatModel::OnUpdateGroupFoldersBeforeFiles(CCmdUI* pCmdUI)
+{
+    pCmdUI->SetCheck(COptions::GroupFoldersBeforeFiles);
+}
+
+void CWinDirStatModel::OnGroupDriveStatsFirst()
+{
+    COptions::GroupDriveStatsFirst = !COptions::GroupDriveStatsFirst;
+    NotifyPanes(MODEL_CHANGE_SORT_ORDER);
+}
+
+void CWinDirStatModel::OnUpdateGroupDriveStatsFirst(CCmdUI * pCmdUI)
+{
+    pCmdUI->SetCheck(COptions::GroupDriveStatsFirst);
+}
+
 void CWinDirStatModel::OnCleanupSparsifyFile()
 {
     // Only sparsify files (no recursion)
