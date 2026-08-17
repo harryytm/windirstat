@@ -157,76 +157,109 @@ struct USERDEFINEDCLEANUP
 //
 class COptions final
 {
-    inline static LPCWSTR OptionsGeneral = L"Options";
-    inline static LPCWSTR OptionsCleanups = L"Cleanups";
-    inline static LPCWSTR OptionsTreeMap = L"TreeMapView";
-    inline static LPCWSTR OptionsFileTree = L"FileTreeView";
-    inline static LPCWSTR OptionsDupeTree = L"DupeView";
-    inline static LPCWSTR OptionsExtView = L"ExtView";
-    inline static LPCWSTR OptionsTopView = L"TopView";
-    inline static LPCWSTR OptionsSearch = L"SearchView";
-    inline static LPCWSTR OptionsWatcher = L"Watcher";
-    inline static LPCWSTR OptionsPerms = L"PermissionsView";
+    inline static LPCWSTR OptionsGeneral     = L"Options";
+    inline static LPCWSTR OptionsCleanups    = L"Cleanups";
+    inline static LPCWSTR OptionsTreeMap     = L"TreeMapView";
+    inline static LPCWSTR OptionsFileTree    = L"FileTreeView";
+    inline static LPCWSTR OptionsDupeTree    = L"DupeView";
+    inline static LPCWSTR OptionsExtView     = L"ExtView";
+    inline static LPCWSTR OptionsTopView     = L"TopView";
+    inline static LPCWSTR OptionsSearch      = L"SearchView";
+    inline static LPCWSTR OptionsWatcher     = L"Watcher";
+    inline static LPCWSTR OptionsPerms       = L"PermissionsView";
     inline static LPCWSTR OptionsDriveSelect = L"DriveSelect";
 
 public:
+    // General options
+    inline static Setting<bool> AutoElevate{ OptionsGeneral, L"AutoElevate", false };
+    inline static Setting<bool> AutoMapDrivesWhenElevated{ OptionsGeneral, L"AutoMapDrivesWhenElevated", true };
     inline static Setting<bool> AutomaticallyResizeColumns{ OptionsGeneral, L"AutomaticallyResizeColumns", true };
-    inline static Setting<bool> ExcludeJunctions{ OptionsGeneral, L"ExcludeJunctions", true };
-    inline static Setting<bool> ExcludeSymbolicLinksDirectory{ OptionsGeneral, L"ExcludeSymbolicLinksDirectory", true };
-    inline static Setting<bool> ExcludeVolumeMountPoints{ OptionsGeneral, L"ExcludeVolumeMountPoints", true };
     inline static Setting<bool> ExcludeHiddenDirectory{ OptionsGeneral, L"ExcludeHiddenDirectory", false };
-    inline static Setting<bool> ExcludeProtectedDirectory{ OptionsGeneral, L"ExcludeProtectedDirectory", false };
-    inline static Setting<bool> ExcludeSymbolicLinksFile{ OptionsGeneral, L"ExcludeSymbolicLinksFile", true };
     inline static Setting<bool> ExcludeHiddenFile{ OptionsGeneral, L"ExcludeHiddenFile", false };
+    inline static Setting<bool> ExcludeJunctions{ OptionsGeneral, L"ExcludeJunctions", true };
+    inline static Setting<bool> ExcludeProtectedDirectory{ OptionsGeneral, L"ExcludeProtectedDirectory", false };
     inline static Setting<bool> ExcludeProtectedFile{ OptionsGeneral, L"ExcludeProtectedFile", false };
+    inline static Setting<bool> ExcludeSymbolicLinksDirectory{ OptionsGeneral, L"ExcludeSymbolicLinksDirectory", true };
+    inline static Setting<bool> ExcludeSymbolicLinksFile{ OptionsGeneral, L"ExcludeSymbolicLinksFile", true };
+    inline static Setting<bool> ExcludeVolumeMountPoints{ OptionsGeneral, L"ExcludeVolumeMountPoints", true };
     inline static Setting<bool> FilteringUseRegex{ OptionsGeneral, L"FilteringUseRegex", false };
     inline static Setting<bool> FollowVolumeMountPoints{ OptionsGeneral, L"FollowVolumeMountPoints", false };
-    inline static Setting<bool> UseSizeSuffixes{ OptionsGeneral, L"UseSizeSuffixes", true };
+    inline static Setting<bool> GroupUnregisteredTypes{ OptionsGeneral, L"GroupUnregisteredTypes", false };
     inline static Setting<bool> ListFullRowSelection{ OptionsGeneral, L"ListFullRowSelection", true };
     inline static Setting<bool> ListGrid{ OptionsGeneral, L"ListGrid", false };
     inline static Setting<bool> ListStripes{ OptionsGeneral, L"ListStripes", false };
     inline static Setting<bool> PacmanAnimation{ OptionsGeneral, L"PacmanAnimation", true };
-    inline static Setting<bool> ScanForDuplicates{ OptionsDupeTree, L"ScanForDuplicates", false };
-    inline static Setting<bool> SearchWholePhrase{ OptionsSearch, L"SearchWholePhrase", false };
-    inline static Setting<bool> SearchRegex{ OptionsSearch, L"SearchRegex", false };
-    inline static Setting<bool> SearchCase{ OptionsSearch, L"SearchCase", false };
-    inline static Setting<int> SearchMaxResults{ OptionsSearch, L"SearchMaxResults", 10000, 1, 1000000 };
+    inline static Setting<bool> ProcessHardlinks{ OptionsGeneral, L"ProcessHardlinks", true };
+    inline static Setting<bool> ShowCreateHardlinkPrompt{ OptionsGeneral, L"ShowCreateHardlinkPrompt", true };
     inline static Setting<bool> ShowDeletePermanentlyWarning{ OptionsGeneral, L"ShowDeletePermanentlyWarning", true };
     inline static Setting<bool> ShowDeleteToRecycleBinWarning{ OptionsGeneral, L"ShowDeleteToRecycleBinWarning", true };
-    inline static Setting<bool> ShowElevationPrompt{ OptionsGeneral, L"ShowElevationPrompt", true };
-    inline static Setting<bool> ShowEmptyRecycleBinPrompt{ OptionsGeneral, L"ShowEmptyRecycleBinPrompt", true };
-    inline static Setting<bool> ShowCreateHardlinkPrompt{ OptionsGeneral, L"ShowCreateHardlinkPrompt", true };
-    inline static Setting<bool> ShowRemoveMotwPrompt{ OptionsGeneral, L"ShowRemoveMotwPrompt", true };
     inline static Setting<bool> ShowDisableHibernatePrompt{ OptionsGeneral, L"ShowDisableHibernatePrompt", true };
-    inline static Setting<bool> ShowRemoveShadowCopiesPrompt{ OptionsGeneral, L"ShowRemoveShadowCopiesPrompt", true };
     inline static Setting<bool> ShowDismCleanupPrompt{ OptionsGeneral, L"ShowDismCleanupPrompt", true };
     inline static Setting<bool> ShowDismResetPrompt{ OptionsGeneral, L"ShowDismResetPrompt", true };
-    inline static Setting<bool> ShowSetDatesPrompt{ OptionsGeneral, L"ShowSetDatesPrompt", true };
-    inline static Setting<bool> ShowRemoveEmptyFoldersPrompt{ OptionsGeneral, L"ShowRemoveEmptyFoldersPrompt", true };
-    inline static Setting<bool> ShowMicrosoftProgress{ OptionsGeneral, L"ShowMicrosoftProgress", false };
+    inline static Setting<bool> ShowDupeDetectionCloudLinksWarning{ OptionsGeneral, L"ShowDupeDetectionCloudLinksWarning", true };
+    inline static Setting<bool> ShowElevationPrompt{ OptionsGeneral, L"ShowElevationPrompt", true };
+    inline static Setting<bool> ShowEmptyRecycleBinPrompt{ OptionsGeneral, L"ShowEmptyRecycleBinPrompt", true };
     inline static Setting<bool> ShowFileTypes{ OptionsGeneral, L"ShowFileTypes", true };
-    inline static Setting<bool> GroupUnregisteredTypes{ OptionsGeneral, L"GroupUnregisteredTypes", false };
     inline static Setting<bool> ShowFreeSpace{ OptionsGeneral, L"ShowFreeSpace", false };
+    inline static Setting<bool> ShowMicrosoftProgress{ OptionsGeneral, L"ShowMicrosoftProgress", false };
+    inline static Setting<bool> ShowRemoveEmptyFoldersPrompt{ OptionsGeneral, L"ShowRemoveEmptyFoldersPrompt", true };
+    inline static Setting<bool> ShowRemoveMotwPrompt{ OptionsGeneral, L"ShowRemoveMotwPrompt", true };
+    inline static Setting<bool> ShowRemoveShadowCopiesPrompt{ OptionsGeneral, L"ShowRemoveShadowCopiesPrompt", true };
+    inline static Setting<bool> ShowSetDatesPrompt{ OptionsGeneral, L"ShowSetDatesPrompt", true };
     inline static Setting<bool> ShowStatusBar{ OptionsGeneral, L"ShowStatusBar", true };
-    inline static Setting<bool> ShowTimeSpent{ OptionsFileTree, L"ShowTimeSpent", true };
     inline static Setting<bool> ShowToolBar{ OptionsGeneral, L"ShowToolBar", true };
-    inline static Setting<int> ToolBarSizePercent{ OptionsGeneral, L"ToolBarSizePercent", 0, 0, 200 };
-    inline static Setting<bool> ShowVisualization{ OptionsTreeMap, L"ShowVisualization", true };
     inline static Setting<bool> ShowUnknown{ OptionsGeneral, L"ShowUnknown", false };
     inline static Setting<bool> SkipDupeDetectionCloudLinks{ OptionsGeneral, L"SkipDupeDetectionCloudLinks", true };
-    inline static Setting<bool> ShowDupeDetectionCloudLinksWarning{ OptionsGeneral, L"ShowDupeDetectionCloudLinksWarning", true };
-    inline static Setting<bool> AutoElevate{ OptionsGeneral, L"AutoElevate", false };
-    inline static Setting<bool> AutoMapDrivesWhenElevated{ OptionsGeneral, L"AutoMapDrivesWhenElevated", true };
+    inline static Setting<bool> UseBackupRestore{ OptionsGeneral, L"UseBackupRestore", true };
+    inline static Setting<bool> UseDrawTextCache{ OptionsGeneral, L"UseDrawTextCache", true };
+    inline static Setting<bool> UseFastScanEngine{ OptionsGeneral, L"UseFastScanEngine", true };
+    inline static Setting<bool> UseSizeSuffixes{ OptionsGeneral, L"UseSizeSuffixes", true };
+    inline static Setting<bool> UseWindowsLocaleSetting{ OptionsGeneral, L"UseWindowsLocaleSetting", true };
+    inline static Setting<double> MainSplitterPos{ OptionsGeneral, L"MainSplitterPos", -1.0, 0.0, 1.0 };
+    inline static Setting<double> SubSplitterPos{ OptionsGeneral, L"SubSplitterPos", -1.0, 0.0, 1.0 };
+    inline static Setting<int> ConfigPage{ OptionsGeneral, L"ConfigPage", 0 };
+    inline static Setting<int> DarkMode{ OptionsGeneral, L"DarkMode", DM_USE_WINDOWS, DM_DISABLED, DM_USE_WINDOWS };
+    inline static Setting<int> FileHashAlgorithm{ OptionsGeneral, L"FileHashAlgorithm", HASH_XXHASH, HASH_MD5, HASH_XXHASH };
+    inline static Setting<int> FilteringMaxAgeDays{ OptionsGeneral, L"FilteringMaxAgeDays", 0 };
+    inline static Setting<int> FilteringSizeMinimum{ OptionsGeneral, L"FilteringSizeMinimum", 0 };
+    inline static Setting<int> FilteringSizeUnits{ OptionsGeneral, L"FilteringSizeUnits", 0 };
+    inline static Setting<int> FontSizePercent{ OptionsGeneral, L"FontSizePercent", 0, 0, 200 };
+    inline static Setting<int> LanguageId{ OptionsGeneral, L"LanguageId", 0 };
+    inline static Setting<int> LargeFileCount{ OptionsGeneral, L"LargeFileCount", 50, 0, 10000 };
+    inline static Setting<int> LayoutPermutation{ OptionsGeneral, L"LayoutPermutation", 0, 0, 3 };
+    inline static Setting<int> LayoutTopology{ OptionsGeneral, L"LayoutTopology", LT_ROWS_SUB_COLS, LT_ROWS_SUB_COLS, LT_COLS_VISUALIZATION_FULL };
+    inline static Setting<int> MinimizeViewThreshold{ OptionsGeneral, L"MinimizeViewThreshold", 10, 1, 10000 };
+    inline static Setting<int> ProcessPriority{ OptionsGeneral, L"ProcessPriority", NORMAL, LOW, HIGH };
+    inline static Setting<int> ScanningThreads{ OptionsGeneral, L"ScanningThreads", 4, 1, 16 };
+    inline static Setting<int> ToolBarSizePercent{ OptionsGeneral, L"ToolBarSizePercent", 0, 0, 200 };
+    inline static Setting<RECT> AboutWindowRect{ OptionsGeneral, L"AboutWindowRect" };
+    inline static Setting<WINDOWPLACEMENT> MainWindowPlacement{ OptionsGeneral, L"MainWindowPlacement" };
+
+    // Cleanup options
+    inline static Setting<int> UserDefinedCleanupCount{ OptionsCleanups, L"Count", 0, 0, std::numeric_limits<int>::max() };
+
+    // TreeMap view settings
+    inline static Setting<bool> ShowVisualization{ OptionsTreeMap, L"ShowVisualization", true };
     inline static Setting<bool> TreeMapGrid{ OptionsTreeMap, L"TreeMapGrid", (CTreeMap::GetDefaults().grid) };
     inline static Setting<bool> TreeMapShowExtensions{ OptionsTreeMap, L"TreeMapShowExtensions", (CTreeMap::GetDefaults().showExtensions) };
     inline static Setting<bool> TreeMapShowFolderFrames{ OptionsTreeMap, L"TreeMapShowFolderFrames", (CTreeMap::GetDefaults().showFolderFrames) };
     inline static Setting<bool> TreeMapUseLogical{ OptionsTreeMap, L"TreeMapUseLogicalSize", false };
+    inline static Setting<COLORREF> TreeMapGridColor{ OptionsTreeMap, L"TreeMapGridColor", CTreeMap::GetDefaults().gridColor };
+    inline static Setting<COLORREF> TreeMapHighlightColor{ OptionsTreeMap, L"TreeMapHighlightColor", RGB(255, 255, 255) };
+    inline static Setting<int> GraphPaneStyle{ OptionsTreeMap, L"GraphPaneStyle", EncodeGraphPane(GraphPane::TreeMap), 0, MaxPersistedGraphPane };
+    inline static Setting<int> TreeMapAmbientLightPercent{ OptionsTreeMap, L"TreeMapAmbientLightPercent", CTreeMap::GetDefaults().GetAmbientLightPercent(), 0, 100 };
+    inline static Setting<int> TreeMapBrightness{ OptionsTreeMap, L"TreeMapBrightness", CTreeMap::GetDefaults().GetBrightnessPercent(), 0, 100 };
+    inline static Setting<int> TreeMapFolderFramesDrawThreshold{ OptionsTreeMap, L"TreeMapFolderFramesDrawThreshold", CTreeMap::GetDefaults().folderFramesDrawThreshold, 3, 128 };
+    inline static Setting<int> TreeMapHeightFactor{ OptionsTreeMap, L"TreeMapHeightFactor", CTreeMap::GetDefaults().GetHeightPercent(), 0, 100 };
+    inline static Setting<int> TreeMapLightSourceX{ OptionsTreeMap, L"TreeMapLightSourceX", CTreeMap::GetDefaults().GetLightSourceXPercent(), -200, 200 };
+    inline static Setting<int> TreeMapLightSourceY{ OptionsTreeMap, L"TreeMapLightSourceY", CTreeMap::GetDefaults().GetLightSourceYPercent(), -200, 200 };
+    inline static Setting<int> TreeMapMaxDepth{ OptionsTreeMap, L"TreeMapMaxDepth", 6, 1, 64 };
+    inline static Setting<int> TreeMapScaleFactor{ OptionsTreeMap, L"TreeMapScaleFactor", CTreeMap::GetDefaults().GetScaleFactorPercent(), 0, 100 };
+    inline static Setting<int> TreeMapStyle{ OptionsTreeMap, L"TreeMapStyle", static_cast<int>(CTreeMap::GetDefaults().style), static_cast<int>(TreeMapLayout::Style::Rows), static_cast<int>(TreeMapLayout::Style::Moore) };
+
+    // FileTree view settings
+    inline static Setting<bool> ShowTimeSpent{ OptionsFileTree, L"ShowTimeSpent", true };
     inline static Setting<bool> UseAbsolutePercentages{ OptionsFileTree, L"UseAbsolutePercentages", true };
-    inline static Setting<bool> UseBackupRestore{ OptionsGeneral, L"UseBackupRestore", true };
-    inline static Setting<bool> UseDrawTextCache{ OptionsGeneral, L"UseDrawTextCache", true };
-    inline static Setting<bool> UseFastScanEngine{ OptionsGeneral, L"UseFastScanEngine", true };
-    inline static Setting<bool> UseWindowsLocaleSetting{ OptionsGeneral, L"UseWindowsLocaleSetting", true };
-    inline static Setting<bool> ProcessHardlinks{ OptionsGeneral, L"ProcessHardlinks", true };
     inline static Setting<COLORREF> FileTreeColors[TREELISTCOLORCOUNT] =
     {
         { OptionsFileTree, L"FileTreeColor0", RGB(64, 64, 140) },
@@ -238,15 +271,53 @@ public:
         { OptionsFileTree, L"FileTreeColor6", RGB(0, 255, 0) },
         { OptionsFileTree, L"FileTreeColor7", RGB(255, 255, 0) }
     };
-    inline static Setting<COLORREF> TreeMapGridColor{ OptionsTreeMap, L"TreeMapGridColor", CTreeMap::GetDefaults().gridColor };
-    inline static Setting<COLORREF> TreeMapHighlightColor{ OptionsTreeMap, L"TreeMapHighlightColor", RGB(255, 255, 255) };
-    inline static Setting<std::wstring> PermsColorAccount[PERMSRULECOUNT] =
+    inline static Setting<int> FileTreeColorCount{ OptionsFileTree, L"FileTreeColorCount", 8, 1, TREELISTCOLORCOUNT };
+    inline static Setting<int> SizeProportionIndent{ OptionsFileTree, L"SizeProportionIndent", 16, 0, 1000 };
+    inline static Setting<std::vector<int>> FileTreeColumnOrder{ OptionsFileTree, L"ColumnOrder" };
+    inline static Setting<std::vector<int>> FileTreeColumnVisibility{ OptionsFileTree, L"ColumnVisibility" };
+    inline static Setting<std::vector<int>> FileTreeColumnWidths{ OptionsFileTree, L"ColumnWidths" };
+
+    // Dupe view settings
+    inline static Setting<bool> ScanForDuplicates{ OptionsDupeTree, L"ScanForDuplicates", false };
+    inline static Setting<std::vector<int>> DupeViewColumnOrder{ OptionsDupeTree, L"ColumnOrder" };
+    inline static Setting<std::vector<int>> DupeViewColumnVisibility{ OptionsDupeTree, L"ColumnVisibility" };
+    inline static Setting<std::vector<int>> DupeViewColumnWidths{ OptionsDupeTree, L"ColumnWidths" };
+
+    // Extension view settings
+    inline static Setting<std::vector<int>> ExtViewColumnOrder{ OptionsExtView, L"ColumnOrder" };
+    inline static Setting<std::vector<int>> ExtViewColumnVisibility{ OptionsExtView, L"ColumnVisibility" };
+    inline static Setting<std::vector<int>> ExtViewColumnWidths{ OptionsExtView, L"ColumnWidths" };
+
+    // Top view settings
+    inline static Setting<std::vector<int>> TopViewColumnOrder{ OptionsTopView, L"ColumnOrder" };
+    inline static Setting<std::vector<int>> TopViewColumnVisibility{ OptionsTopView, L"ColumnVisibility" };
+    inline static Setting<std::vector<int>> TopViewColumnWidths{ OptionsTopView, L"ColumnWidths" };
+
+    // Search view settings
+    inline static Setting<bool> SearchWholePhrase{ OptionsSearch, L"SearchWholePhrase", false };
+    inline static Setting<bool> SearchCase{ OptionsSearch, L"SearchCase", false };
+    inline static Setting<bool> SearchRegex{ OptionsSearch, L"SearchRegex", false };
+    inline static Setting<int> SearchMaxResults{ OptionsSearch, L"SearchMaxResults", 10000, 1, 1000000 };
+    inline static Setting<RECT> SearchWindowRect{ OptionsSearch, L"WindowRect" };
+    inline static Setting<std::vector<int>> SearchViewColumnOrder{ OptionsSearch, L"ColumnOrder" };
+    inline static Setting<std::vector<int>> SearchViewColumnVisibility{ OptionsSearch, L"ColumnVisibility" };
+    inline static Setting<std::vector<int>> SearchViewColumnWidths{ OptionsSearch, L"ColumnWidths" };
+    inline static Setting<std::wstring> SearchTerm{ OptionsSearch, L"SearchTerm" };
+
+    // Watcher view settings
+    inline static Setting<bool> WatcherAutoScroll{ OptionsWatcher, L"AutoScroll", true };
+    inline static Setting<std::vector<int>> WatcherColumnOrder{ OptionsWatcher, L"ColumnOrder" };
+    inline static Setting<std::vector<int>> WatcherColumnVisibility{ OptionsWatcher, L"ColumnVisibility" };
+    inline static Setting<std::vector<int>> WatcherColumnWidths{ OptionsWatcher, L"ColumnWidths" };
+
+    // Permissions view settings
+    inline static Setting<COLORREF> PermsColor[PERMSRULECOUNT] =
     {
-        { OptionsPerms, L"ColorAccount0", L"" },
-        { OptionsPerms, L"ColorAccount1", L"" },
-        { OptionsPerms, L"ColorAccount2", L"" },
-        { OptionsPerms, L"ColorAccount3", L"" },
-        { OptionsPerms, L"ColorAccount4", L"" }
+        { OptionsPerms, L"Color0", RGB(200, 0, 0) },
+        { OptionsPerms, L"Color1", RGB(200, 100, 0) },
+        { OptionsPerms, L"Color2", RGB(0, 100, 200) },
+        { OptionsPerms, L"Color3", RGB(0, 150, 0) },
+        { OptionsPerms, L"Color4", RGB(150, 0, 200) }
     };
     // Level values are 0 (any) or 1 + PERMSLEVEL enumeration value (excluding Special)
     inline static Setting<int> PermsColorLevel[PERMSRULECOUNT] =
@@ -257,82 +328,32 @@ public:
         { OptionsPerms, L"ColorLevel3", 0, 0, 5 },
         { OptionsPerms, L"ColorLevel4", 0, 0, 5 }
     };
-    inline static Setting<COLORREF> PermsColor[PERMSRULECOUNT] =
+    inline static Setting<std::vector<int>> PermsViewColumnOrder{ OptionsPerms, L"ColumnOrder" };
+    inline static Setting<std::vector<int>> PermsViewColumnVisibility{ OptionsPerms, L"ColumnVisibility" };
+    inline static Setting<std::vector<int>> PermsViewColumnWidths{ OptionsPerms, L"ColumnWidths" };
+    inline static Setting<std::wstring> PermsColorAccount[PERMSRULECOUNT] =
     {
-        { OptionsPerms, L"Color0", RGB(200, 0, 0) },
-        { OptionsPerms, L"Color1", RGB(200, 100, 0) },
-        { OptionsPerms, L"Color2", RGB(0, 100, 200) },
-        { OptionsPerms, L"Color3", RGB(0, 150, 0) },
-        { OptionsPerms, L"Color4", RGB(150, 0, 200) }
+        { OptionsPerms, L"ColorAccount0", L"" },
+        { OptionsPerms, L"ColorAccount1", L"" },
+        { OptionsPerms, L"ColorAccount2", L"" },
+        { OptionsPerms, L"ColorAccount3", L"" },
+        { OptionsPerms, L"ColorAccount4", L"" }
     };
     inline static Setting<std::wstring> PermsExcludeRegex{ OptionsPerms, L"ExcludeRegex", L"" };
-    inline static Setting<double> MainSplitterPos{ OptionsGeneral, L"MainSplitterPos", -1.0, 0.0, 1.0 };
-    inline static Setting<double> SubSplitterPos{ OptionsGeneral, L"SubSplitterPos", -1.0, 0.0, 1.0 };
-    inline static Setting<int> ConfigPage{ OptionsGeneral, L"ConfigPage", 0 };
-    inline static Setting<int> UserDefinedCleanupCount{ OptionsCleanups, L"Count", 0, 0, std::numeric_limits<int>::max() };
-    inline static Setting<int> DarkMode{ OptionsGeneral, L"DarkMode", DM_USE_WINDOWS, DM_DISABLED, DM_USE_WINDOWS };
-    inline static Setting<int> FontSizePercent{ OptionsGeneral, L"FontSizePercent", 0, 0, 200 };
-    inline static Setting<int> LanguageId{ OptionsGeneral, L"LanguageId", 0 };
-    inline static Setting<int> ProcessPriority{ OptionsGeneral, L"ProcessPriority", NORMAL, LOW, HIGH };
-    inline static Setting<int> FileHashAlgorithm{ OptionsGeneral, L"FileHashAlgorithm", HASH_XXHASH, HASH_MD5, HASH_XXHASH };
-    inline static Setting<int> LargeFileCount{ OptionsGeneral, L"LargeFileCount", 50, 0, 10000 };
-    inline static Setting<int> MinimizeViewThreshold{ OptionsGeneral, L"MinimizeViewThreshold", 10, 1, 10000 };
-    inline static Setting<int> ScanningThreads{ OptionsGeneral, L"ScanningThreads", 4, 1, 16 };
-    inline static Setting<int> SelectDrivesRadio{ OptionsDriveSelect, L"SelectDrivesRadio", 0, 0, 2 };
-    inline static Setting<int> SizeProportionIndent{ OptionsFileTree, L"SizeProportionIndent", 16, 0, 1000 };
-    inline static Setting<int> FileTreeColorCount{ OptionsFileTree, L"FileTreeColorCount", 8, 1, TREELISTCOLORCOUNT };
-    inline static Setting<int> FilteringSizeMinimum{ OptionsGeneral, L"FilteringSizeMinimum", 0 };
-    inline static Setting<int> FilteringSizeUnits{ OptionsGeneral, L"FilteringSizeUnits", 0 };
-    inline static Setting<int> FilteringMaxAgeDays{ OptionsGeneral, L"FilteringMaxAgeDays", 0 };
-    inline static Setting<int> TreeMapAmbientLightPercent{ OptionsTreeMap, L"TreeMapAmbientLightPercent", CTreeMap::GetDefaults().GetAmbientLightPercent(), 0, 100 };
-    inline static Setting<int> TreeMapBrightness{ OptionsTreeMap, L"TreeMapBrightness", CTreeMap::GetDefaults().GetBrightnessPercent(), 0, 100 };
-    inline static Setting<int> TreeMapFolderFramesDrawThreshold{ OptionsTreeMap, L"TreeMapFolderFramesDrawThreshold", CTreeMap::GetDefaults().folderFramesDrawThreshold, 3, 128 };
-    inline static Setting<int> TreeMapHeightFactor{ OptionsTreeMap, L"TreeMapHeightFactor", CTreeMap::GetDefaults().GetHeightPercent(), 0, 100 };
-    inline static Setting<int> TreeMapLightSourceX{ OptionsTreeMap, L"TreeMapLightSourceX", CTreeMap::GetDefaults().GetLightSourceXPercent(), -200, 200 };
-    inline static Setting<int> TreeMapLightSourceY{ OptionsTreeMap, L"TreeMapLightSourceY", CTreeMap::GetDefaults().GetLightSourceYPercent(), -200, 200 };
-    inline static Setting<int> TreeMapScaleFactor{ OptionsTreeMap, L"TreeMapScaleFactor", CTreeMap::GetDefaults().GetScaleFactorPercent(), 0, 100 };
-    inline static Setting<int> TreeMapStyle{ OptionsTreeMap, L"TreeMapStyle", static_cast<int>(CTreeMap::GetDefaults().style), static_cast<int>(TreeMapLayout::Style::Rows), static_cast<int>(TreeMapLayout::Style::Moore) };
-    inline static Setting<int> GraphPaneStyle{ OptionsTreeMap, L"GraphPaneStyle", EncodeGraphPane(GraphPane::TreeMap), 0, MaxPersistedGraphPane };
-    inline static Setting<int> TreeMapMaxDepth{ OptionsTreeMap, L"TreeMapMaxDepth", 6, 1, 64 };
+
+    // Drive selection settings
     inline static Setting<int> FolderHistoryCount{ OptionsDriveSelect, L"FolderHistoryCount", 10, 0, 100 };
-    inline static Setting<int> LayoutTopology{ OptionsGeneral, L"LayoutTopology", LT_ROWS_SUB_COLS, LT_ROWS_SUB_COLS, LT_COLS_VISUALIZATION_FULL };
-    inline static Setting<int> LayoutPermutation{ OptionsGeneral, L"LayoutPermutation", 0, 0, 3 };
-    inline static Setting<RECT> AboutWindowRect{ OptionsGeneral, L"AboutWindowRect" };
+    inline static Setting<int> SelectDrivesRadio{ OptionsDriveSelect, L"SelectDrivesRadio", 0, 0, 2 };
     inline static Setting<RECT> DriveSelectWindowRect{ OptionsDriveSelect, L"WindowRect" };
-    inline static Setting<RECT> SearchWindowRect{ OptionsSearch, L"WindowRect" };
     inline static Setting<std::vector<int>> DriveListColumnOrder{ OptionsDriveSelect, L"ColumnOrder" };
-    inline static Setting<std::vector<int>> DriveListColumnWidths{ OptionsDriveSelect, L"ColumnWidths" };
     inline static Setting<std::vector<int>> DriveListColumnVisibility{ OptionsDriveSelect, L"ColumnVisibility" };
-    inline static Setting<std::vector<int>> DupeViewColumnOrder{ OptionsDupeTree, L"ColumnOrder" };
-    inline static Setting<std::vector<int>> DupeViewColumnWidths{ OptionsDupeTree, L"ColumnWidths" };
-    inline static Setting<std::vector<int>> DupeViewColumnVisibility{ OptionsDupeTree, L"ColumnVisibility" };
-    inline static Setting<std::vector<int>> FileTreeColumnOrder{ OptionsFileTree, L"ColumnOrder" };
-    inline static Setting<std::vector<int>> FileTreeColumnWidths{ OptionsFileTree, L"ColumnWidths" };
-    inline static Setting<std::vector<int>> FileTreeColumnVisibility{ OptionsFileTree, L"ColumnVisibility" };
-    inline static Setting<std::vector<int>> ExtViewColumnOrder{ OptionsExtView, L"ColumnOrder" };
-    inline static Setting<std::vector<int>> ExtViewColumnWidths{ OptionsExtView, L"ColumnWidths" };
-    inline static Setting<std::vector<int>> ExtViewColumnVisibility{ OptionsExtView, L"ColumnVisibility" };
-    inline static Setting<std::vector<int>> TopViewColumnOrder{ OptionsTopView, L"ColumnOrder" };
-    inline static Setting<std::vector<int>> TopViewColumnWidths{ OptionsTopView, L"ColumnWidths" };
-    inline static Setting<std::vector<int>> TopViewColumnVisibility{ OptionsTopView, L"ColumnVisibility" };
-    inline static Setting<std::vector<int>> SearchViewColumnOrder{ OptionsSearch, L"ColumnOrder" };
-    inline static Setting<std::vector<int>> SearchViewColumnWidths{ OptionsSearch, L"ColumnWidths" };
-    inline static Setting<std::vector<int>> SearchViewColumnVisibility{ OptionsSearch, L"ColumnVisibility" };
-    inline static Setting<bool> WatcherAutoScroll{ OptionsWatcher, L"AutoScroll", true };
-    inline static Setting<std::vector<int>> WatcherColumnOrder{ OptionsWatcher, L"ColumnOrder" };
-    inline static Setting<std::vector<int>> WatcherColumnWidths{ OptionsWatcher, L"ColumnWidths" };
-    inline static Setting<std::vector<int>> WatcherColumnVisibility{ OptionsWatcher, L"ColumnVisibility" };
-    inline static Setting<std::vector<int>> PermsViewColumnOrder{ OptionsPerms, L"ColumnOrder" };
-    inline static Setting<std::vector<int>> PermsViewColumnWidths{ OptionsPerms, L"ColumnWidths" };
-    inline static Setting<std::vector<int>> PermsViewColumnVisibility{ OptionsPerms, L"ColumnVisibility" };
+    inline static Setting<std::vector<int>> DriveListColumnWidths{ OptionsDriveSelect, L"ColumnWidths" };
     inline static Setting<std::vector<std::wstring>> SelectDrivesDrives{ OptionsDriveSelect, L"SelectDrivesDrives" };
     inline static Setting<std::vector<std::wstring>> SelectDrivesFolder{ OptionsDriveSelect, L"SelectDrivesFolder" };
-    inline static Setting<std::wstring> SearchTerm{ OptionsSearch, L"SearchTerm" };
     inline static Setting<std::wstring> FilteringExcludeDirs{ OptionsDriveSelect, L"FilteringExcludeDirs" };
     inline static Setting<std::wstring> FilteringExcludeFiles{ OptionsDriveSelect, L"FilteringExcludeFiles" };
     inline static Setting<std::wstring> FilteringIncludeDirs{ OptionsDriveSelect, L"FilteringIncludeDirs" };
     inline static Setting<std::wstring> FilteringIncludeFiles{ OptionsDriveSelect, L"FilteringIncludeFiles" };
-    inline static Setting<WINDOWPLACEMENT> MainWindowPlacement{ OptionsGeneral, L"MainWindowPlacement" };
 
     inline static CTreeMap::Options TreeMapOptions;
     inline static std::vector<USERDEFINEDCLEANUP> UserDefinedCleanups;
