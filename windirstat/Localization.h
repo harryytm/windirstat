@@ -73,6 +73,7 @@ public:
     static void UpdateDialogs(CWnd& wnd);
     static bool LoadExternalLanguage(LCTYPE lcttype, LCID lcid);
     static bool LoadFile(const std::wstring& file);
+    static void LoadSymbolSrings();
     static bool LoadResource(LANGID language);
     static std::wstring ConvertToWideString(const std::string_view& sv);
     static std::set<LANGID> GetLanguageList();
