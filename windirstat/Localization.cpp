@@ -101,6 +101,18 @@ std::set<LANGID> Localization::GetLanguageList()
     return results;
 }
 
+void Localization::LoadSymbolSrings()
+{
+    static constexpr struct { std::wstring_view k, v; } strings[] = {
+        { L"IDS_ADD",    L"\x002B" },
+        { L"IDS_REMOVE", L"\x2212" },
+        { L"IDS_UP",     L"\x25B2" },
+        { L"IDS_DOWN",   L"\x25BC" }
+    };
+
+    for (const auto& [k, v] : strings) m_map.emplace(k, v);
+}
+
 bool Localization::LoadResource(const LANGID language)
 {
     const LCID lcid = MAKELCID(language, SORT_DEFAULT);
@@ -108,6 +120,8 @@ bool Localization::LoadResource(const LANGID language)
 
     // Load English strings first as a baseline fallback
     CrackStrings(sResourceData, L"en");
+    // Load symbol strings
+    LoadSymbolSrings();
 
     if (GetLocaleInfo(lcid, LOCALE_SLANGUAGE, nullptr, 0) == 0) return true;
 
