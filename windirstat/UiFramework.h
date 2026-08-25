@@ -2233,8 +2233,11 @@ public:
                     GetClassNameW(control->m_hWnd, className, static_cast<int>(std::size(className))) != 0 &&
                     _wcsicmp(className, WC_STATIC) == 0)
                 {
-                    if (const std::wstring value = control->Text();
-                        !value.empty() && CopyTextToClipboard(value)) return true;
+                    std::wstring value = control->Text();
+                    for (size_t i = 0; i < value.size(); ++i)
+                        if (value[i] == L'\n' && (i == 0 || value[i - 1] != L'\r')) value.insert(i++, 1, L'\r');
+
+                    if (!value.empty() && CopyTextToClipboard(value)) return true;
                 }
             }
         }
