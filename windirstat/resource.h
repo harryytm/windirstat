@@ -163,7 +163,6 @@
 #define IDC_PROMPT_DISM_NORMAL          1143
 #define IDC_PROMPT_DISM_RESET           1144
 #define IDC_PROMPT_SET_DATES            1145
-#define IDC_PROMPT_REMOVE_EMPTY         1146
 #define IDC_DELETION_BIN_WARNING        1147
 #define IDC_ADD_CLEANUP                 1148
 #define IDC_REMOVE_CLEANUP              1149

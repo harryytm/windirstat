@@ -37,7 +37,6 @@ std::span<const CSettingsPage::CheckboxSettingBinding> CPagePrompts::CheckboxSet
         CheckboxSettingBinding{ IDC_PROMPT_DISM_NORMAL, COptions::ShowDismCleanupPrompt },
         CheckboxSettingBinding{ IDC_PROMPT_DISM_RESET, COptions::ShowDismResetPrompt },
         CheckboxSettingBinding{ IDC_PROMPT_SET_DATES, COptions::ShowSetDatesPrompt },
-        CheckboxSettingBinding{ IDC_PROMPT_REMOVE_EMPTY, COptions::ShowRemoveEmptyFoldersPrompt },
     };
     return bindings;
 }
@@ -64,7 +63,6 @@ void CPagePrompts::InitializePage()
         { IDC_PROMPT_DISM_NORMAL,       IDS_MENU_DISM,               L"/StartComponentCleanup" },
         { IDC_PROMPT_DISM_RESET,        IDS_MENU_DISM,               L"/StartComponentCleanup /ResetBase" },
         { IDC_PROMPT_SET_DATES,         IDS_MENU_SET_DATES,         {} },
-        { IDC_PROMPT_REMOVE_EMPTY,      IDS_MENU_REMOVE_EMPTY,      {} },
     };
 
     for (const auto& [controlId, operationId, detail] : promptControls)

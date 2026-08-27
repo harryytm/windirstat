@@ -111,4 +111,5 @@ public:
     bool IsReserved() const override { return false; }
 
     static bool DoesFileExist(const std::wstring& folder, const std::wstring& file = {});
+    static bool IsEmptyFolderOnDisk(const CItem* item, std::unordered_map<std::wstring, bool>& checkedFolders);
 };
