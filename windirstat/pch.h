@@ -154,3 +154,17 @@
 #include "MainFrame.h"
 #include "MessageBoxDlg.h"
 #include "LangStrings.h"
+
+// Additional commonly-included headers identified by Build Insights as
+// expensive when repeatedly parsed. Moving them into the precompiled
+// header reduces compile cost across translation units.
+#include "FinderMtp.h"
+#include "FinderNtfs.h"
+#include "FinderBasic.h"
+#include "FlameGraph.h"
+#include "DrawTextCache.h"
+#include "GraphView.h"
+#include "ExtensionView.h"
+#include "SunburstView.h"
+#include "StorageAnalyticsView.h"
+#include "SelectDrivesDlg.h"
