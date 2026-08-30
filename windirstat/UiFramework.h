@@ -2254,11 +2254,10 @@ public:
 
     static std::span<const RouteEntry> Routes()
     {
-        using ThisClass = CDialog;
         static constexpr std::array entries
         {
-            Route::Command<&ThisClass::OnOK>(IDOK),
-            Route::Command<&ThisClass::OnCancel>(IDCANCEL),
+            Route::Command<&OnOK>(IDOK),
+            Route::Command<&OnCancel>(IDCANCEL),
         };
         return entries;
     }
@@ -2653,18 +2652,17 @@ public:
 
     static std::span<const RouteEntry> Routes()
     {
-        using ThisClass = CSplitterWnd;
         static constexpr std::array entries
         {
-            Route::Window<&ThisClass::OnSize>(WM_SIZE),
-            Route::Window<&ThisClass::OnEraseBkgnd>(WM_ERASEBKGND),
-            Route::Window<&ThisClass::OnPaint>(WM_PAINT),
-            Route::Window<&ThisClass::OnLButtonDown>(WM_LBUTTONDOWN),
-            Route::Window<&ThisClass::OnLButtonUp>(WM_LBUTTONUP),
-            Route::Window<&ThisClass::OnMouseMove>(WM_MOUSEMOVE),
-            Route::Window<&ThisClass::OnCaptureChanged>(WM_CAPTURECHANGED),
-            Route::Window<&ThisClass::OnCancelMode>(WM_CANCELMODE),
-            Route::Window<&ThisClass::OnSetCursor>(WM_SETCURSOR),
+            Route::Window<&OnSize>(WM_SIZE),
+            Route::Window<&OnEraseBkgnd>(WM_ERASEBKGND),
+            Route::Window<&OnPaint>(WM_PAINT),
+            Route::Window<&OnLButtonDown>(WM_LBUTTONDOWN),
+            Route::Window<&OnLButtonUp>(WM_LBUTTONUP),
+            Route::Window<&OnMouseMove>(WM_MOUSEMOVE),
+            Route::Window<&OnCaptureChanged>(WM_CAPTURECHANGED),
+            Route::Window<&OnCancelMode>(WM_CANCELMODE),
+            Route::Window<&OnSetCursor>(WM_SETCURSOR),
         };
         return entries;
     }
@@ -3088,11 +3086,10 @@ public:
 
     static std::span<const RouteEntry> Routes()
     {
-        using ThisClass = CToolBar;
         static constexpr std::array entries
         {
-            Route::ReflectNotify<&ThisClass::OnCustomDraw>(NM_CUSTOMDRAW),
-            Route::ReflectNotify<&ThisClass::OnGetInfoTip>(TBN_GETINFOTIPW),
+            Route::ReflectNotify<&OnCustomDraw>(NM_CUSTOMDRAW),
+            Route::ReflectNotify<&OnGetInfoTip>(TBN_GETINFOTIPW),
         };
         return entries;
     }
@@ -3175,12 +3172,11 @@ public:
 
     static std::span<const RouteEntry> Routes()
     {
-        using ThisClass = CStatusBar;
         static constexpr std::array entries
         {
-            Route::Window<&ThisClass::OnPaint>(WM_PAINT),
-            Route::Window<&ThisClass::OnEraseBkgnd>(WM_ERASEBKGND),
-            Route::Window<&ThisClass::OnSize>(WM_SIZE),
+            Route::Window<&OnPaint>(WM_PAINT),
+            Route::Window<&OnEraseBkgnd>(WM_ERASEBKGND),
+            Route::Window<&OnSize>(WM_SIZE),
         };
         return entries;
     }
@@ -3366,10 +3362,9 @@ inline constexpr UINT ID_VIEW_STATUS_BAR = 0xE801;
 // It is inline because this header is included by multiple translation units.
 inline std::span<const RouteEntry> CWinApp::Routes()
 {
-    using ThisClass = CWinApp;
     static constexpr std::array entries
     {
-        Route::Command<&ThisClass::OnAppExit>(ID_APP_EXIT),
+        Route::Command<&OnAppExit>(ID_APP_EXIT),
     };
     return entries;
 }
@@ -3378,11 +3373,10 @@ inline std::span<const RouteEntry> CWinApp::Routes()
 // It is inline for the same reason as CWinApp's table above.
 inline std::span<const RouteEntry> CFrameWnd::Routes()
 {
-    using ThisClass = CFrameWnd;
     static constexpr std::array entries
     {
-        Route::Command<&ThisClass::OnBarCheck>(ID_VIEW_TOOLBAR, ID_VIEW_STATUS_BAR),
-        Route::Update<&ThisClass::OnUpdateControlBarMenu>(ID_VIEW_TOOLBAR, ID_VIEW_STATUS_BAR),
+        Route::Command<&OnBarCheck>(ID_VIEW_TOOLBAR, ID_VIEW_STATUS_BAR),
+        Route::Update<&OnUpdateControlBarMenu>(ID_VIEW_TOOLBAR, ID_VIEW_STATUS_BAR),
     };
     return entries;
 }

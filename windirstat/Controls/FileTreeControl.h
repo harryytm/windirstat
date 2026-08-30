@@ -43,12 +43,11 @@ protected:
 
 inline std::span<const RouteEntry> CFileTreeControl::Routes()
 {
-    using ThisClass = CFileTreeControl;
     static constexpr std::array entries
     {
-        Route::Window<&ThisClass::OnKeyDown>(WM_KEYDOWN),
-        Route::Window<&ThisClass::OnLButtonDown>(WM_LBUTTONDOWN),
-        Route::Window<&ThisClass::OnSetCursor>(WM_SETCURSOR),
+        Route::Window<&OnKeyDown>(WM_KEYDOWN),
+        Route::Window<&OnLButtonDown>(WM_LBUTTONDOWN),
+        Route::Window<&OnSetCursor>(WM_SETCURSOR),
     };
     return entries;
 }
