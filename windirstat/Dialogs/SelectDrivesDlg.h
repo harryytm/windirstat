@@ -171,7 +171,7 @@ inline std::span<const RouteEntry> CDrivesList::Routes()
     static constexpr std::array entries
     {
         Route::ReflectNotify<&OnLvnDeleteItem>(LVN_DELETEITEM),
-        Route::ReflectNotify<&OnDoubleClick>(NM_DBLCLK),
+        Route::ReflectNotify<&OnDoubleClick>(NM_DBLCLK)
     };
     return entries;
 }
@@ -197,7 +197,7 @@ inline std::span<const RouteEntry> CSelectDrivesDlg::Routes()
         Route::Window<&OnWmuOk>(WM_WDS_SELECT_DRIVES_OK),
         Route::Window<&OnWmDriveInfoThreadFinished>(WM_WDS_DRIVE_INFO_FINISHED),
         Route::Window<&OnCtlColor>(WM_CTLCOLOR),
-        Route::Window<&OnSysColorChange>(WM_SYSCOLORCHANGE),
+        Route::Window<&OnSysColorChange>(WM_SYSCOLORCHANGE)
     };
     return entries;
 }

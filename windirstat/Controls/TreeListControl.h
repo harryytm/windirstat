@@ -174,7 +174,7 @@ inline std::span<const RouteEntry> CTreeListControl::Routes()
         Route::Window<&OnKeyDown>(WM_KEYDOWN),
         Route::Window<&OnLButtonDblClk>(WM_LBUTTONDBLCLK),
         Route::Window<&OnSetFocus>(WM_SETFOCUS),
-        Route::Notify<&OnHeaderEndDrag>(HDN_ENDDRAG, 0),
+        Route::Notify<&OnHeaderEndDrag>(HDN_ENDDRAG, 0)
     };
     return entries;
 }

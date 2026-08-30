@@ -98,7 +98,7 @@ inline std::span<const RouteEntry> CProgressDlg::Routes()
     {
         Route::Window<&OnTimer>(WM_TIMER),
         Route::Window<&OnCtlColor>(WM_CTLCOLOR),
-        Route::Control<&OnCancel>(BN_CLICKED, IDCANCEL),
+        Route::Control<&OnCancel>(BN_CLICKED, IDCANCEL)
     };
     return entries;
 }
@@ -108,7 +108,7 @@ inline std::span<const RouteEntry> CWdsProgressCtrl::Routes()
     static constexpr std::array entries
     {
         Route::Window<&OnPaint>(WM_PAINT),
-        Route::Window<&OnEraseBkgnd>(WM_ERASEBKGND),
+        Route::Window<&OnEraseBkgnd>(WM_ERASEBKGND)
     };
     return entries;
 }

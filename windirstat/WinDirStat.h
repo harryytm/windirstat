@@ -102,7 +102,7 @@ inline std::span<const RouteEntry> CDirStatApp::Routes()
         Route::Command<&OnRunElevated>(ID_RUN_ELEVATED),
         Route::Update<&OnUpdateRunElevated>(ID_RUN_ELEVATED),
         Route::Command<&OnHelpManual>(ID_HELP_MANUAL),
-        Route::Command<&OnReportBug>(ID_HELP_REPORTBUG),
+        Route::Command<&OnReportBug>(ID_HELP_REPORTBUG)
     };
     return entries;
 }

@@ -126,7 +126,7 @@ inline std::span<const RouteEntry> CGraphView::Routes()
         Route::Window<&OnContextMenu>(WM_CONTEXTMENU),
         Route::Window<&OnMouseMove>(WM_MOUSEMOVE),
         Route::Window<&OnMouseLeave>(WM_MOUSELEAVE),
-        Route::Window<&OnMouseWheel>(WM_MOUSEWHEEL),
+        Route::Window<&OnMouseWheel>(WM_MOUSEWHEEL)
     };
     return entries;
 }

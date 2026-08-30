@@ -74,7 +74,7 @@ inline std::span<const RouteEntry> CColorButton::CPreview::Routes()
     static constexpr std::array entries
     {
         Route::Window<&OnPaint>(WM_PAINT),
-        Route::Window<&OnLButtonDown>(WM_LBUTTONDOWN),
+        Route::Window<&OnLButtonDown>(WM_LBUTTONDOWN)
     };
     return entries;
 }
@@ -86,7 +86,7 @@ inline std::span<const RouteEntry> CColorButton::Routes()
         Route::Window<&OnPaint>(WM_PAINT),
         Route::Window<&OnDestroy>(WM_DESTROY),
         Route::ReflectControl<&OnBnClicked>(BN_CLICKED),
-        Route::Window<&OnEnable>(WM_ENABLE),
+        Route::Window<&OnEnable>(WM_ENABLE)
     };
     return entries;
 }

@@ -66,7 +66,7 @@ inline std::span<const RouteEntry> CSettingsPage::Routes()
     static constexpr std::array entries
     {
         Route::Window<&OnEraseBkgnd>(WM_ERASEBKGND),
-        Route::Window<&OnCtlColor>(WM_CTLCOLOR),
+        Route::Window<&OnCtlColor>(WM_CTLCOLOR)
     };
     return entries;
 }

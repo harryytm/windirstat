@@ -60,7 +60,7 @@ inline std::span<const RouteEntry> CExtensionView::Routes()
         Route::Window<&OnCreate>(WM_CREATE),
         Route::Window<&OnEraseBkgnd>(WM_ERASEBKGND),
         Route::Window<&OnSize>(WM_SIZE),
-        Route::Window<&OnSetFocus>(WM_SETFOCUS),
+        Route::Window<&OnSetFocus>(WM_SETFOCUS)
     };
     return entries;
 }

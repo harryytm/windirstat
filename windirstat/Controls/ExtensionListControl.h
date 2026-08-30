@@ -112,7 +112,7 @@ inline std::span<const RouteEntry> CExtensionListControl::Routes()
         Route::ReflectNotify<&OnLvnItemChanged>(LVN_ITEMCHANGED),
         Route::Command<&OnSearchExtension>(ID_EXTLIST_SEARCH_EXTENSION),
         Route::Command<&OnExcludeExtension>(ID_FILTER_EXCLUDE_ITEM),
-        Route::Window<&OnKeyDown>(WM_KEYDOWN),
+        Route::Window<&OnKeyDown>(WM_KEYDOWN)
     };
     return entries;
 }

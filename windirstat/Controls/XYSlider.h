@@ -98,7 +98,7 @@ inline std::span<const RouteEntry> CXySlider::Routes()
         Route::Window<&OnLButtonDown>(WM_LBUTTONDOWN),
         Route::Window<&OnLButtonDblClk>(WM_LBUTTONDBLCLK),
         Route::Window<&OnSetPos>(XY_SETPOS),
-        Route::Window<&OnGetPos>(XY_GETPOS),
+        Route::Window<&OnGetPos>(XY_GETPOS)
     };
     return entries;
 }

@@ -924,7 +924,7 @@ std::span<const RouteEntry> CTabControl::Routes()
         Route::Window<&OnSetFocus>(WM_SETFOCUS),
         Route::Window<&OnKillFocus>(WM_KILLFOCUS),
         Route::Window<&OnPaint>(WM_PAINT),
-        Route::ReflectNotify<&OnNativeSelChange>(TCN_SELCHANGE),
+        Route::ReflectNotify<&OnNativeSelChange>(TCN_SELCHANGE)
     };
     return entries;
 }
@@ -1523,7 +1523,7 @@ std::span<const RouteEntry> CPropertySheet::Routes()
     static constexpr std::array entries
     {
         Route::Window<&OnTabChanged>(WM_WDS_TAB_CHANGED),
-        Route::Window<&OnClose>(WM_CLOSE),
+        Route::Window<&OnClose>(WM_CLOSE)
     };
     return entries;
 }

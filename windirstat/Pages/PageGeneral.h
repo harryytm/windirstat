@@ -66,7 +66,7 @@ inline std::span<const RouteEntry> CPageGeneral::Routes()
         Route::Control<&OnBnClickedSetModified>(BN_CLICKED, IDC_DARK_MODE_DISABLED),
         Route::Control<&OnBnClickedSetModified>(BN_CLICKED, IDC_DARK_MODE_ENABLED),
         Route::Control<&OnBnClickedSetModified>(BN_CLICKED, IDC_DARK_MODE_USE_WINDOWS),
-        Route::Control<&OnBnClickedSetModified>(CBN_SELENDOK, IDC_COMBO),
+        Route::Control<&OnBnClickedSetModified>(CBN_SELENDOK, IDC_COMBO)
     };
     return entries;
 }

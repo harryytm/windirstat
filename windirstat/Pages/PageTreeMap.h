@@ -85,7 +85,7 @@ inline std::span<const RouteEntry> CPageTreeMap::Routes()
         Route::Control<&OnSetModified>(CBN_SELCHANGE, IDC_TREEMAPSTYLE),
         Route::Control<&OnSetModified>(BN_CLICKED, IDC_TREEMAPGRID),
         Route::Control<&OnBnClickedReset>(BN_CLICKED, IDC_RESET),
-        Route::Notify<&OnLightSourceChanged>(CXySlider::XYSLIDER_CHANGED, IDC_LIGHTSOURCE),
+        Route::Notify<&OnLightSourceChanged>(CXySlider::XYSLIDER_CHANGED, IDC_LIGHTSOURCE)
     };
     return entries;
 }

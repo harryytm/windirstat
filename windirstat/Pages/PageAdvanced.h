@@ -66,7 +66,7 @@ inline std::span<const RouteEntry> CPageAdvanced::Routes()
         Route::Control<&OnSettingChanged>(BN_CLICKED, IDC_PROCESS_HARDLINKS),
         Route::Control<&OnBnClickedResetPreferences>(BN_CLICKED, IDC_RESET_PREFERENCES),
         Route::Control<&OnEnChangeLargestFileCount>(EN_CHANGE, IDC_LARGEST_FILE_COUNT),
-        Route::Control<&OnEnChangeFolderHistoryCount>(EN_CHANGE, IDC_FOLDER_HISTORY_COUNT),
+        Route::Control<&OnEnChangeFolderHistoryCount>(EN_CHANGE, IDC_FOLDER_HISTORY_COUNT)
     };
     return entries;
 }

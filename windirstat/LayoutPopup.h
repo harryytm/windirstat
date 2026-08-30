@@ -93,7 +93,7 @@ inline std::span<const RouteEntry> CLayoutPopup::Routes()
         Route::Window<&OnKillFocus>(WM_KILLFOCUS),
         Route::Window<&OnActivateApp>(WM_ACTIVATEAPP),
         Route::Window<&OnCaptureChanged>(WM_CAPTURECHANGED),
-        Route::Window<&OnMouseLeave>(WM_MOUSELEAVE),
+        Route::Window<&OnMouseLeave>(WM_MOUSELEAVE)
     };
     return entries;
 }

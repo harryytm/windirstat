@@ -68,7 +68,7 @@ inline std::span<const RouteEntry> CPageFiltering::Routes()
         Route::Control<&OnSettingChanged>(CBN_SELENDOK, IDC_FILTERING_MIN_UNITS),
         Route::Control<&OnSettingChanged>(CBN_SELENDOK, IDC_FILTERING_SIZE_COMPARISON),
         Route::Control<&OnSettingChanged>(EN_CHANGE, IDC_FILTERING_MAX_AGE_DAYS),
-        Route::Control<&OnSettingChanged>(CBN_SELENDOK, IDC_FILTERING_MAX_AGE_COMPARISON),
+        Route::Control<&OnSettingChanged>(CBN_SELENDOK, IDC_FILTERING_MAX_AGE_COMPARISON)
     };
     return entries;
 }

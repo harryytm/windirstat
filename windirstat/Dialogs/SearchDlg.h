@@ -50,7 +50,7 @@ inline std::span<const RouteEntry> SearchDlg::Routes()
         Route::Control<&OnBnClickedOk>(BN_CLICKED, IDOK),
         Route::Control<&OnChangeSearchTerm>(EN_CHANGE, IDC_SEARCH_TERM),
         Route::Control<&OnChangeSearchTerm>(BN_CLICKED, IDC_SEARCH_REGEX),
-        Route::Window<&OnCtlColor>(WM_CTLCOLOR),
+        Route::Window<&OnCtlColor>(WM_CTLCOLOR)
     };
     return entries;
 }

@@ -118,7 +118,7 @@ inline std::span<const RouteEntry> CCenteredEdit::Routes()
     static constexpr std::array entries
     {
         Route::Window<&OnNcCalcSize>(WM_NCCALCSIZE),
-        Route::Window<&OnChar>(WM_CHAR),
+        Route::Window<&OnChar>(WM_CHAR)
     };
     return entries;
 }
@@ -134,7 +134,7 @@ inline std::span<const RouteEntry> CStorageAnalyticsView::Routes()
         Route::Window<&OnCtlColor>(WM_CTLCOLOR),
         Route::Control<&OnBtnRecalculate>(BN_CLICKED, 1001),
         Route::Control<&OnComboUnitSelChange>(CBN_SELCHANGE, 1007),
-        Route::Control<&OnEditChangeRange>(EN_CHANGE, 2000, 2100),
+        Route::Control<&OnEditChangeRange>(EN_CHANGE, 2000, 2100)
     };
     return entries;
 }

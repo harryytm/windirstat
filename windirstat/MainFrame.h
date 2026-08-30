@@ -337,7 +337,7 @@ inline std::span<const RouteEntry> CSettingsSheet::Routes()
     static constexpr std::array entries
     {
         Route::Window<&OnCtlColor>(WM_CTLCOLOR),
-        Route::Window<&OnEraseBkgnd>(WM_ERASEBKGND),
+        Route::Window<&OnEraseBkgnd>(WM_ERASEBKGND)
     };
     return entries;
 }
@@ -346,7 +346,7 @@ inline std::span<const RouteEntry> CWdsSplitterWnd::Routes()
 {
     static constexpr std::array entries
     {
-        Route::Window<&OnSize>(WM_SIZE),
+        Route::Window<&OnSize>(WM_SIZE)
     };
     return entries;
 }
@@ -357,7 +357,7 @@ inline std::span<const RouteEntry> CPacmanControl::Routes()
     {
         Route::Window<&OnPaint>(WM_PAINT),
         Route::Window<&OnCreate>(WM_CREATE),
-        Route::Window<&OnEraseBkgnd>(WM_ERASEBKGND),
+        Route::Window<&OnEraseBkgnd>(WM_ERASEBKGND)
     };
     return entries;
 }
@@ -435,7 +435,7 @@ inline std::span<const RouteEntry> CMainFrame::Routes()
         Route::Update<&OnUpdateToolsPermissions>(ID_TOOLS_PERMISSIONS),
         Route::Command<&OnToolsStorageAnalytics>(ID_TOOLS_STORAGE_ANALYTICS),
         Route::Update<&OnUpdateToolsStorageAnalytics>(ID_TOOLS_STORAGE_ANALYTICS),
-        Route::Command<&OnViewWindowLayout>(ID_VIEW_WINDOW_LAYOUT),
+        Route::Command<&OnViewWindowLayout>(ID_VIEW_WINDOW_LAYOUT)
     };
     return entries;
 }

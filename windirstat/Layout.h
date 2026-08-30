@@ -129,7 +129,7 @@ inline std::span<const RouteEntry> CLayoutDialog::Routes()
     {
         Route::Window<&OnSize>(WM_SIZE),
         Route::Window<&OnGetMinMaxInfo>(WM_GETMINMAXINFO),
-        Route::Window<&OnDestroy>(WM_DESTROY),
+        Route::Window<&OnDestroy>(WM_DESTROY)
     };
     return entries;
 }
@@ -139,7 +139,7 @@ inline std::span<const RouteEntry> CLayout::CSizeGripper::Routes()
     static constexpr std::array entries
     {
         Route::Window<&OnPaint>(WM_PAINT),
-        Route::Window<&OnNcHitTest>(WM_NCHITTEST),
+        Route::Window<&OnNcHitTest>(WM_NCHITTEST)
     };
     return entries;
 }

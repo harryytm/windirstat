@@ -61,7 +61,7 @@ inline std::span<const RouteEntry> CVisualizationPane::Routes()
     {
         Route::Window<&OnCreate>(WM_CREATE),
         Route::Window<&OnSetFocus>(WM_SETFOCUS),
-        Route::Window<&OnSize>(WM_SIZE),
+        Route::Window<&OnSize>(WM_SIZE)
     };
     return entries;
 }

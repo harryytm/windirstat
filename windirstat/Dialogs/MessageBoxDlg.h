@@ -120,7 +120,7 @@ inline std::span<const RouteEntry> CMessageBoxDlg::Routes()
         Route::Window<&OnSize>(WM_SIZE),
         Route::Notify<&OnListViewCustomDraw>(NM_CUSTOMDRAW, IDC_MESSAGE_LISTVIEW),
         Route::Notify<&OnListViewGetDispInfo>(LVN_GETDISPINFO, IDC_MESSAGE_LISTVIEW),
-        Route::Notify<&OnListViewItemChanging>(LVN_ITEMCHANGING, IDC_MESSAGE_LISTVIEW),
+        Route::Notify<&OnListViewItemChanging>(LVN_ITEMCHANGING, IDC_MESSAGE_LISTVIEW)
     };
     return entries;
 }

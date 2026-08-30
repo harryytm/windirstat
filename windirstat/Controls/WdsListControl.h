@@ -206,7 +206,7 @@ inline std::span<const RouteEntry> CWdsListControl::Routes()
         Route::Window<&OnEraseBkgnd>(WM_ERASEBKGND),
         Route::Window<&OnSettingChange>(WM_SETTINGCHANGE),
         Route::Window<&OnShowWindow>(WM_SHOWWINDOW),
-        Route::Window<&OnSetFont>(WM_SETFONT),
+        Route::Window<&OnSetFont>(WM_SETFONT)
     };
     return entries;
 }

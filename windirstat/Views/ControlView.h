@@ -64,7 +64,7 @@ inline std::span<const RouteEntry> CControlView::Routes()
         Route::Window<&OnSetFocus>(WM_SETFOCUS),
         Route::Notify<&OnLvnItemChanged>(LVN_ITEMCHANGED, ID_WDS_CONTROL),
         Route::Update<&OnUpdatePopupToggle>(ID_POPUP_TOGGLE),
-        Route::Command<&OnPopupToggle>(ID_POPUP_TOGGLE),
+        Route::Command<&OnPopupToggle>(ID_POPUP_TOGGLE)
     };
     return entries;
 }

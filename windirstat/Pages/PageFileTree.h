@@ -78,7 +78,7 @@ inline std::span<const RouteEntry> CPageFileTree::Routes()
         Route::Control<&OnSettingChanged>(BN_CLICKED, IDC_TREECOL_OWNER),
         Route::Control<&OnSettingChanged>(BN_CLICKED, IDC_TREECOL_PERCENTAGE),
         Route::Control<&OnSettingChanged>(BN_CLICKED, IDC_TREECOL_SIZE_LOGICAL),
-        Route::Control<&OnSettingChanged>(BN_CLICKED, IDC_TREECOL_SIZE_PHYSICAL),
+        Route::Control<&OnSettingChanged>(BN_CLICKED, IDC_TREECOL_SIZE_PHYSICAL)
     };
     return entries;
 }

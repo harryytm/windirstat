@@ -89,7 +89,7 @@ inline std::span<const RouteEntry> CFlameGraphView::Routes()
     static constexpr std::array entries
     {
         Route::Window<&OnMouseWheel>(WM_MOUSEWHEEL),
-        Route::Window<&OnVScroll>(WM_VSCROLL),
+        Route::Window<&OnVScroll>(WM_VSCROLL)
     };
     return entries;
 }

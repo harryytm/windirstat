@@ -2257,7 +2257,7 @@ public:
         static constexpr std::array entries
         {
             Route::Command<&OnOK>(IDOK),
-            Route::Command<&OnCancel>(IDCANCEL),
+            Route::Command<&OnCancel>(IDCANCEL)
         };
         return entries;
     }
@@ -2662,7 +2662,7 @@ public:
             Route::Window<&OnMouseMove>(WM_MOUSEMOVE),
             Route::Window<&OnCaptureChanged>(WM_CAPTURECHANGED),
             Route::Window<&OnCancelMode>(WM_CANCELMODE),
-            Route::Window<&OnSetCursor>(WM_SETCURSOR),
+            Route::Window<&OnSetCursor>(WM_SETCURSOR)
         };
         return entries;
     }
@@ -3089,7 +3089,7 @@ public:
         static constexpr std::array entries
         {
             Route::ReflectNotify<&OnCustomDraw>(NM_CUSTOMDRAW),
-            Route::ReflectNotify<&OnGetInfoTip>(TBN_GETINFOTIPW),
+            Route::ReflectNotify<&OnGetInfoTip>(TBN_GETINFOTIPW)
         };
         return entries;
     }
@@ -3176,7 +3176,7 @@ public:
         {
             Route::Window<&OnPaint>(WM_PAINT),
             Route::Window<&OnEraseBkgnd>(WM_ERASEBKGND),
-            Route::Window<&OnSize>(WM_SIZE),
+            Route::Window<&OnSize>(WM_SIZE)
         };
         return entries;
     }
@@ -3364,7 +3364,7 @@ inline std::span<const RouteEntry> CWinApp::Routes()
 {
     static constexpr std::array entries
     {
-        Route::Command<&OnAppExit>(ID_APP_EXIT),
+        Route::Command<&OnAppExit>(ID_APP_EXIT)
     };
     return entries;
 }
@@ -3376,7 +3376,7 @@ inline std::span<const RouteEntry> CFrameWnd::Routes()
     static constexpr std::array entries
     {
         Route::Command<&OnBarCheck>(ID_VIEW_TOOLBAR, ID_VIEW_STATUS_BAR),
-        Route::Update<&OnUpdateControlBarMenu>(ID_VIEW_TOOLBAR, ID_VIEW_STATUS_BAR),
+        Route::Update<&OnUpdateControlBarMenu>(ID_VIEW_TOOLBAR, ID_VIEW_STATUS_BAR)
     };
     return entries;
 }

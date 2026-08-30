@@ -108,7 +108,7 @@ inline std::span<const RouteEntry> CFileTabbedView::Routes()
         Route::Window<&OnSetFocus>(WM_SETFOCUS),
         Route::Window<&OnSize>(WM_SIZE),
         Route::Window<&OnEraseBkgnd>(WM_ERASEBKGND),
-        Route::Window<&OnChangeActiveTab>(WM_WDS_TAB_CHANGED),
+        Route::Window<&OnChangeActiveTab>(WM_WDS_TAB_CHANGED)
     };
     return entries;
 }

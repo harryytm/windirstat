@@ -65,7 +65,7 @@ inline std::span<const RouteEntry> CWinDirStatPane::Routes()
     {
         Route::Window<&OnCreate>(WM_CREATE),
         Route::Window<&OnMouseActivate>(WM_MOUSEACTIVATE),
-        Route::Window<&OnPaint>(WM_PAINT),
+        Route::Window<&OnPaint>(WM_PAINT)
     };
     return entries;
 }

@@ -87,7 +87,7 @@ inline std::span<const RouteEntry> CPageCleanups::Routes()
         Route::Control<&OnBnClickedRemove>(BN_CLICKED, IDC_REMOVE_CLEANUP),
         Route::Control<&OnBnClickedUp>(BN_CLICKED, IDC_UP),
         Route::Control<&OnBnClickedDown>(BN_CLICKED, IDC_DOWN),
-        Route::Control<&OnBnClickedHelpbutton>(BN_CLICKED, IDC_HELPBUTTON),
+        Route::Control<&OnBnClickedHelpbutton>(BN_CLICKED, IDC_HELPBUTTON)
     };
     return entries;
 }
