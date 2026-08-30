@@ -72,9 +72,7 @@ protected:
     bool m_restartRequest = false;
     bool m_alreadyAsked = false;
 
-public:
-    static std::span<const RouteEntry> Routes();
-
+    DECLARE_ROUTE_MAP()
 };
 
 //
@@ -109,11 +107,10 @@ protected:
 
     void PostNcDestroy() override;
 
-public:
-    static std::span<const RouteEntry> Routes();
-
 protected:
     void OnSize(UINT nType, int cx, int cy);
+
+    DECLARE_ROUTE_MAP()
 };
 
 //
@@ -130,13 +127,12 @@ public:
 protected:
     CPacman m_pacman;
 
-public:
-    static std::span<const RouteEntry> Routes();
-
 protected:
     void OnPaint();
     int OnCreate(LPCREATESTRUCT lpCreateStruct);
     bool OnEraseBkgnd(CDC* pDC);
+
+    DECLARE_ROUTE_MAP()
 };
 
 //
@@ -241,8 +237,6 @@ public:
     ULONGLONG m_shadowCopyCount = 0;
     ULONGLONG m_shadowCopyBytes = 0;
 
-static std::span<const RouteEntry> Routes();
-
 protected:
     CCmdTarget* GetCommandTarget() const override { return CWinDirStatModel::Get(); }
     int OnCreate(LPCREATESTRUCT lpCreateStruct);
@@ -330,112 +324,94 @@ private:
     void ApplyWindowsTextScale();
     void BuildSplitterLayout(int topo, int perm, HWND hFTV, HWND hExtV, HWND hVisualization);
     void ConfigureSplitterCallbacks(int topo, int perm);
+
+    DECLARE_ROUTE_MAP()
 };
 
-inline std::span<const RouteEntry> CSettingsSheet::Routes()
-{
-    static constexpr std::array entries
-    {
-        Route::Window<&OnCtlColor>(WM_CTLCOLOR),
-        Route::Window<&OnEraseBkgnd>(WM_ERASEBKGND),
-    };
-    return entries;
-}
+BEGIN_ROUTE_MAP(CSettingsSheet)
+    ON_WINDOW(OnCtlColor, WM_CTLCOLOR)
+    ON_WINDOW(OnEraseBkgnd, WM_ERASEBKGND)
+END_ROUTE_MAP()
 
-inline std::span<const RouteEntry> CWdsSplitterWnd::Routes()
-{
-    static constexpr std::array entries
-    {
-        Route::Window<&OnSize>(WM_SIZE),
-    };
-    return entries;
-}
+BEGIN_ROUTE_MAP(CWdsSplitterWnd)
+    ON_WINDOW(OnSize, WM_SIZE)
+END_ROUTE_MAP()
 
-inline std::span<const RouteEntry> CPacmanControl::Routes()
-{
-    static constexpr std::array entries
-    {
-        Route::Window<&OnPaint>(WM_PAINT),
-        Route::Window<&OnCreate>(WM_CREATE),
-        Route::Window<&OnEraseBkgnd>(WM_ERASEBKGND),
-    };
-    return entries;
-}
+BEGIN_ROUTE_MAP(CPacmanControl)
+    ON_WINDOW(OnPaint, WM_PAINT)
+    ON_WINDOW(OnCreate, WM_CREATE)
+    ON_WINDOW(OnEraseBkgnd, WM_ERASEBKGND)
+END_ROUTE_MAP()
 
-inline std::span<const RouteEntry> CMainFrame::Routes()
-{
-    static constexpr std::array entries
-    {
-        Route::Command<&OnConfigure>(ID_CONFIGURE),
-        Route::Command<&OnViewShowFileTypes>(ID_VIEW_SHOWFILETYPES),
-        Route::Command<&OnViewGroupUnregisteredTypes>(ID_VIEW_GROUP_TYPES),
-        Route::Command<&OnViewShowVisualization>(ID_VIEW_SHOWVISUALIZATION),
-        Route::Command<&OnViewTreeMapStyle>(ID_VIEW_TREEMAP_ROWS, ID_VIEW_TREEMAP_MOORE),
-        Route::Command<&OnViewFlameGraph>(ID_VIEW_FLAMEGRAPH),
-        Route::Command<&OnViewSunburst>(ID_VIEW_SUNBURST),
-        Route::Command<&OnViewTreeMapUseLogical>(ID_TREEMAP_LOGICAL_SIZE),
-        Route::Command<&OnViewTreeMapUsePhysical>(ID_TREEMAP_PHYSICAL_SIZE),
-        Route::Command<&OnViewAbsolutePercentages>(ID_VIEW_ABSOLUTE_PERCENTAGES),
-        Route::Window<&OnEnterSizeMove>(WM_ENTERSIZEMOVE),
-        Route::Window<&OnExitSizeMove>(WM_EXITSIZEMOVE),
-        Route::Window<&OnCallbackRequest>(WM_CALLBACKUI),
-        Route::Window<&OnUahDrawMenu>(DarkMode::WM_UAHDRAWMENU),
-        Route::Window<&OnUahDrawMenu>(DarkMode::WM_UAHDRAWMENUITEM),
-        Route::Registered<&OnTaskButtonCreated>(s_TaskBarMessage),
-        Route::Update<&OnUpdateViewShowVisualization>(ID_VIEW_SHOWVISUALIZATION),
-        Route::Update<&OnUpdateViewTreeMapStyle>(ID_VIEW_TREEMAP_ROWS, ID_VIEW_TREEMAP_MOORE),
-        Route::Update<&OnUpdateViewFlameGraph>(ID_VIEW_FLAMEGRAPH),
-        Route::Update<&OnUpdateViewSunburst>(ID_VIEW_SUNBURST),
-        Route::Update<&OnUpdateViewShowFileTypes>(ID_VIEW_SHOWFILETYPES),
-        Route::Update<&OnUpdateViewGroupUnregisteredTypes>(ID_VIEW_GROUP_TYPES),
-        Route::Update<&OnUpdateTreeMapUseLogical>(ID_TREEMAP_LOGICAL_SIZE),
-        Route::Update<&OnUpdateTreeMapUsePhysical>(ID_TREEMAP_PHYSICAL_SIZE),
-        Route::Update<&OnUpdateViewAbsolutePercentages>(ID_VIEW_ABSOLUTE_PERCENTAGES),
-        Route::Command<&OnViewShowExtensionsOnTreeMap>(ID_TREEMAP_SHOW_EXTENSIONS),
-        Route::Update<&OnUpdateViewShowExtensionsOnTreeMap>(ID_TREEMAP_SHOW_EXTENSIONS),
-        Route::Command<&OnViewShowFolderFramesOnTreeMap>(ID_TREEMAP_SHOW_FOLDER_FRAMES),
-        Route::Update<&OnUpdateViewShowFolderFramesOnTreeMap>(ID_TREEMAP_SHOW_FOLDER_FRAMES),
-        Route::Update<&OnUpdateViewShowWatcher>(ID_TOOLS_WATCHER),
-        Route::Window<&OnClose>(WM_CLOSE),
-        Route::Window<&OnCreate>(WM_CREATE),
-        Route::Window<&OnDestroy>(WM_DESTROY),
-        Route::Window<&OnInitMenuPopup>(WM_INITMENUPOPUP),
-        Route::Window<&OnMenuCommand>(WM_MENUCOMMAND),
-        Route::Window<&OnSize>(WM_SIZE),
-        Route::Window<&OnSysColorChange>(WM_SYSCOLORCHANGE),
-        Route::Window<&OnSettingChange>(WM_SETTINGCHANGE),
-        Route::Window<&OnPowerBroadcast>(WM_POWERBROADCAST),
-        Route::Window<&OnTimer>(WM_TIMER),
-        Route::Window<&OnNcPaint>(WM_NCPAINT),
-        Route::Window<&OnNcActivate>(WM_NCACTIVATE),
-        Route::Window<&OnEraseBkgnd>(WM_ERASEBKGND),
-        Route::Window<&OnSetFocus>(WM_SETFOCUS),
-        Route::Window<&OnKeyDown>(WM_KEYDOWN),
-        Route::Command<&OnViewAllFiles>(ID_VIEW_ALL_FILES),
-        Route::Command<&OnViewLargestFiles>(ID_VIEW_LARGEST_FILES),
-        Route::Command<&OnViewDuplicateFiles>(ID_VIEW_DUPLICATE_FILES),
-        Route::Command<&OnViewSearchResults>(ID_VIEW_SEARCH_RESULTS),
-        Route::Command<&OnViewToolBarSize>(ID_VIEW_TOOLBAR_SIZE_100, ID_VIEW_TOOLBAR_SIZE_USE_WINDOWS),
-        Route::Update<&OnUpdateViewToolBarSize>(ID_VIEW_TOOLBAR_SIZE_100, ID_VIEW_TOOLBAR_SIZE_USE_WINDOWS),
-        Route::Command<&OnViewFontSize>(ID_VIEW_FONT_SIZE_100, ID_VIEW_FONT_SIZE_USE_WINDOWS),
-        Route::Update<&OnUpdateViewFontSize>(ID_VIEW_FONT_SIZE_100, ID_VIEW_FONT_SIZE_USE_WINDOWS),
-        Route::Command<&OnAdvancedShadowCopy>(ID_TOOLS_SHADOW_COPY_BASE, ID_TOOLS_SHADOW_COPY_BASE + wds::alphaSize),
-        Route::Command<&OnAdvancedDefrag>(ID_TOOLS_DEFRAG_BASE, ID_TOOLS_DEFRAG_BASE + wds::alphaSize),
-        Route::Command<&OnAdvancedChkdsk>(ID_TOOLS_CHKDSK_BASE, ID_TOOLS_CHKDSK_BASE + wds::alphaSize),
-        Route::Command<&OnToolsWatcher>(ID_TOOLS_WATCHER),
-        Route::Command<&OnWatcherStart>(ID_WATCHER_START),
-        Route::Update<&OnUpdateWatcherStart>(ID_WATCHER_START),
-        Route::Command<&OnWatcherPause>(ID_WATCHER_PAUSE),
-        Route::Update<&OnUpdateWatcherPause>(ID_WATCHER_PAUSE),
-        Route::Command<&OnWatcherAutoScroll>(ID_WATCHER_AUTOSCROLL),
-        Route::Update<&OnUpdateWatcherAutoScroll>(ID_WATCHER_AUTOSCROLL),
-        Route::Command<&OnWatcherClear>(ID_WATCHER_CLEAR),
-        Route::Update<&OnUpdateWatcherClear>(ID_WATCHER_CLEAR),
-        Route::Command<&OnToolsPermissions>(ID_TOOLS_PERMISSIONS),
-        Route::Update<&OnUpdateToolsPermissions>(ID_TOOLS_PERMISSIONS),
-        Route::Command<&OnToolsStorageAnalytics>(ID_TOOLS_STORAGE_ANALYTICS),
-        Route::Update<&OnUpdateToolsStorageAnalytics>(ID_TOOLS_STORAGE_ANALYTICS),
-        Route::Command<&OnViewWindowLayout>(ID_VIEW_WINDOW_LAYOUT),
-    };
-    return entries;
-}
+BEGIN_ROUTE_MAP(CMainFrame)
+    ON_COMMAND(OnConfigure, ID_CONFIGURE)
+    ON_COMMAND(OnViewShowFileTypes, ID_VIEW_SHOWFILETYPES)
+    ON_COMMAND(OnViewGroupUnregisteredTypes, ID_VIEW_GROUP_TYPES)
+    ON_COMMAND(OnViewShowVisualization, ID_VIEW_SHOWVISUALIZATION)
+    ON_COMMAND(OnViewTreeMapStyle, ID_VIEW_TREEMAP_ROWS, ID_VIEW_TREEMAP_MOORE)
+    ON_COMMAND(OnViewFlameGraph, ID_VIEW_FLAMEGRAPH)
+    ON_COMMAND(OnViewSunburst, ID_VIEW_SUNBURST)
+    ON_COMMAND(OnViewTreeMapUseLogical, ID_TREEMAP_LOGICAL_SIZE)
+    ON_COMMAND(OnViewTreeMapUsePhysical, ID_TREEMAP_PHYSICAL_SIZE)
+    ON_COMMAND(OnViewAbsolutePercentages, ID_VIEW_ABSOLUTE_PERCENTAGES)
+    ON_WINDOW(OnEnterSizeMove, WM_ENTERSIZEMOVE)
+    ON_WINDOW(OnExitSizeMove, WM_EXITSIZEMOVE)
+    ON_WINDOW(OnCallbackRequest, WM_CALLBACKUI)
+    ON_WINDOW(OnUahDrawMenu, DarkMode::WM_UAHDRAWMENU)
+    ON_WINDOW(OnUahDrawMenu, DarkMode::WM_UAHDRAWMENUITEM)
+    ON_REGISTERED(OnTaskButtonCreated, s_TaskBarMessage)
+    ON_UPDATE(OnUpdateViewShowVisualization, ID_VIEW_SHOWVISUALIZATION)
+    ON_UPDATE(OnUpdateViewTreeMapStyle, ID_VIEW_TREEMAP_ROWS, ID_VIEW_TREEMAP_MOORE)
+    ON_UPDATE(OnUpdateViewFlameGraph, ID_VIEW_FLAMEGRAPH)
+    ON_UPDATE(OnUpdateViewSunburst, ID_VIEW_SUNBURST)
+    ON_UPDATE(OnUpdateViewShowFileTypes, ID_VIEW_SHOWFILETYPES)
+    ON_UPDATE(OnUpdateViewGroupUnregisteredTypes, ID_VIEW_GROUP_TYPES)
+    ON_UPDATE(OnUpdateTreeMapUseLogical, ID_TREEMAP_LOGICAL_SIZE)
+    ON_UPDATE(OnUpdateTreeMapUsePhysical, ID_TREEMAP_PHYSICAL_SIZE)
+    ON_UPDATE(OnUpdateViewAbsolutePercentages, ID_VIEW_ABSOLUTE_PERCENTAGES)
+    ON_COMMAND(OnViewShowExtensionsOnTreeMap, ID_TREEMAP_SHOW_EXTENSIONS)
+    ON_UPDATE(OnUpdateViewShowExtensionsOnTreeMap, ID_TREEMAP_SHOW_EXTENSIONS)
+    ON_COMMAND(OnViewShowFolderFramesOnTreeMap, ID_TREEMAP_SHOW_FOLDER_FRAMES)
+    ON_UPDATE(OnUpdateViewShowFolderFramesOnTreeMap, ID_TREEMAP_SHOW_FOLDER_FRAMES)
+    ON_UPDATE(OnUpdateViewShowWatcher, ID_TOOLS_WATCHER)
+    ON_WINDOW(OnClose, WM_CLOSE)
+    ON_WINDOW(OnCreate, WM_CREATE)
+    ON_WINDOW(OnDestroy, WM_DESTROY)
+    ON_WINDOW(OnInitMenuPopup, WM_INITMENUPOPUP)
+    ON_WINDOW(OnMenuCommand, WM_MENUCOMMAND)
+    ON_WINDOW(OnSize, WM_SIZE)
+    ON_WINDOW(OnSysColorChange, WM_SYSCOLORCHANGE)
+    ON_WINDOW(OnSettingChange, WM_SETTINGCHANGE)
+    ON_WINDOW(OnPowerBroadcast, WM_POWERBROADCAST)
+    ON_WINDOW(OnTimer, WM_TIMER)
+    ON_WINDOW(OnNcPaint, WM_NCPAINT)
+    ON_WINDOW(OnNcActivate, WM_NCACTIVATE)
+    ON_WINDOW(OnEraseBkgnd, WM_ERASEBKGND)
+    ON_WINDOW(OnSetFocus, WM_SETFOCUS)
+    ON_WINDOW(OnKeyDown, WM_KEYDOWN)
+    ON_COMMAND(OnViewAllFiles, ID_VIEW_ALL_FILES)
+    ON_COMMAND(OnViewLargestFiles, ID_VIEW_LARGEST_FILES)
+    ON_COMMAND(OnViewDuplicateFiles, ID_VIEW_DUPLICATE_FILES)
+    ON_COMMAND(OnViewSearchResults, ID_VIEW_SEARCH_RESULTS)
+    ON_COMMAND(OnViewToolBarSize, ID_VIEW_TOOLBAR_SIZE_100, ID_VIEW_TOOLBAR_SIZE_USE_WINDOWS)
+    ON_UPDATE(OnUpdateViewToolBarSize, ID_VIEW_TOOLBAR_SIZE_100, ID_VIEW_TOOLBAR_SIZE_USE_WINDOWS)
+    ON_COMMAND(OnViewFontSize, ID_VIEW_FONT_SIZE_100, ID_VIEW_FONT_SIZE_USE_WINDOWS)
+    ON_UPDATE(OnUpdateViewFontSize, ID_VIEW_FONT_SIZE_100, ID_VIEW_FONT_SIZE_USE_WINDOWS)
+    ON_COMMAND(OnAdvancedShadowCopy, ID_TOOLS_SHADOW_COPY_BASE, ID_TOOLS_SHADOW_COPY_BASE + wds::alphaSize)
+    ON_COMMAND(OnAdvancedDefrag, ID_TOOLS_DEFRAG_BASE, ID_TOOLS_DEFRAG_BASE + wds::alphaSize)
+    ON_COMMAND(OnAdvancedChkdsk, ID_TOOLS_CHKDSK_BASE, ID_TOOLS_CHKDSK_BASE + wds::alphaSize)
+    ON_COMMAND(OnToolsWatcher, ID_TOOLS_WATCHER)
+    ON_COMMAND(OnWatcherStart, ID_WATCHER_START)
+    ON_UPDATE(OnUpdateWatcherStart, ID_WATCHER_START)
+    ON_COMMAND(OnWatcherPause, ID_WATCHER_PAUSE)
+    ON_UPDATE(OnUpdateWatcherPause, ID_WATCHER_PAUSE)
+    ON_COMMAND(OnWatcherAutoScroll, ID_WATCHER_AUTOSCROLL)
+    ON_UPDATE(OnUpdateWatcherAutoScroll, ID_WATCHER_AUTOSCROLL)
+    ON_COMMAND(OnWatcherClear, ID_WATCHER_CLEAR)
+    ON_UPDATE(OnUpdateWatcherClear, ID_WATCHER_CLEAR)
+    ON_COMMAND(OnToolsPermissions, ID_TOOLS_PERMISSIONS)
+    ON_UPDATE(OnUpdateToolsPermissions, ID_TOOLS_PERMISSIONS)
+    ON_COMMAND(OnToolsStorageAnalytics, ID_TOOLS_STORAGE_ANALYTICS)
+    ON_UPDATE(OnUpdateToolsStorageAnalytics, ID_TOOLS_STORAGE_ANALYTICS)
+    ON_COMMAND(OnViewWindowLayout, ID_VIEW_WINDOW_LAYOUT)
+END_ROUTE_MAP()

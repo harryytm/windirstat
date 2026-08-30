@@ -1483,6 +1483,30 @@ LRESULT InvokeWindowHandler(CCmdTarget& target, const UINT message, WPARAM wPara
     return result;
 }
 
+// Declarative mapping macros for window and dialog implementations
+#define DECLARE_ROUTE_MAP() \
+public: \
+    static std::span<const RouteEntry> Routes();
+
+#define BEGIN_ROUTE_MAP(ClassName) \
+    inline std::span<const RouteEntry> ClassName::Routes() { \
+        using namespace Route; \
+        static constexpr std::array entries {
+
+#define END_ROUTE_MAP() \
+        }; \
+        return entries; \
+    }
+
+#define ON_COMMAND(func, ...)          Command<&func>(__VA_ARGS__),
+#define ON_CONTROL(func, ...)          Control<&func>(__VA_ARGS__),
+#define ON_UPDATE(func, ...)           Update<&func>(__VA_ARGS__),
+#define ON_WINDOW(func, ...)           Window<&func>(__VA_ARGS__),
+#define ON_REGISTERED(func, msg)       Registered<&func>(msg),
+#define ON_NOTIFY(func, ...)           Notify<&func>(__VA_ARGS__),
+#define ON_CONTROL_REFLECT(func, code) ReflectControl<&func>(code),
+#define ON_NOTIFY_REFLECT(func, code)  ReflectNotify<&func>(code),
+
 namespace Route
 {
     template<auto Handler>
