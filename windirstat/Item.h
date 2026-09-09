@@ -326,8 +326,9 @@ private:
     void SetName(std::wstring_view name);
     const wchar_t* GetNameBuffer() const noexcept
     {
-        return IsTypeOrFlag(IT_DRIVE) ? GetFolderInfo()->m_driveName.get() : IsLeaf() ?
-            reinterpret_cast<const wchar_t*>(this + 1) : reinterpret_cast<const wchar_t*>(GetFolderInfo() + 1);
+        return (IsTypeOrFlag(IT_DRIVE, ITRP_MOUNT) && GetFolderInfo()->m_driveName) ?
+            GetFolderInfo()->m_driveName.get() : reinterpret_cast<const wchar_t*>(IsLeaf() ?
+                static_cast<const void*>(this + 1) : (GetFolderInfo() + 1));
     }
     wchar_t* GetNameBuffer() noexcept
     {
