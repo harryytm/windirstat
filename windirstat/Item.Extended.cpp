@@ -487,7 +487,7 @@ ULONGLONG CItem::TmiGetSize() const noexcept
 
 bool CItem::SupportsSpaceItems() const noexcept
 {
-    return IsTypeOrFlag(IT_DRIVE) ||
+    return IsTypeOrFlag(IT_DRIVE, ITRP_MOUNT) ||
         (IsScanRoot() && IsTypeOrFlag(IT_DIRECTORY) && IsDriveAdministrativeSharePath(GetNameView()));
 }
 
@@ -638,15 +638,20 @@ void CItem::UpdateFreeSpaceItem()
     }
     else if (SupportsSpaceItems())
     {
-        auto [total, free] = CDirStatApp::GetFreeDiskSpace(GetPath());
+        const auto [total, free] = CDirStatApp::GetFreeDiskSpace(GetPath());
+        const std::wstring usage = Localization::Format(IDS_DRIVE_ITEM_FREEsTOTALs, FormatBytes(free), FormatBytes(total));
+        const std::wstring percentage = FormatDouble(total == 0 ? 0.0 : 100.0 * free / total);
 
         // Recreate name based on updated free space and percentage
         if (IsTypeOrFlag(IT_DRIVE))
         {
             SetName(std::format(L"{:.2}|{} - {} ({}%)", GetNameView(),
-                FormatVolumeNameOfRootPath(GetPath()), Localization::Format(
-                    IDS_DRIVE_ITEM_FREEsTOTALs, FormatBytes(free), FormatBytes(total)),
-                FormatDouble(total == 0 ? 0.0 : 100.0 * free / total)));
+                FormatVolumeNameOfRootPath(GetPath()), usage, percentage));
+        }
+        else if (IsTypeOrFlag(ITRP_MOUNT))
+        {
+            const std::wstring_view view{ m_name.get(), m_nameLen };
+            SetName(std::format(L"{0}|{0} - {1} ({2}%)", view.substr(0, view.find(L'|')), usage, percentage));
         }
 
         // Update freespace item if it exists

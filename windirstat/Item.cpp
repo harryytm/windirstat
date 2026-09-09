@@ -642,11 +642,15 @@ std::wstring CItem::GetName(const bool stripDrivePrefix) const noexcept
 std::wstring_view CItem::GetNameView(const bool stripDrivePrefix) const noexcept
 {
     if (IsTypeOrFlag(IT_HLINKS_FILE)) return GetLinkedItem()->GetNameView(stripDrivePrefix);
-    if (stripDrivePrefix && IsTypeOrFlag(IT_DRIVE))
+
+    const std::wstring_view name{ m_name.get(), m_nameLen };
+
+    if (IsTypeOrFlag(ITRP_MOUNT) || (stripDrivePrefix && IsTypeOrFlag(IT_DRIVE)))
     {
-        return std::wstring_view(m_name.get(), m_nameLen).substr(std::size(L"?:"));
+        if (const auto pos = name.find(L'|'); pos != name.npos) return name.substr(pos + 1);
     }
-    return { m_name.get(), m_nameLen };
+
+    return name;
 }
 
 bool CItem::HasExtension(const std::wstring_view extension) const noexcept
@@ -852,17 +856,24 @@ std::wstring CItem::GetPathWithoutSlash() const
     // append the strings in reverse order
     for (auto it = pathParts.rbegin(); it != pathParts.rend(); ++it) [[msvc::forceinline_calls]]
     {
-        if (const auto & pathPart = *it; pathPart->IsTypeOrFlag(IT_DIRECTORY))
+        const auto& pathPart = *it;
+        const std::wstring_view name(pathPart->m_name.get(), pathPart->m_nameLen);
+
+        if (pathPart->IsTypeOrFlag(ITRP_MOUNT))
         {
-            path.append(pathPart->m_name.get(), pathPart->m_nameLen).append(L"\\");
+            path.append(name.substr(0, name.find(L'|'))).append(L"\\");
+        }
+        else if (pathPart->IsTypeOrFlag(IT_DIRECTORY))
+        {
+            path.append(name).append(L"\\");
         }
         else if (pathPart->IsTypeOrFlag(IT_DRIVE))
         {
-            path.append(pathPart->m_name.get(), 2).append(L"\\");
+            path.append(name.substr(0, 2)).append(L"\\");
         }
         else if (!pathPart->IsTypeOrFlag(IT_MYCOMPUTER))
         {
-            path.append(pathPart->m_name.get(), pathPart->m_nameLen);
+            path.append(name);
         }
     }
 
@@ -1080,7 +1091,7 @@ void CItem::ScanItems(BlockingQueue<CItem*> * queue, FinderNtfsContext& contextN
         }
 
         // Try to load NTFS MFT
-        if (item->IsTypeOrFlag(IT_DRIVE) && COptions::UseFastScanEngine)
+        if (item->IsTypeOrFlag(IT_DRIVE, ITRP_MOUNT) && COptions::UseFastScanEngine)
         {
             contextNtfs.LoadRoot(item, queue);
         }
