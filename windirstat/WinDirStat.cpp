@@ -395,6 +395,21 @@ bool CDirStatApp::InitInstance()
         ExitProcess(0);
     }
 
+    // Allow user to elevate if desired
+    if (IsElevationAvailable() && COptions::ShowElevationPrompt && !hideApp)
+    {
+        const auto [nID, isChecked] = CMessageBoxDlg::Show(Localization::Lookup(IDS_ELEVATION_QUESTION),
+            Localization::Lookup(IDS_DONT_SHOW_AGAIN), false, MB_YESNO | MB_ICONQUESTION, m_pMainWnd);
+
+        COptions::ShowElevationPrompt = !isChecked;
+        if (isChecked) COptions::AutoElevate = (nID == IDYES); // Remember the user's choice if the checkbox is checked
+
+        if (nID == IDYES)
+        {
+            RunElevated(m_lpCmdLine);
+        }
+    }
+
     // Check if we should hide the app window
     if (hideApp && (cmdInfo.GetPath().empty() || cmdInfo.HasInvalidPath())) ExitProcess(1);
     if (hideApp) m_nCmdShow = SW_HIDE;
@@ -458,21 +473,6 @@ bool CDirStatApp::InitInstance()
     {
         constexpr CHAR PHCM_EXPOSE_PLACEHOLDERS = 2;
         RtlSetProcessPlaceholderCompatibilityMode(PHCM_EXPOSE_PLACEHOLDERS);
-    }
-
-    // Allow user to elevate if desired
-    if (IsElevationAvailable() && COptions::ShowElevationPrompt && !hideApp)
-    {
-        const auto [nID, isChecked] = CMessageBoxDlg::Show(Localization::Lookup(IDS_ELEVATION_QUESTION),
-            Localization::Lookup(IDS_DONT_SHOW_AGAIN),false, MB_YESNO | MB_ICONQUESTION, m_pMainWnd);
-
-        COptions::ShowElevationPrompt = !isChecked;
-        if (isChecked) COptions::AutoElevate = (nID == IDYES); // Remember the user's choice if the checkbox is checked
-
-        if (nID == IDYES)
-        {
-            RunElevated(m_lpCmdLine);
-        }
     }
 
     // Load results if specified via command line

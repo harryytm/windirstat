@@ -2223,6 +2223,18 @@ inline LRESULT CALLBACK ModalMessageHookProc(const int code, const WPARAM wParam
     return CallNextHookEx(g_modalPreTranslateHook, code, wParam, lParam);
 }
 
+inline std::wstring NormalizeLineEndings(std::wstring_view input)
+{
+    std::wstring result;
+    result.reserve(input.size());
+    for (wchar_t prev = L'\0'; wchar_t ch : input)
+    {
+        if (ch == L'\n' && prev != L'\r') result.push_back(L'\r');
+        result.push_back(prev = ch);
+    }
+    return result;
+}
+
 class CDialog : public MessageTarget<CDialog, CWnd>
 {
 public:
@@ -2278,8 +2290,8 @@ public:
                     GetClassNameW(control->m_hWnd, className, static_cast<int>(std::size(className))) != 0 &&
                     _wcsicmp(className, WC_STATIC) == 0)
                 {
-                    if (const std::wstring value = control->GetText();
-                        !value.empty() && CopyTextToClipboard(value)) return true;
+                    const std::wstring value = NormalizeLineEndings(control->GetText());
+                    if (!value.empty() && CopyTextToClipboard(value)) return true;
                 }
             }
         }
