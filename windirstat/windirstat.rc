@@ -920,6 +920,11 @@ BEGIN
     0
 END
 
+IDD_PAGE_PROMPTS AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
