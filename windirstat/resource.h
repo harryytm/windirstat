@@ -137,7 +137,7 @@
 #define IDC_FILTERING_INCLUDE_FILES     1114
 #define IDC_HASH_ALGORITHM              1115
 #define IDC_FILTER_BUTTON               1116
-#define IDC_FILTERING_SIZE_COMPARISON    1117
+#define IDC_FILTERING_SIZE_COMPARISON   1117
 #define IDC_FILTERING_MAX_AGE_COMPARISON 1118
 #define IDC_FILTERING_MAX_AGE_DAYS      1119
 #define IDC_PERMS_ACCOUNT0              1120
@@ -166,8 +166,8 @@
 #define IDC_ADD_CLEANUP                 1143
 #define IDC_REMOVE_CLEANUP              1144
 #define IDC_ADD_FOLDER                  1145
-#define IDC_TREEMAPPRESET                1146
-#define IDC_SAMPLE_LARGE_FILES           1147
+#define IDC_TREEMAPPRESET               1146
+#define IDC_SAMPLE_LARGE_FILES          1147
 #define IDC_FOLDER_HISTORY_COUNT        1148
 #define IDC_SEARCH_SIZE_MIN             1149
 #define IDC_SEARCH_SIZE_MAX             1150
@@ -204,7 +204,6 @@
 #define ID_VIEW_SHOWFREESPACE           32784
 #define ID_VIEW_SHOWUNKNOWN             32785
 #define ID_VIEW_SHOWFILETYPES           32786
-#define ID_VIEW_GROUP_TYPES             32949
 #define ID_USERDEFINEDCLEANUP0          32787
 #define ID_USERDEFINEDCLEANUP1          32788
 #define ID_USERDEFINEDCLEANUP2          32789
@@ -265,12 +264,13 @@
 #define ID_TOOLS_CHKDSK_BASE            32910
 #define ID_TOOLS_WATCHER                32940
 #define ID_TREEMAP_SHOW_EXTENSIONS      32941
-#define ID_TREEMAP_SHOW_FOLDER_FRAMES   32947
 #define ID_FILTER_EXCLUDE_ITEM          32943
 #define ID_TOOLS_PERMISSIONS            32944
 #define ID_SAVE_PERMISSIONS             32945
 #define ID_TOOLS_STORAGE_ANALYTICS      32946
+#define ID_TREEMAP_SHOW_FOLDER_FRAMES   32947
 #define ID_VIEW_WINDOW_LAYOUT           32948
+#define ID_VIEW_GROUP_TYPES             32949
 #define ID_CLEANUP_STORAGE_SENSE        32950
 #define ID_WATCHER_START                32951
 #define ID_WATCHER_PAUSE                32952
