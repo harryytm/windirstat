@@ -388,6 +388,17 @@ bool CDirStatApp::InitInstance()
     // Elevate non-interactive operations before rejecting protected paths or applying changes.
     if (autoElevate && (hideApp || cmdInfo.IsLegacyUninstallRequested())) RunElevated(m_lpCmdLine);
 
+    // Allow user to elevate if desired
+    if (IsElevationAvailable() && COptions::ShowElevationPrompt && !hideApp)
+    {
+        const auto [nID, isChecked] = CMessageBoxDlg::Show(Localization::Lookup(IDS_ELEVATION_QUESTION),
+            Localization::Lookup(IDS_DONT_SHOW_AGAIN),false, MB_YESNO | MB_ICONQUESTION, m_pMainWnd);
+
+        COptions::ShowElevationPrompt = !isChecked;
+        if (isChecked) COptions::AutoElevate = (nID == IDYES); // Remember the user's choice if the checkbox is checked
+        if (nID == IDYES) RunElevated(m_lpCmdLine);
+    }
+
     if (cmdInfo.IsLegacyUninstallRequested())
     {
         LegacyUninstall();
@@ -458,21 +469,6 @@ bool CDirStatApp::InitInstance()
     {
         constexpr CHAR PHCM_EXPOSE_PLACEHOLDERS = 2;
         RtlSetProcessPlaceholderCompatibilityMode(PHCM_EXPOSE_PLACEHOLDERS);
-    }
-
-    // Allow user to elevate if desired
-    if (IsElevationAvailable() && COptions::ShowElevationPrompt && !hideApp)
-    {
-        const auto [nID, isChecked] = CMessageBoxDlg::Show(Localization::Lookup(IDS_ELEVATION_QUESTION),
-            Localization::Lookup(IDS_DONT_SHOW_AGAIN),false, MB_YESNO | MB_ICONQUESTION, m_pMainWnd);
-
-        COptions::ShowElevationPrompt = !isChecked;
-        if (isChecked) COptions::AutoElevate = (nID == IDYES); // Remember the user's choice if the checkbox is checked
-
-        if (nID == IDYES)
-        {
-            RunElevated(m_lpCmdLine);
-        }
     }
 
     // Load results if specified via command line
