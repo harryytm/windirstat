@@ -69,8 +69,7 @@ void CPagePrompts::InitializePage()
 
     for (const auto& [controlId, operationId, detail] : promptControls)
     {
-        SetText(controlId, Localization::Format(IDS_PAGE_PROMPTS_OPERATION_CONFIRMATIONs,
-            GetLocalizedMenuText(operationId, detail)));
+        SetText(controlId, GetLocalizedMenuText(operationId, detail));
     }
 }
 
