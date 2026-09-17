@@ -1290,13 +1290,23 @@ bool CWnd::InitializeDialogControls(const UINT resourceId)
 void CWnd::CenterWindow(const CWnd* pAlternate)
 {
     HWND hParent = pAlternate ? pAlternate->m_hWnd : ::GetParent(m_hWnd);
+    if (hParent != nullptr && ::IsIconic(hParent)) hParent = nullptr;
+
+    MONITORINFO mi{ sizeof(MONITORINFO) };
+    const RECT viewport = (hParent || ::IsWindow(m_hWnd)) && ::GetMonitorInfoW(::MonitorFromWindow(hParent ?
+        hParent : m_hWnd, MONITOR_DEFAULTTONEAREST), &mi) ? mi.rcWork : RECT{};
+
     if (hParent == nullptr) hParent = ::GetDesktopWindow();
     RECT rcParent{}, rcWnd{};
     if (!::GetWindowRect(hParent, &rcParent) || !::GetWindowRect(m_hWnd, &rcWnd)) return;
     const CSize parent = CRect(rcParent).Size(), window = CRect(rcWnd).Size();
     const int64_t dx = static_cast<int64_t>(parent.cx) - window.cx, dy = static_cast<int64_t>(parent.cy) - window.cy;
-    const int x = static_cast<int>(std::clamp<int64_t>(static_cast<int64_t>(rcParent.left) + dx / 2, INT_MIN, INT_MAX));
-    const int y = static_cast<int>(std::clamp<int64_t>(static_cast<int64_t>(rcParent.top) + dy / 2, INT_MIN, INT_MAX));
+    const int centerX = static_cast<int>(std::clamp<int64_t>(static_cast<int64_t>(rcParent.left) + dx / 2, INT_MIN, INT_MAX));
+    const int centerY = static_cast<int>(std::clamp<int64_t>(static_cast<int64_t>(rcParent.top) + dy / 2, INT_MIN, INT_MAX));
+    const int x = (viewport.right > viewport.left) ?
+        std::clamp<int>(centerX, viewport.left, std::max<int>(viewport.left, viewport.right - window.cx)) : centerX;
+    const int y = (viewport.bottom > viewport.top) ?
+        std::clamp<int>(centerY, viewport.top, std::max<int>(viewport.top, viewport.bottom - window.cy)) : centerY;
     ::SetWindowPos(m_hWnd, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
