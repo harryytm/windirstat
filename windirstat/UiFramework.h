@@ -1142,6 +1142,8 @@ public:
         psi->cbSize = sizeof(SCROLLINFO); return ::SetScrollInfo(m_hWnd, bar, psi, bRedraw);
     }
 
+    [[nodiscard]] CRect EnsureVisibleInViewport(const CRect& targetRect, HWND hReferenceWnd = nullptr) const noexcept;
+    void EnsureVisibleInViewport(HWND hReferenceWnd = nullptr) noexcept;
     void CenterWindow(const CWnd* pAlternate = nullptr);
 
     // ---- default message handlers (call CallDefaultHandler()) ----

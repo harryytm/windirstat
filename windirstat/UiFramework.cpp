@@ -1287,27 +1287,64 @@ bool CWnd::InitializeDialogControls(const UINT resourceId)
     }
 }
 
+CRect CWnd::EnsureVisibleInViewport(const CRect& targetRect, const HWND hReferenceWnd) const noexcept
+{
+    const HWND hMonitorWnd = hReferenceWnd ? hReferenceWnd : m_hWnd;
+    const HMONITOR hMonitor = ::MonitorFromWindow(hMonitorWnd, MONITOR_DEFAULTTONEAREST);
+
+    MONITORINFO monitor{ sizeof(MONITORINFO) };
+    if (!::GetMonitorInfoW(hMonitor, &monitor)) return targetRect; // Fallback to raw target if monitor query fails
+
+    const CRect work(monitor.rcWork);
+    CRect resultRect = targetRect;
+
+    // Cap width if the target rectangle exceeds total available display work area width
+    const int width = (work.Width() >= targetRect.Width()) ? targetRect.Width() : work.Width();
+    resultRect.right = resultRect.left + width;
+
+    // Clamp X and Y origins directly into the active display work area
+    const int clampedX = std::clamp(resultRect.left, work.left, std::max(work.left, work.right - width));
+    const int clampedY = std::clamp(resultRect.top, work.top, std::max(work.top, work.bottom - resultRect.Height()));
+
+    resultRect.Offset(clampedX - resultRect.left, clampedY - resultRect.top);
+    return resultRect;
+}
+
+void CWnd::EnsureVisibleInViewport(const HWND hReferenceWnd) noexcept
+{
+    if (m_hWnd != nullptr && ::IsWindow(m_hWnd))
+    {
+        const CRect currentRect = GetWindowRect();
+        const CRect clampedRect = EnsureVisibleInViewport(currentRect, hReferenceWnd);
+        if (currentRect != clampedRect)
+        {
+            MoveWindow(clampedRect);
+        }
+    }
+}
+
 void CWnd::CenterWindow(const CWnd* pAlternate)
 {
     HWND hParent = pAlternate ? pAlternate->m_hWnd : ::GetParent(m_hWnd);
     if (hParent != nullptr && ::IsIconic(hParent)) hParent = nullptr;
-
-    MONITORINFO mi{ sizeof(MONITORINFO) };
-    const RECT viewport = (hParent || ::IsWindow(m_hWnd)) && ::GetMonitorInfoW(::MonitorFromWindow(hParent ?
-        hParent : m_hWnd, MONITOR_DEFAULTTONEAREST), &mi) ? mi.rcWork : RECT{};
-
     if (hParent == nullptr) hParent = ::GetDesktopWindow();
-    RECT rcParent{}, rcWnd{};
+
+    CRect rcParent, rcWnd;
     if (!::GetWindowRect(hParent, &rcParent) || !::GetWindowRect(m_hWnd, &rcWnd)) return;
-    const CSize parent = CRect(rcParent).Size(), window = CRect(rcWnd).Size();
-    const int64_t dx = static_cast<int64_t>(parent.cx) - window.cx, dy = static_cast<int64_t>(parent.cy) - window.cy;
+
+    const CSize parent = rcParent.Size();
+    const CSize window = rcWnd.Size();
+
+    const int64_t dx = static_cast<int64_t>(parent.cx) - window.cx;
+    const int64_t dy = static_cast<int64_t>(parent.cy) - window.cy;
+
     const int centerX = static_cast<int>(std::clamp<int64_t>(static_cast<int64_t>(rcParent.left) + dx / 2, INT_MIN, INT_MAX));
     const int centerY = static_cast<int>(std::clamp<int64_t>(static_cast<int64_t>(rcParent.top) + dy / 2, INT_MIN, INT_MAX));
-    const int x = (viewport.right > viewport.left) ?
-        std::clamp<int>(centerX, viewport.left, std::max<int>(viewport.left, viewport.right - window.cx)) : centerX;
-    const int y = (viewport.bottom > viewport.top) ?
-        std::clamp<int>(centerY, viewport.top, std::max<int>(viewport.top, viewport.bottom - window.cy)) : centerY;
-    ::SetWindowPos(m_hWnd, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+
+    const CRect candidateRect(centerX, centerY, centerX + window.cx, centerY + window.cy);
+    const CRect finalRect = EnsureVisibleInViewport(candidateRect, hParent);
+
+    ::SetWindowPos(m_hWnd, nullptr, finalRect.left, finalRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
 std::optional<std::wstring> CDialog::PickFile(const FilePickerMode mode, std::wstring filter, const CWnd* parent)
