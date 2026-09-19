@@ -329,18 +329,19 @@ bool CPropertySheet::OnInitDialog()
         }());
     }
 
+    const int offset = gap * 2;
     for (const auto [i, page] : std::views::enumerate(m_pages))
     {
         if (!EnsurePageCreated(static_cast<int>(i))) continue;
 
         const CRect rcPage = page->GetWindowRect();
-        maxW = std::max<int>(maxW, rcPage.Width());
-        maxH = std::max<int>(maxH, rcPage.Height());
+        maxW = std::max<int>(maxW, rcPage.Width()) - offset;
+        maxH = std::max<int>(maxH, rcPage.Height()) - offset * 2;
         break;
     }
 
-    const int clientW = margin + maxW + margin;
-    const int clientH = margin + tabH + tabGap + maxH + gap + btnH + margin;
+    const int clientW = maxW + gap * 2;
+    const int clientH = tabGap + tabH + tabGap + maxH + btnGap + btnH + btnGap;
 
     // Resize the sheet to fit
     RECT rcWin{ 0, 0, clientW, clientH };
@@ -350,12 +351,12 @@ bool CPropertySheet::OnInitDialog()
 
     // Tab strip (label-only)
     m_tab.SetLocation(CTabControl::Location::Top);
-    m_tab.Create(CRect(margin, margin, margin + maxW, margin + tabH), this, 0xCAFE, true);
+    m_tab.Create(CRect(0, tabGap, clientW, tabH + tabGap), this, 0xCAFE, true);
     for (auto& cap : captions) m_tab.AddTab(nullptr, cap);
 
     // Position pages
-    const int pageY = margin + tabH + tabGap;
-    m_pageRect = CRect(margin, pageY, margin + maxW, pageY + maxH);
+    const int pageY = tabH + tabGap * 2;
+    m_pageRect = CRect(tabGap, pageY, tabGap + maxW, pageY + maxH);
     for (const auto& page : m_pages)
         if (page->Handle()) page->SetWindowPos(nullptr, m_pageRect.left, m_pageRect.top,
             m_pageRect.Width(), m_pageRect.Height(), SWP_NOZORDER | SWP_NOACTIVATE);
