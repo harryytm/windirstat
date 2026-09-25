@@ -281,14 +281,114 @@ std::wstring GetBaseNameFromPath(const std::wstring_view path)
 
 std::wstring GlobToRegex(const std::wstring& glob, const bool useAnchors)
 {
-    static const std::wregex escapePattern(LR"([.\\+^$|()[\]{}])", std::regex_constants::optimize);
+    constexpr auto escapeRegex = [](const std::wstring& input) {
+        std::wstring result;
+        result.reserve(input.length() * 2);
+        for (wchar_t ch : input)
+        {
+            if (std::wstring_view(L"\\.^$|()[]{}*+?").find(ch) != std::wstring_view::npos) result += L'\\';
+            result += ch;
+        }
+        return result;
+        };
+
+    constexpr auto processValue = [](const std::wstring& val) {
+        if (val.find(L'|') != std::wstring::npos)
+        {
+            std::wstringstream ss(val);
+            std::wstring item, result;
+            while (std::getline(ss, item, L'|'))
+            {
+                if (!result.empty()) result += L"|";
+                result += escapeRegex(item);
+            }
+            return L"(?:" + result + L")";
+        }
+        return escapeRegex(val);
+        };
+
+    using TokenHandler = void(*)(const std::wstring&, std::wstring&, std::wstring&);
+    static const std::pair<std::wstring_view, TokenHandler> dispatchTable[] = {
+        { L"ext:", [](const std::wstring& val, std::wstring& base, std::wstring&) {
+            std::wstring cleaned;
+            for (wchar_t ch : val) { if (ch != L'.') cleaned += ch; }
+            base = L"[^\\\\/:]*\\.(?:" + cleaned + L")";
+        }},
+        { L"contains:", [](const std::wstring& val, std::wstring&, std::wstring& looks) {
+            (val.find(L'|') != std::wstring::npos) ?
+                looks += L"(?=.*(?:" + val + L").*)" : looks += L"(?=.*" + val + L".*)";
+        }},
+        { L"prefix:", [](const std::wstring& val, std::wstring&, std::wstring& looks) {
+            looks += L"(?=.*(?:^|[\\\\/])" + processValue(val) + L"[^\\\\/]*$)";
+        }},
+        { L"suffix:", [](const std::wstring& val, std::wstring&, std::wstring& looks) {
+            looks += L"(?=.*" + processValue(val) + L"(?:\\.[^\\\\/.]*)?$)";
+        }},
+        { L"exact:", [](const std::wstring& val, std::wstring&, std::wstring& looks) {
+            looks += L"(?=.*(?:^|[\\\\/])" + processValue(val) + L"$)";
+        }}
+    };
+
+    auto hasPrefixTag = [&glob]() {
+        for (const auto& [prefix, handler] : dispatchTable) if (glob.rfind(prefix, 0) == 0) return true;
+        return false;
+    };
+
+    if (glob.find(L' ') != std::wstring::npos || hasPrefixTag())
+    {
+        std::wistringstream stream(glob);
+        std::wstring token;
+        std::wstring basePattern = L"[^\\\\/:]*";
+        std::wstring lookaheads;
+
+        while (stream >> token)
+        {
+            bool handled = false;
+            for (const auto& [prefix, handler] : dispatchTable)
+            {
+                if (token.rfind(prefix, 0) == 0)
+                {
+                    handler(token.substr(prefix.length()), basePattern, lookaheads);
+                    handled = true;
+                    break;
+                }
+            }
+
+            if (!handled) basePattern = token;
+        }
+
+        if (!lookaheads.empty() && basePattern == L"[^\\\\/:]*")
+        {
+            basePattern = L".*";
+        }
+
+        std::wstring combined = lookaheads + basePattern;
+        return useAnchors ? (L"^" + combined + L"$") : combined;
+    }
+
+    static const std::wregex escapePattern(LR"([.\\+^$()[\]{}])", std::regex_constants::optimize);
     static const std::wregex starPattern(LR"(\*+)", std::regex_constants::optimize);
     static const std::wregex questionPattern(LR"(\?)", std::regex_constants::optimize);
+    static const std::wregex rootPattern(LR"(^(?:\\\\|/))", std::regex_constants::optimize);
+    static const std::wregex multiExtPattern(LR"(^\*\.[^|*?]+(?:\|\*\.[^|*?]+)+$)", std::regex_constants::optimize);
+    static const std::wregex stripStarDotPattern(LR"(\*\.)", std::regex_constants::optimize);
 
-    std::wstring regex = glob;
-    regex = std::regex_replace(regex, escapePattern, LR"(\$&)");
-    regex = std::regex_replace(regex, starPattern, LR"([^\\/:]*)");
-    regex = std::regex_replace(regex, questionPattern, LR"([^\\/:])");
+    std::wstring regex;
+    if (std::regex_match(glob, multiExtPattern))
+    {
+        regex = std::regex_replace(glob, stripStarDotPattern, L"");
+        regex = std::regex_replace(regex, escapePattern, LR"(\$&)");
+        regex = L"[^\\\\/:]*\\.(?:" + regex + L")";
+    }
+    else
+    {
+        regex = std::regex_replace(glob, escapePattern, LR"(\$&)");
+        regex = std::regex_replace(regex, starPattern, LR"([^\\/:]*)");
+        regex = std::regex_replace(regex, questionPattern, LR"([^\\/:])");
+        regex = std::regex_replace(regex, rootPattern, LR"((?:[^\\/:]:)?[\\/])");
+    }
+
+    if (glob.find(L'|') != std::wstring::npos) regex = L"(?:" + regex + L")";
 
     return useAnchors ? (L"^" + regex + L"$") : regex;
 }

@@ -142,6 +142,20 @@ std::wstring CFiltering::NormalizePathRegex(const std::wstring_view pattern)
 
 // --- Public methods ---
 
+static std::optional<std::wregex> TryCompileRegex(
+    const std::wstring& pattern,
+    std::regex_constants::syntax_option_type flags = std::regex_constants::icase | std::regex_constants::optimize) noexcept
+{
+    try
+    {
+        return std::wregex(pattern, flags);
+    }
+    catch (const std::regex_error&)
+    {
+        return std::nullopt;
+    }
+}
+
 void CFiltering::CompileFilters()
 {
     ExcludeDirsRegex.clear();
@@ -149,6 +163,7 @@ void CFiltering::CompileFilters()
     IncludeDirsRegex.clear();
     IncludeFilesRegex.clear();
     IncludeDirsAnchors.clear();
+    std::vector<std::wstring> invalidFilters;
 
     for (const auto& [optionString, optionRegex] : {
         std::pair{COptions::FilteringExcludeDirs.Obj(), std::ref(ExcludeDirsRegex)},
@@ -161,32 +176,70 @@ void CFiltering::CompileFilters()
         const bool isPathFilter = isIncludeDirs || isExcludeDirs;
         for (auto& token : SplitString(optionString, L'\n'))
         {
-            try
+            // Start of Insert
+            while (!token.empty() && (token.back() == L'\r' || token.back() == L'\\')) token.pop_back();
+            if (token.empty()) continue;
+
+            // In regex mode, normalize lone backslashes in path-based patterns so
+            // users can type V:\Folder without having to escape the path separators.
+            const std::wstring normalized = [&]()
             {
-                while (!token.empty() && (token.back() == L'\r' || token.back() == L'\\')) token.pop_back();
-                if (token.empty()) continue;
+                if (!COptions::FilteringUseRegex) return token;
 
-                // In regex mode, normalize lone backslashes in path-based patterns so
-                // users can type V:\Folder without having to escape the path separators.
-                const std::wstring normalized = (COptions::FilteringUseRegex && isPathFilter)
-                    ? NormalizePathRegex(token) : token;
+                std::wstring str = isPathFilter ? NormalizePathRegex(token) : token;
+                for (size_t i = 0; i < str.length(); ++i)
+                {
+                    if (str[i] != L'$') continue;
+                    if (i > 0 && str[i - 1] == L'\\') continue;
+                    if (i + 1 >= str.length() || !std::iswalnum(str[i + 1])) continue;
 
-                // Directory filters apply to the directory itself and everything below it.
-                std::wstring expr = COptions::FilteringUseRegex ? normalized : GlobToRegex(normalized, false);
-                if (isIncludeDirs || isExcludeDirs) expr = MatchDirectoryAndDescendants(std::move(expr));
-                optionRegex.get().emplace_back(expr,
-                    std::regex_constants::icase | std::regex_constants::optimize);
+                    str.insert(i, 1, L'\\');
+                    ++i;
+                }
+                return str;
+            }();
 
+            // Directory filters apply to the directory itself and everything below it.
+            std::wstring expr = COptions::FilteringUseRegex ? normalized : GlobToRegex(normalized, false);
+            if (isIncludeDirs || isExcludeDirs) expr = MatchDirectoryAndDescendants(std::move(expr));
+
+            if (auto compiled = TryCompileRegex(expr); compiled.has_value())
+            {
+                optionRegex.get().push_back(std::move(*compiled));
                 if (isIncludeDirs)
                 {
                     IncludeDirsAnchors.emplace_back(ExtractIncludeAnchor(normalized, COptions::FilteringUseRegex));
                 }
             }
-            catch (const std::regex_error&)
+            else
             {
-                DisplayError(Localization::Lookup(IDS_PAGE_FILTERING_INVALID_FILTER) + L" " + token);
+                std::wstring fallbackExpr = GlobToRegex(normalized, false);
+                if (isIncludeDirs || isExcludeDirs) fallbackExpr = MatchDirectoryAndDescendants(std::move(fallbackExpr));
+
+                if (auto retry = TryCompileRegex(fallbackExpr); retry.has_value())
+                {
+                    optionRegex.get().push_back(std::move(*retry));
+                    if (isIncludeDirs)
+                    {
+                        IncludeDirsAnchors.emplace_back(ExtractIncludeAnchor(normalized, false));
+                    }
+                }
+                else
+                {
+                    invalidFilters.push_back(token);
+                }
             }
         }
+    }
+
+    if (!invalidFilters.empty())
+    {
+        std::wstring errorMessage = Localization::Lookup(IDS_PAGE_FILTERING_INVALID_FILTER) + L"\r\n";
+        for (const auto& invalidToken : invalidFilters)
+        {
+            errorMessage.append(std::format(L"\r\n{}", invalidToken));
+        }
+        DisplayError(errorMessage);
     }
 
     // Calculate the total number of bytes to test as a scan minimum
