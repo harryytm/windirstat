@@ -188,6 +188,8 @@ public:
         L"ListFullRowSelection", true, CheckboxBind(IDC_FULL_ROW_SELECTION) };
     inline static Setting<bool> ListGrid{ OptionsGeneral, L"ListGrid", false, CheckboxBind(IDC_SHOW_GRID) };
     inline static Setting<bool> ListStripes{ OptionsGeneral, L"ListStripes", false, CheckboxBind(IDC_SHOW_STRIPES) };
+    inline static Setting<bool> GroupDriveStatsFirst{ OptionsGeneral, L"GroupDriveStatsFirst", true };
+    inline static Setting<bool> GroupFoldersBeforeFiles{ OptionsGeneral, L"GroupFoldersBeforeFiles", true };
     inline static Setting<bool> PacmanAnimation{ OptionsGeneral, L"PacmanAnimation", true };
     inline static Setting<bool> ScanForDuplicates{ OptionsDupeTree, L"ScanForDuplicates", false };
     inline static Setting<bool> SearchWholePhrase{ OptionsSearch, L"SearchWholePhrase", false };
