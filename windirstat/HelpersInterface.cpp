@@ -117,15 +117,19 @@ std::wstring FormatBytes(const ULONGLONG n) noexcept
 std::wstring FormatSizeSuffixes(const ULONGLONG n) noexcept
 {
     using namespace wds;
+    constexpr auto GetThreshold = [](ULONGLONG unit) constexpr -> ULONGLONG {
+        return (unit * (M - 5) + (K - 1)) / K;
+    };
+
     static constexpr struct {
         ULONGLONG bytes;
         ULONGLONG threshold;
         const std::wstring& (*suffix)();
     } units[] = {
-        {Ti, Ti - Gi / 2, GetSpec_TiB},
-        {Gi, Gi - Mi / 2, GetSpec_GiB},
-        {Mi, Mi - Ki / 2, GetSpec_MiB},
-        {Ki, Ki,          GetSpec_KiB},
+        {Ti, GetThreshold(Gi), GetSpec_TiB},
+        {Gi, GetThreshold(Mi), GetSpec_GiB},
+        {Mi, GetThreshold(Ki), GetSpec_MiB},
+        {Ki, K,                GetSpec_KiB},
     };
 
     for (const auto& [bytes, threshold, suffix] : units) [[msvc::flatten]]
