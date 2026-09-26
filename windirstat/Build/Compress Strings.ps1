@@ -1,4 +1,5 @@
 ﻿param($Path)
+Write-Host "Compressing language files"
 
 # Normalize module path issues
 $env:PSModulePath = Join-Path ([System.Environment]::SystemDirectory) '\WindowsPowerShell\v1.0\Modules'
