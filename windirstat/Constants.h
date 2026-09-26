@@ -32,11 +32,17 @@ namespace wds
     inline constexpr auto chrEqual        = L'=';
     inline constexpr auto szNpos          = std::wstring::npos;
 
-    // Binary size constants
+    // IEC binary prefix multipliers (base 2 scale factors)
     inline constexpr auto Ki = 1024ull;
     inline constexpr auto Mi = Ki * Ki;
     inline constexpr auto Gi = Mi * Ki;
     inline constexpr auto Ti = Gi * Ki;
+
+    // SI decimal prefix multipliers (base 10 scale factors)
+    inline constexpr auto K = 1000ull;
+    inline constexpr auto M = K * K;
+    inline constexpr auto G = M * K;
+    inline constexpr auto T = G * K;
 
     inline constexpr auto strAccessibilityKey = L"Software\\Microsoft\\Accessibility";
     inline constexpr auto strExplorerKey      = L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer";
