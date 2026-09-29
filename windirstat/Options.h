@@ -181,6 +181,7 @@ public:
     inline static Setting<bool> ExcludeProtectedFile{ OptionsGeneral,
         L"ExcludeProtectedFile", false, CheckboxBind(IDC_EXCLUDE_PROTECTED_FILE) };
     inline static Setting<bool> FilteringUseRegex{ OptionsGeneral, L"FilteringUseRegex", false };
+    inline static Setting<bool> FirstRun{ OptionsGeneral, L"FirstRun", true };
     inline static Setting<bool> FollowVolumeMountPoints{ OptionsGeneral, L"FollowVolumeMountPoints", false };
     inline static Setting<bool> UseSizeSuffixes{ OptionsGeneral,
         L"UseSizeSuffixes", true, CheckboxBind(IDC_SIZE_SUFFIXES) };
