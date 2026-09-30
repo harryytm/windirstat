@@ -90,6 +90,15 @@ bool CWinDirStatModel::StartScan(const std::wstring& pathSpec)
     // Persist the full scan spec, which may contain pipe-separated roots.
     Get()->SetScanPathSpec(JoinString(selections));
 
+    if (COptions::UseFastScanEngine && IsElevationAvailable())
+    {
+        if (ShowMessageBox(Localization::Lookup(IDS_ELEVATION_QUESTION), MB_YESNO | MB_ICONQUESTION) == IDYES)
+        {
+            RunElevated(m_scanPathSpec);
+            return true;
+        }
+    }
+
     const auto isDrivePath = [](const std::wstring& path)
     {
         return path.size() == 3 && path[1] == L':' && path[2] == L'\\' &&
