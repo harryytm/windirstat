@@ -40,7 +40,7 @@ protected:
     constexpr static ULONGLONG HashThreshold(const ITEMTYPE hashLevel)
     {
         return
-            hashLevel == ITHASH_SMALL ? 4ull * wds::Ki :
+            hashLevel == ITHASH_SMALL ? 64ull * wds::Ki :
             hashLevel == ITHASH_MEDIUM ? wds::Mi : std::numeric_limits<ULONGLONG>::max();
     }
 
