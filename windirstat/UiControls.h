@@ -324,6 +324,46 @@ private:
     CWnd* m_window;
 };
 
+// System Wake Lock that prevents the system from going to sleep
+// while long-running operations are in progress.
+class ScopedSystemWakeLock
+{
+public:
+    explicit ScopedSystemWakeLock(const wchar_t* reason = L"WinDirStat operation in progress") noexcept
+    {
+        REASON_CONTEXT context{ .Version = POWER_REQUEST_CONTEXT_VERSION,
+            .Flags = POWER_REQUEST_CONTEXT_SIMPLE_STRING };
+        context.Reason.SimpleReasonString = const_cast<LPWSTR>(reason);
+        m_request = ::PowerCreateRequest(&context);
+        if (m_request == INVALID_HANDLE_VALUE) return;
+
+        if (!::PowerSetRequest(m_request, m_type) &&
+            !::PowerSetRequest(m_request, m_type = PowerRequestSystemRequired))
+        {
+            ::CloseHandle(m_request);
+            m_request = INVALID_HANDLE_VALUE;
+        }
+    }
+
+    ~ScopedSystemWakeLock() noexcept
+    {
+        if (m_request != INVALID_HANDLE_VALUE)
+        {
+            ::PowerClearRequest(m_request, m_type);
+            ::CloseHandle(m_request);
+        }
+    }
+
+    ScopedSystemWakeLock(const ScopedSystemWakeLock&) = delete;
+    ScopedSystemWakeLock& operator=(const ScopedSystemWakeLock&) = delete;
+    ScopedSystemWakeLock(ScopedSystemWakeLock&&) = delete;
+    ScopedSystemWakeLock& operator=(ScopedSystemWakeLock&&) = delete;
+
+private:
+    HANDLE m_request = INVALID_HANDLE_VALUE;
+    POWER_REQUEST_TYPE m_type = PowerRequestExecutionRequired;
+};
+
 class CBufferedDC final : public CDC
 {
 public:
