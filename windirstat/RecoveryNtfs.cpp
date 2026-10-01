@@ -6,28 +6,6 @@
 
 #include "pch.h"
 #include "RecoveryNtfs.h"
-#include "RecoveryExFat.h"
-
-std::span<const BYTE> NtfsRecovery::Slice(const std::span<const BYTE> bytes, const size_t offset, const size_t size)
-{
-    if (offset > bytes.size() || size > bytes.size() - offset) throw Failure{ {}, ERROR_INVALID_DATA };
-    return bytes.subspan(offset, size);
-}
-
-std::wstring NtfsRecovery::ReadName(const std::span<const BYTE> bytes, const size_t offset, const size_t length)
-{
-    const auto data = Slice(bytes, offset, length * sizeof(wchar_t));
-    std::wstring result(length, L'\0');
-    std::memcpy(result.data(), data.data(), data.size());
-    if (result.find(L'\0') != std::wstring::npos) throw Failure{ {}, ERROR_INVALID_DATA };
-    return result;
-}
-
-void NtfsRecovery::Progress::Check() const
-{
-    while (paused.load(std::memory_order_relaxed) && !cancel.load(std::memory_order_relaxed)) Sleep(25);
-    if (cancel.load(std::memory_order_relaxed)) throw Failure{ {}, ERROR_CANCELLED };
-}
 
 std::vector<NtfsRecovery::Run> NtfsRecovery::DecodeRuns(const std::span<const BYTE> bytes, const ULONGLONG lowestVcn,
     const ULONGLONG highestVcn, const ULONGLONG clusterCount)
@@ -215,92 +193,8 @@ bool NtfsRecovery::ParseRecord(const std::span<const BYTE> bytes, const ULONGLON
     catch (const Failure&) { return false; }
 }
 
-std::wstring NtfsRecovery::SafeName(const std::wstring_view name)
+NtfsRecovery::NtfsRecovery(const std::wstring& volumeName, Progress* progress) : RecoveryShared(volumeName)
 {
-    std::wstring result(name.substr(0, 160));
-    if (!result.empty() && result.back() >= 0xd800 && result.back() <= 0xdbff) result.pop_back();
-    for (size_t i = 0; i < result.size(); ++i)
-    {
-        wchar_t& c = result[i];
-        if (c >= 0xd800 && c <= 0xdbff && i + 1 < result.size() &&
-            result[i + 1] >= 0xdc00 && result[i + 1] <= 0xdfff) { ++i; continue; }
-        if (c < 32 || (c >= 0xd800 && c <= 0xdfff) || std::wstring_view(L"<>:\"/\\|?*").contains(c))
-            c = L'_';
-    }
-    while (!result.empty() && (result.back() == L'.' || result.back() == L' ')) result.pop_back();
-    // A prefix also makes DOS device names and dot components harmless.
-    return L"_" + result;
-}
-
-NtfsRecovery::OutputFile::OutputFile(const std::wstring& folder, const Record& record)
-{
-    ULARGE_INTEGER free = {};
-    if (!GetDiskFreeSpaceExW(folder.c_str(), &free, nullptr, nullptr))
-        throw Failure{ {}, GetLastError() };
-    if (free.QuadPart < record.data.size) throw Failure{ {}, ERROR_DISK_FULL };
-    const auto name = std::format(L"{}-{}{}", record.number, record.sequence, SafeName(record.name));
-    m_path = (std::filesystem::path(folder) / name).wstring();
-    m_file = CreateFileW((m_path + L".partial").c_str(), GENERIC_WRITE | DELETE,
-        0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (!m_file.IsValid()) throw Failure{ {}, GetLastError() };
-}
-
-NtfsRecovery::OutputFile::~OutputFile()
-{
-    if (m_committed) return;
-    FILE_DISPOSITION_INFO info{ TRUE };
-    SetFileInformationByHandle(m_file, FileDispositionInfo, &info, sizeof(info));
-}
-
-void NtfsRecovery::OutputFile::Write(const std::span<const BYTE> bytes, Progress& progress) const
-{
-    progress.Check();
-    if (bytes.size() > MAXDWORD) throw Failure{ {}, ERROR_BUFFER_OVERFLOW };
-    DWORD written = 0;
-    if (!WriteFile(m_file, bytes.data(), static_cast<DWORD>(bytes.size()), &written, nullptr))
-        throw Failure{ {}, GetLastError() };
-    if (written != bytes.size()) throw Failure{ {}, ERROR_WRITE_FAULT };
-}
-
-void NtfsRecovery::OutputFile::Commit(const std::function<void()>& check,
-    const FILETIME* created, const FILETIME* modified)
-{
-    check();
-    if (((created || modified) && !SetFileTime(m_file, created, nullptr, modified)) || !FlushFileBuffers(m_file))
-        throw Failure{ {}, GetLastError() };
-    check();
-
-    // Rename the open temporary file without replacing an existing destination.
-    const auto size = offsetof(FILE_RENAME_INFO, FileName) + (m_path.size() + 1) * sizeof(wchar_t);
-    std::vector<BYTE> bytes(size, 0);
-    auto& rename = *reinterpret_cast<FILE_RENAME_INFO*>(bytes.data());
-    rename.FileNameLength = static_cast<DWORD>(m_path.size() * sizeof(wchar_t));
-    std::memcpy(rename.FileName, m_path.data(), rename.FileNameLength);
-    if (!SetFileInformationByHandle(m_file, FileRenameInfo, &rename, static_cast<DWORD>(size)))
-        throw Failure{ {}, GetLastError() };
-    m_committed = true;
-}
-
-NtfsRecovery::NtfsRecovery(const std::wstring& root, Progress* progress)
-{
-    if (progress) progress->Check();
-    wchar_t volume[MAX_PATH] = {};
-    if (!GetVolumeNameForVolumeMountPointW(root.c_str(), volume, MAX_PATH))
-        throw Failure{ {}, GetLastError() };
-    m_name = volume;
-    wchar_t filesystem[MAX_PATH] = {};
-    if (!GetVolumeInformationW(volume, nullptr, 0, nullptr, nullptr, nullptr, filesystem, MAX_PATH))
-        throw Failure{ {}, GetLastError() };
-    if (_wcsicmp(filesystem, L"exFAT") == 0)
-    {
-        m_exfat = std::make_unique<ExFatRecovery>(m_name, progress);
-        return;
-    }
-    if (_wcsicmp(filesystem, L"NTFS") != 0) throw Failure{ {}, ERROR_NOT_SUPPORTED };
-    m_volume = CreateFileW(m_name.substr(0, m_name.size() - 1).c_str(), GENERIC_READ,
-        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING,
-        FILE_FLAG_NO_BUFFERING, nullptr);
-    if (!m_volume.IsValid()) throw Failure{ {}, GetLastError() };
     struct { NTFS_VOLUME_DATA_BUFFER info; NTFS_EXTENDED_VOLUME_DATA extended; } data = {};
     DWORD returned = 0;
     if (!DeviceIoControl(m_volume, FSCTL_GET_NTFS_VOLUME_DATA, nullptr, 0, &data, sizeof(data),
@@ -319,14 +213,12 @@ NtfsRecovery::NtfsRecovery(const std::wstring& root, Progress* progress)
         m_info.MftValidDataLength.QuadPart <= 0 ||
         m_info.MftValidDataLength.QuadPart % m_info.BytesPerFileRecordSegment != 0)
         throw Failure{ {}, ERROR_INVALID_DATA };
-    m_mft = CreateFileW((m_name + L"$MFT::$DATA").c_str(), FILE_READ_ATTRIBUTES,
+    m_mft = CreateFileW((volumeName + L"$MFT::$DATA").c_str(), FILE_READ_ATTRIBUTES,
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, 0, nullptr);
     if (!m_mft.IsValid()) throw Failure{ {}, GetLastError() };
     m_mftRuns = GetMftRuns();
     if (progress) progress->Check();
 }
-
-NtfsRecovery::~NtfsRecovery() = default;
 
 std::vector<NtfsRecovery::Run> NtfsRecovery::GetMftRuns() const
 {
@@ -484,7 +376,6 @@ void NtfsRecovery::Scan(Progress& progress, ScanResult& result,
     const std::function<void(const Record&)>& discovered)
 {
     result = {};
-    if (m_exfat) return m_exfat->Scan(progress, result, discovered);
     // Scan assessments may use a bounded cache; every recovery allocation check reads a fresh bitmap.
     std::vector<BYTE> bitmap;
     struct Parent { ULONGLONG parent; USHORT sequence; std::wstring name; };
@@ -553,6 +444,28 @@ void NtfsRecovery::Scan(Progress& progress, ScanResult& result,
         }
         record.path = std::move(path);
     }
+
+    // Read nonresident companions after MFT enumeration because raw reads reuse the scan buffer.
+    ResolveRecyclePaths(progress, result, [&](const Record& record, const std::span<BYTE> bytes)
+    {
+        ValidateRecord(record);
+        size_t position = 0;
+        for (const auto& run : record.data.runs)
+        {
+            progress.Check();
+            if (run.lcn < 0 || !ClustersFree(run.lcn, run.count, progress))
+                throw Failure{ {}, ERROR_INVALID_DATA };
+            const auto take = static_cast<DWORD>(std::min<ULONGLONG>(bytes.size() - position,
+                run.count * m_info.BytesPerCluster));
+            const auto source = ReadAt(run.lcn * ULONGLONG(m_info.BytesPerCluster), take);
+            std::memcpy(bytes.data() + position, source.data(), take);
+            if (!ClustersFree(run.lcn, run.count, progress)) throw Failure{ {}, ERROR_INVALID_DATA };
+            position += take;
+            if (position == bytes.size()) break;
+        }
+        if (position != bytes.size()) throw Failure{ {}, ERROR_INVALID_DATA };
+        ValidateRecord(record);
+    });
 }
 
 void NtfsRecovery::ValidateRecord(const Record& record) const
@@ -566,46 +479,18 @@ void NtfsRecovery::ValidateRecord(const Record& record) const
         fresh.inUse || fresh.snapshot != record.snapshot) throw Failure{ L"IDS_RECOVERY_CHANGED" };
 }
 
-std::wstring NtfsRecovery::ValidateDestination(const std::wstring& folder) const
+std::wstring NtfsRecovery::RecoverFile(const Record& record,
+    const std::wstring& canonicalDestination, Progress& progress)
 {
-    const Handle directory(CloseHandle, CreateFileW(folder.c_str(), FILE_READ_ATTRIBUTES,
-        FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr));
-    if (!directory.IsValid()) throw Failure{ {}, GetLastError() };
-    std::vector<wchar_t> path(32768);
-
-    // Resolve aliases to a volume GUID so same-volume confirmation uses the actual destination.
-    DWORD size = GetFinalPathNameByHandleW(directory, path.data(), static_cast<DWORD>(path.size()),
-        FILE_NAME_NORMALIZED | VOLUME_NAME_GUID);
-    // Network shares have no local volume GUID; DOS naming resolves mapped drives to canonical UNC paths.
-    if (size == 0) size = GetFinalPathNameByHandleW(directory, path.data(), static_cast<DWORD>(path.size()),
-        FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
-    if (size == 0) throw Failure{ {}, GetLastError() };
-    if (size >= path.size()) throw Failure{ {}, ERROR_FILENAME_EXCED_RANGE };
-    std::wstring canonical(path.data(), size);
-    const auto end = canonical.find(L'}');
-    if ((!canonical.starts_with(L"\\\\?\\Volume{") || end == std::wstring::npos) &&
-        !canonical.starts_with(L"\\\\?\\UNC\\")) throw Failure{ {}, ERROR_DIRECTORY };
-    BY_HANDLE_FILE_INFORMATION info = {};
-    if (!GetFileInformationByHandle(directory, &info)) throw Failure{ {}, GetLastError() };
-    if (!(info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) throw Failure{ {}, ERROR_DIRECTORY };
-    if (canonical.back() != L'\\') canonical += L'\\';
-    return canonical;
-}
-
-std::wstring NtfsRecovery::Recover(const Record& record, const std::wstring& folder, Progress& progress)
-{
-    progress.Check();
-    if (m_exfat) return m_exfat->Recover(record, ValidateDestination(folder), progress);
     if (record.inUse || record.directory || !record.supported || !record.data.supported)
         throw Failure{ {}, ERROR_INVALID_DATA };
     ValidateRecord(record);
-    const auto destination = ValidateDestination(folder);
     const auto& stream = record.data;
     progress.Check();
     for (const auto& run : stream.runs)
         if (run.lcn >= 0 && !ClustersFree(run.lcn, run.count, progress))
             throw Failure{ L"IDS_RECOVERY_CHANGED" };
-    OutputFile output(destination, record);
+    OutputFile output(canonicalDestination, record);
     // Resident bytes are already captured; nonresident extents are copied in bounded chunks.
     if (!stream.nonresident) output.Write(stream.resident, progress);
     else

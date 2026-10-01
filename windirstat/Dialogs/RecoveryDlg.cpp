@@ -156,7 +156,7 @@ void RecoveryDlg::StartWorker(std::function<void()> work)
         m_worker = std::jthread([this, work = std::move(work)]
         {
             try { work(); }
-            catch (const NtfsRecovery::Failure& failure)
+            catch (const RecoveryShared::Failure& failure)
             {
                 if (failure.error != ERROR_CANCELLED && failure.error != ERROR_OPERATION_ABORTED)
                     m_error = ErrorText(failure);
@@ -180,7 +180,7 @@ void RecoveryDlg::StartWorker(std::function<void()> work)
     }
 }
 
-std::wstring RecoveryDlg::ErrorText(const NtfsRecovery::Failure& failure)
+std::wstring RecoveryDlg::ErrorText(const RecoveryShared::Failure& failure)
 {
     if (!failure.message.empty()) return Localization::Lookup(failure.message);
     auto text = TranslateError(failure.error == ERROR_OPERATION_ABORTED ? ERROR_CANCELLED : failure.error);
@@ -229,11 +229,11 @@ void RecoveryDlg::OnScan()
     if (m_root.empty()) return;
     StartWorker([this]
     {
-        m_volume = std::make_unique<NtfsRecovery>(m_root, &m_progress);
-        m_volume->Scan(m_progress, m_completedScan, [this](const NtfsRecovery::Record& record)
+        m_volume = RecoveryShared::Open(m_root, &m_progress);
+        m_volume->Scan(m_progress, m_completedScan, [this](const RecoveryShared::Record& record)
         {
             // Publish display fields only; the worker retains recovery metadata until the scan finishes.
-            NtfsRecovery::Record preview;
+            RecoveryShared::Record preview;
             preview.name = record.name;
             preview.path = record.path;
             preview.data.size = record.data.size;
@@ -303,7 +303,7 @@ void RecoveryDlg::OnTimer(const UINT_PTR timer)
     }
     else
     {
-        std::vector<NtfsRecovery::Record> records;
+        std::vector<RecoveryShared::Record> records;
         {
             const std::lock_guard lock(m_resultMutex);
             records.swap(m_pendingRecords);
@@ -360,7 +360,7 @@ std::wstring RecoveryDlg::CellText(const size_t index, const int column) const
     case 1: return record.path;
     case 2: return FormatSizeSuffixes(record.data.size);
     case 3: return FormatFileTime(record.modified);
-    case 4: return Localization::Lookup(record.condition == NtfsRecovery::Condition::Resident ?
+    case 4: return Localization::Lookup(record.condition == RecoveryShared::Condition::Resident ?
         IDS_RECOVERY_RESIDENT : IDS_RECOVERY_UNALLOCATED);
     case 5: return m_outcomes[index];
     default: return {};
@@ -524,7 +524,7 @@ void RecoveryDlg::OnRecover()
     if (selected.empty()) return;
     std::wstring destination;
     try { destination = m_volume->ValidateDestination(GetText(IDC_RECOVERY_DEST)); }
-    catch (const NtfsRecovery::Failure& failure)
+    catch (const RecoveryShared::Failure& failure)
     {
         DisplayError(ErrorText(failure));
         return;
@@ -553,7 +553,7 @@ void RecoveryDlg::OnRecover()
                 m_volume->Recover(m_scan.records[index], destination, m_progress);
                 outcome = Localization::Lookup(IDS_RECOVERY_COPIED);
             }
-            catch (const NtfsRecovery::Failure& failure)
+            catch (const RecoveryShared::Failure& failure)
             {
                 if (failure.error == ERROR_CANCELLED || failure.error == ERROR_OPERATION_ABORTED) break;
                 outcome = ErrorText(failure);

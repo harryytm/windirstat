@@ -13,9 +13,9 @@ bool ExFatRecovery::ParseBootRegion(const std::span<const BYTE> bytes,
     geometry = {};
     if (bytes.size() < 512 || bytes[0] != 0xeb || bytes[1] != 0x76 || bytes[2] != 0x90 ||
         std::memcmp(bytes.data() + 3, "EXFAT   ", 8) != 0 || bytes[108] < 9 || bytes[108] > 12 ||
-        bytes[109] > 25 - bytes[108] || NtfsRecovery::Read<WORD>(bytes, 510) != 0xaa55 ||
-        NtfsRecovery::Read<WORD>(bytes, 104) != 0x0100 || bytes[110] != 1 ||
-        (NtfsRecovery::Read<WORD>(bytes, 106) & 1) != 0 || (bytes[112] > 100 && bytes[112] != 255) ||
+        bytes[109] > 25 - bytes[108] || Read<WORD>(bytes, 510) != 0xaa55 ||
+        Read<WORD>(bytes, 104) != 0x0100 || bytes[110] != 1 ||
+        (Read<WORD>(bytes, 106) & 1) != 0 || (bytes[112] > 100 && bytes[112] != 255) ||
         std::ranges::any_of(bytes.subspan(11, 53), [](const BYTE value) { return value != 0; })) return false;
     const DWORD sector = 1u << bytes[108], cluster = sector << bytes[109];
     if (bytes.size() < sector * 12u) return false;
@@ -25,15 +25,15 @@ bool ExFatRecovery::ParseBootRegion(const std::span<const BYTE> bytes,
     for (size_t i = 0; i < sector * 11u; ++i)
         if (i != 106 && i != 107 && i != 112) checksum = std::rotr(checksum, 1) + bytes[i];
     for (size_t i = sector * 11u; i < sector * 12u; i += 4)
-        if (NtfsRecovery::Read<DWORD>(bytes, i) != checksum) return false;
+        if (Read<DWORD>(bytes, i) != checksum) return false;
     for (size_t i = 1; i <= 8; ++i)
-        if (NtfsRecovery::Read<DWORD>(bytes, (i + 1) * sector - 4) != 0xaa550000) return false;
+        if (Read<DWORD>(bytes, (i + 1) * sector - 4) != 0xaa550000) return false;
 
     // Cross-check the FAT and cluster heap against the reported device length.
-    const auto sectors = NtfsRecovery::Read<ULONGLONG>(bytes, 72);
-    const auto fat = NtfsRecovery::Read<DWORD>(bytes, 80), fatLength = NtfsRecovery::Read<DWORD>(bytes, 84);
-    const auto heap = NtfsRecovery::Read<DWORD>(bytes, 88), count = NtfsRecovery::Read<DWORD>(bytes, 92);
-    const auto root = NtfsRecovery::Read<DWORD>(bytes, 96);
+    const auto sectors = Read<ULONGLONG>(bytes, 72);
+    const auto fat = Read<DWORD>(bytes, 80), fatLength = Read<DWORD>(bytes, 84);
+    const auto heap = Read<DWORD>(bytes, 88), count = Read<DWORD>(bytes, 92);
+    const auto root = Read<DWORD>(bytes, 96);
     if (deviceLength > LLONG_MAX || sectors < 1024 * 1024 / sector || sectors > deviceLength / sector ||
         fat < 24 || fatLength == 0 || ULONGLONG(fat) + fatLength > heap || heap >= sectors ||
         count == 0 || count > 0xfffffff5 || root < 2 || root > ULONGLONG(count) + 1 ||
@@ -73,20 +73,20 @@ bool ExFatRecovery::ParseEntrySet(const std::span<const BYTE> bytes, const Geome
     const BYTE nameLength = bytes[35], flags = bytes[33];
     const size_t nameEnd = 64 + ((nameLength + 14) / 15) * 32;
     if (bytes[32] != (0x40 | inUse) || (flags != 1 && flags != 3) || nameLength == 0 ||
-        bytes.size() < nameEnd || (NtfsRecovery::Read<WORD>(bytes, 4) & ~0x37) != 0) return false;
+        bytes.size() < nameEnd || (Read<WORD>(bytes, 4) & ~0x37) != 0) return false;
     // Restore deleted entries' InUse bits when checking their original set checksum.
     WORD checksum = 0;
     for (size_t i = 0; i < bytes.size(); ++i)
         if (i != 2 && i != 3) checksum = static_cast<WORD>(std::rotr(checksum, 1) +
             (i % 32 == 0 ? bytes[i] | 0x80 : bytes[i]));
-    if (checksum != NtfsRecovery::Read<WORD>(bytes, 2)) return false;
+    if (checksum != Read<WORD>(bytes, 2)) return false;
     for (size_t i = 64; i < bytes.size(); i += 32)
         if (i < nameEnd ? bytes[i] != (0x41 | inUse) : (bytes[i] & 0xe0) != (0x60 | inUse)) return false;
 
     // Filename fragments hold up to fifteen UTF-16 code units per entry.
     for (size_t i = 0; i < nameLength; ++i)
     {
-        const wchar_t c = NtfsRecovery::Read<wchar_t>(bytes, 66 + (i / 15) * 32 + (i % 15) * 2);
+        const wchar_t c = Read<wchar_t>(bytes, 66 + (i / 15) * 32 + (i % 15) * 2);
         if (c < 32 || std::wstring_view(L"<>:\"/\\|?*").contains(c)) return false;
         record.name += c;
     }
@@ -101,13 +101,13 @@ bool ExFatRecovery::ParseEntrySet(const std::span<const BYTE> bytes, const Geome
         if (++i == record.name.size() || record.name[i] < 0xdc00 || record.name[i] > 0xdfff) return false;
     }
     record.inUse = inUse != 0;
-    record.directory = (NtfsRecovery::Read<WORD>(bytes, 4) & FILE_ATTRIBUTE_DIRECTORY) != 0;
+    record.directory = (Read<WORD>(bytes, 4) & FILE_ATTRIBUTE_DIRECTORY) != 0;
     record.sequence = checksum;
-    record.created = Timestamp(NtfsRecovery::Read<DWORD>(bytes, 8), bytes[20], bytes[22]);
-    record.modified = Timestamp(NtfsRecovery::Read<DWORD>(bytes, 12), bytes[21], bytes[23]);
-    record.data.size = NtfsRecovery::Read<ULONGLONG>(bytes, 56);
-    record.data.initialized = NtfsRecovery::Read<ULONGLONG>(bytes, 40);
-    const DWORD first = NtfsRecovery::Read<DWORD>(bytes, 52);
+    record.created = Timestamp(Read<DWORD>(bytes, 8), bytes[20], bytes[22]);
+    record.modified = Timestamp(Read<DWORD>(bytes, 12), bytes[21], bytes[23]);
+    record.data.size = Read<ULONGLONG>(bytes, 56);
+    record.data.initialized = Read<ULONGLONG>(bytes, 40);
+    const DWORD first = Read<DWORD>(bytes, 52);
     const ULONGLONG count = (record.data.size / geometry.clusterSize) +
         (record.data.size % geometry.clusterSize != 0);
 
@@ -130,13 +130,8 @@ bool ExFatRecovery::ParseEntrySet(const std::span<const BYTE> bytes, const Geome
     return true;
 }
 
-ExFatRecovery::ExFatRecovery(const std::wstring& volumeName, Progress* const progress)
+ExFatRecovery::ExFatRecovery(const std::wstring& volumeName, Progress* const progress) : RecoveryShared(volumeName)
 {
-    if (volumeName.empty() || volumeName.back() != L'\\') throw Failure{ {}, ERROR_INVALID_NAME };
-    m_volume = CreateFileW(volumeName.substr(0, volumeName.size() - 1).c_str(), GENERIC_READ,
-        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING,
-        FILE_FLAG_NO_BUFFERING, nullptr);
-    if (!m_volume.IsValid()) throw Failure{ {}, GetLastError() };
     GET_LENGTH_INFORMATION length = {};
     DWORD returned = 0;
     if (!DeviceIoControl(m_volume, IOCTL_DISK_GET_LENGTH_INFO, nullptr, 0, &length, sizeof(length),
@@ -194,7 +189,7 @@ DWORD ExFatRecovery::NextCluster(const DWORD cluster)
         ReadAt(m_geometry.fatOffset + page, m_fatPage);
         m_fatPageOffset = page;
     }
-    return NtfsRecovery::Read<DWORD>(m_fatPage, static_cast<size_t>(offset - page));
+    return Read<DWORD>(m_fatPage, static_cast<size_t>(offset - page));
 }
 
 std::vector<DWORD> ExFatRecovery::Chain(const DWORD first, const ULONGLONG length, const bool contiguous,
@@ -270,11 +265,11 @@ void ExFatRecovery::Initialize(Progress* const suppliedProgress)
         if (!m_bitmapEntry.empty() || entry[1] != 0) throw Failure{ {}, ERROR_INVALID_DATA };
         m_bitmapEntry.assign(entry.begin(), entry.end());
         m_bitmapEntryOffset = offset;
-        m_bitmapSize = NtfsRecovery::Read<ULONGLONG>(entry, 24);
+        m_bitmapSize = Read<ULONGLONG>(entry, 24);
         if (m_bitmapSize < (ULONGLONG(m_geometry.clusterCount) + 7) / 8 ||
             m_bitmapSize > ULONGLONG(m_geometry.clusterCount) * m_geometry.clusterSize)
             throw Failure{ {}, ERROR_INVALID_DATA };
-        m_bitmapClusters = Chain(NtfsRecovery::Read<DWORD>(entry, 20), m_bitmapSize, false, progress);
+        m_bitmapClusters = Chain(Read<DWORD>(entry, 20), m_bitmapSize, false, progress);
         return true;
     });
     if (m_bitmapEntry.empty()) throw Failure{ {}, ERROR_INVALID_DATA };
@@ -344,7 +339,7 @@ bool ExFatRecovery::ClustersHaveState(const DWORD first, ULONGLONG count, const 
     return true;
 }
 
-void ExFatRecovery::Scan(Progress& progress, NtfsRecovery::ScanResult& result,
+void ExFatRecovery::Scan(Progress& progress, ScanResult& result,
     const std::function<void(const Record&)>& discovered)
 {
     result = {};
@@ -409,7 +404,7 @@ void ExFatRecovery::Scan(Progress& progress, NtfsRecovery::ScanResult& result,
             // Only live directories provide reliable ancestry for further traversal.
             if (record.directory && record.inUse)
             {
-                pending.push_back({ NtfsRecovery::Read<DWORD>(record.snapshot, 52), record.data.size,
+                pending.push_back({ Read<DWORD>(record.snapshot, 52), record.data.size,
                     (record.snapshot[33] & 2) != 0, record.path + L"\\" });
                 return true;
             }
@@ -422,6 +417,14 @@ void ExFatRecovery::Scan(Progress& progress, NtfsRecovery::ScanResult& result,
         });
         if (!entries.empty()) ++result.invalidRecords;
     }
+
+    // Deleted NoFatChain companions can be read without trusting a released FAT chain.
+    ResolveRecyclePaths(progress, result, [&](const Record& record, const std::span<BYTE> bytes)
+    {
+        Validate(record, progress);
+        ReadAt(ClusterOffset(static_cast<DWORD>(record.data.runs.front().lcn + 2)), bytes);
+        Validate(record, progress);
+    });
 }
 
 void ExFatRecovery::Validate(const Record& record, Progress& progress)
@@ -441,7 +444,7 @@ void ExFatRecovery::Validate(const Record& record, Progress& progress)
     std::array<BYTE, 32> bitmap{};
     ReadAt(m_bitmapEntryOffset, bitmap);
     if (!std::ranges::equal(bitmap, m_bitmapEntry) ||
-        Chain(NtfsRecovery::Read<DWORD>(bitmap, 20), m_bitmapSize, false, progress) != m_bitmapClusters ||
+        Chain(Read<DWORD>(bitmap, 20), m_bitmapSize, false, progress) != m_bitmapClusters ||
         Chain(m_geometry.rootCluster, 0, false, progress) != m_rootClusters ||
         record.snapshot.size() < 96 || record.snapshot.size() > MaxEntrySetSize || record.snapshot.size() % 32 != 0 ||
         record.entryOffsets.size() != record.snapshot.size() / 32 ||
@@ -461,7 +464,7 @@ void ExFatRecovery::Validate(const Record& record, Progress& progress)
     }
     Record current;
     if (entries != record.snapshot || !ParseEntrySet(entries, m_geometry, current) || current.inUse ||
-        current.directory || !current.supported || current.name != record.name ||
+        current.directory || !current.supported ||
         current.data.size != record.data.size || current.data.initialized != record.data.initialized ||
         current.data.runs != record.data.runs) throw Failure{ L"IDS_RECOVERY_CHANGED" };
     for (const auto& run : current.data.runs)
@@ -469,10 +472,11 @@ void ExFatRecovery::Validate(const Record& record, Progress& progress)
             throw Failure{ L"IDS_RECOVERY_CHANGED" };
 }
 
-std::wstring ExFatRecovery::Recover(const Record& record, const std::wstring& canonicalDestination, Progress& progress)
+std::wstring ExFatRecovery::RecoverFile(const Record& record,
+    const std::wstring& canonicalDestination, Progress& progress)
 {
     Validate(record, progress);
-    NtfsRecovery::OutputFile output(canonicalDestination, record);
+    OutputFile output(canonicalDestination, record);
     std::vector<BYTE> bytes(static_cast<size_t>(std::min<ULONGLONG>(ReadSize, record.data.size)));
     for (ULONGLONG position = 0; position < record.data.size;)
     {
