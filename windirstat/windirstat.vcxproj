@@ -191,6 +191,7 @@ POWERSHELL.EXE -NoLogo -ExecutionPolicy Unrestricted -NoProfile -File "$(Project
     <ClInclude Include="RecoveryNtfs.h" />
     <ClInclude Include="RecoveryShared.h" />
     <ClInclude Include="RecoveryExFat.h" />
+    <ClInclude Include="RecoveryFat.h" />
     <ClInclude Include="ItemSearch.h" />
     <ClInclude Include="ItemTop.h" />
     <ClInclude Include="Pages\PageFiltering.h" />
@@ -280,6 +281,7 @@ POWERSHELL.EXE -NoLogo -ExecutionPolicy Unrestricted -NoProfile -File "$(Project
     <ClCompile Include="FinderMtp.cpp" />
     <ClCompile Include="FinderNtfs.cpp" />
     <ClCompile Include="RecoveryExFat.cpp" />
+    <ClCompile Include="RecoveryFat.cpp" />
     <ClCompile Include="RecoveryNtfs.cpp" />
     <ClCompile Include="RecoveryShared.cpp" />
     <ClCompile Include="HelpersTasks.cpp">

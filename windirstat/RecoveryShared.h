@@ -83,6 +83,8 @@ public:
 protected:
     explicit RecoveryShared(const std::wstring& volumeName);
 
+    void ReadVolume(ULONGLONG offset, std::span<BYTE> bytes, ULONGLONG length, DWORD alignment);
+
     template <typename T>
     static T Read(const std::span<const BYTE> bytes, const size_t offset)
     {
@@ -120,6 +122,8 @@ protected:
 
 private:
     std::wstring m_name;
+    SmartPointer<void*, decltype(&_aligned_free)> m_rawBuffer{ _aligned_free };
+    size_t m_rawBufferSize = 0;
 
     struct RecycleInfo
     {

@@ -222,6 +222,8 @@ NtfsRecovery::NtfsRecovery(const std::wstring& volumeName, Progress* progress) :
 
 std::vector<NtfsRecovery::Run> NtfsRecovery::GetMftRuns() const
 {
+    using Extent = std::remove_extent_t<decltype(RETRIEVAL_POINTERS_BUFFER::Extents)>;
+    constexpr size_t headerSize = offsetof(RETRIEVAL_POINTERS_BUFFER, Extents);
     std::vector<Run> runs;
     std::vector<BYTE> buffer(64 * 1024);
     // Ignore growth beyond the original scan range while retaining every cluster that supplies its bytes.
@@ -237,14 +239,15 @@ std::vector<NtfsRecovery::Run> NtfsRecovery::GetMftRuns() const
             throw Failure{ {}, GetLastError() };
         if (returned > buffer.size()) throw Failure{ {}, ERROR_INVALID_DATA };
         const auto data = std::span<const BYTE>(buffer).first(returned);
-        const auto count = Read<DWORD>(data, 0);
-        auto vcn = Read<LONGLONG>(data, 8);
-        if (vcn != input.StartingVcn.QuadPart || count == 0 || count > (data.size() - 16) / 16)
+        const auto mapping = Read<RETRIEVAL_POINTERS_BUFFER>(data, 0);
+        auto vcn = mapping.StartingVcn.QuadPart;
+        if (vcn != input.StartingVcn.QuadPart || mapping.ExtentCount == 0 ||
+            mapping.ExtentCount > (data.size() - headerSize) / sizeof(Extent))
             throw Failure{ {}, ERROR_INVALID_DATA };
-        for (DWORD i = 0; i < count; ++i)
+        for (DWORD i = 0; i < mapping.ExtentCount; ++i)
         {
-            const auto next = Read<LONGLONG>(data, 16 + size_t(i) * 16);
-            const auto lcn = Read<LONGLONG>(data, 24 + size_t(i) * 16);
+            const auto extent = Read<Extent>(data, headerSize + size_t(i) * sizeof(Extent));
+            const auto next = extent.NextVcn.QuadPart, lcn = extent.Lcn.QuadPart;
             if (next <= vcn || lcn < 0 || lcn >= m_info.TotalClusters.QuadPart ||
                 next - vcn > m_info.TotalClusters.QuadPart - lcn)
                 throw Failure{ {}, ERROR_INVALID_DATA };
@@ -339,14 +342,20 @@ bool NtfsRecovery::ClustersFree(ULONGLONG lcn, ULONGLONG count, Progress& progre
     if (lcn >= static_cast<ULONGLONG>(m_info.TotalClusters.QuadPart) ||
         count > static_cast<ULONGLONG>(m_info.TotalClusters.QuadPart) - lcn)
         throw Failure{ {}, ERROR_INVALID_DATA };
+    constexpr size_t headerSize = offsetof(VOLUME_BITMAP_BUFFER, Buffer);
     std::vector<BYTE> fresh;
     auto& buffer = cached == nullptr ? fresh : *cached;
     while (count != 0)
     {
         progress.Check();
         auto data = std::span<const BYTE>(buffer);
-        auto start = data.empty() ? 0 : Read<ULONGLONG>(data, 0);
-        auto bits = data.empty() ? 0 : std::min<ULONGLONG>(Read<ULONGLONG>(data, 8), (data.size() - 16) * 8);
+
+        // Bitmap replies need only the fixed header and actual bitmap bytes, without structure padding.
+        VOLUME_BITMAP_BUFFER bitmap{};
+        if (!data.empty()) std::memcpy(&bitmap, Slice(data, 0, headerSize).data(), headerSize);
+        auto start = static_cast<ULONGLONG>(bitmap.StartingLcn.QuadPart);
+        auto bits = data.empty() ? 0 : std::min<ULONGLONG>(bitmap.BitmapSize.QuadPart,
+            (data.size() - headerSize) * 8);
         if (start > lcn || lcn - start >= bits)
         {
             buffer.resize(64 * 1024);
@@ -355,17 +364,18 @@ bool NtfsRecovery::ClustersFree(ULONGLONG lcn, ULONGLONG count, Progress& progre
             if (!DeviceIoControl(m_volume, FSCTL_GET_VOLUME_BITMAP, &input, sizeof(input), buffer.data(),
                 static_cast<DWORD>(buffer.size()), &returned, nullptr) && GetLastError() != ERROR_MORE_DATA)
                 throw Failure{ {}, GetLastError() };
-            if (returned < 16 || returned > buffer.size()) throw Failure{ {}, ERROR_INVALID_DATA };
+            if (returned < headerSize || returned > buffer.size()) throw Failure{ {}, ERROR_INVALID_DATA };
             buffer.resize(returned);
             data = buffer;
 
             // Windows may round the bitmap start down; use the returned origin.
-            start = Read<ULONGLONG>(data, 0);
-            bits = std::min<ULONGLONG>(Read<ULONGLONG>(data, 8), (data.size() - 16) * 8);
+            std::memcpy(&bitmap, data.data(), headerSize);
+            start = static_cast<ULONGLONG>(bitmap.StartingLcn.QuadPart);
+            bits = std::min<ULONGLONG>(bitmap.BitmapSize.QuadPart, (data.size() - headerSize) * 8);
             if (start > lcn || lcn - start >= bits) throw Failure{ {}, ERROR_INVALID_DATA };
         }
         const auto take = std::min(count, bits - (lcn - start));
-        if (!BitmapFree(data.subspan(16), lcn - start, take)) return false;
+        if (!BitmapFree(data.subspan(headerSize), lcn - start, take)) return false;
         lcn += take;
         count -= take;
     }
@@ -402,6 +412,9 @@ void NtfsRecovery::Scan(Progress& progress, ScanResult& result,
             // Parent sequence numbers prevent paths from following directory records that have been reused.
             if (record.directory)
             {
+                // Deletion advances the directory sequence; children retain its last allocated sequence.
+                if (!record.inUse && record.sequence != 0)
+                    record.sequence = record.sequence == 1 ? USHRT_MAX : static_cast<USHORT>(record.sequence - 1);
                 parents.emplace(number, Parent{ record.parent, record.sequence, std::move(record.name) });
                 continue;
             }

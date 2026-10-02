@@ -314,6 +314,9 @@
     <ClInclude Include="RecoveryExFat.h">
       <Filter>Header Files\Core\Finders</Filter>
     </ClInclude>
+    <ClInclude Include="RecoveryFat.h">
+      <Filter>Header Files\Core\Finders</Filter>
+    </ClInclude>
     <ClInclude Include="HelpersInterface.h">
       <Filter>Header Files\Core\Helpers</Filter>
     </ClInclude>
@@ -560,6 +563,9 @@
       <Filter>Source Files\Core\Finders</Filter>
     </ClCompile>
     <ClCompile Include="RecoveryExFat.cpp">
+      <Filter>Source Files\Core\Finders</Filter>
+    </ClCompile>
+    <ClCompile Include="RecoveryFat.cpp">
       <Filter>Source Files\Core\Finders</Filter>
     </ClCompile>
     <ClCompile Include="HelpersInterface.cpp">

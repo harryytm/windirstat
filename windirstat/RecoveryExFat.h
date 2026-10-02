@@ -40,8 +40,6 @@ private:
 
     static FILETIME Timestamp(DWORD packed, BYTE increment, BYTE offset);
 
-    SmartPointer<void*, decltype(&_aligned_free)> m_rawBuffer{ _aligned_free };
-    size_t m_rawBufferSize = 0;
     ULONGLONG m_length = 0;
     DWORD m_alignment = 4096;
     Geometry m_geometry;
@@ -56,7 +54,6 @@ private:
     std::vector<BYTE> m_bitmapPage;
     ULONGLONG m_bitmapPageOffset = ULLONG_MAX;
 
-    void ReadRaw(ULONGLONG offset, std::span<BYTE> bytes);
     void ReadAt(ULONGLONG offset, std::span<BYTE> bytes);
     void Initialize(Progress* progress);
     DWORD NextCluster(DWORD cluster);

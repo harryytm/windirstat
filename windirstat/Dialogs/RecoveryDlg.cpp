@@ -61,7 +61,8 @@ bool RecoveryDlg::OnInitDialog()
         const auto root = drive + L"\\";
         wchar_t filesystem[MAX_PATH] = {}, label[MAX_PATH] = {};
         if (!GetVolumeInformationW(root.c_str(), label, MAX_PATH, nullptr, nullptr, nullptr, filesystem, MAX_PATH) ||
-            (_wcsicmp(filesystem, L"NTFS") != 0 && _wcsicmp(filesystem, L"exFAT") != 0)) continue;
+            (_wcsicmp(filesystem, L"NTFS") != 0 && _wcsicmp(filesystem, L"exFAT") != 0 &&
+                _wcsicmp(filesystem, L"FAT") != 0 && _wcsicmp(filesystem, L"FAT32") != 0)) continue;
         m_roots.push_back(root);
         const auto text = label[0] == L'\0' ? root : std::format(L"{} ({})", root, label);
         GetDlgItem(IDC_RECOVERY_SOURCE).SendMessage(CB_ADDSTRING, 0, text.c_str());

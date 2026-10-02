@@ -8,6 +8,7 @@
 #include "RecoveryShared.h"
 #include "RecoveryNtfs.h"
 #include "RecoveryExFat.h"
+#include "RecoveryFat.h"
 
 // Recycle Bin $I layouts have no padding between their on-disk fields.
 #pragma pack(push, 1)
@@ -67,6 +68,8 @@ std::unique_ptr<RecoveryShared> RecoveryShared::Open(const std::wstring& root, P
         throw Failure{ {}, GetLastError() };
     if (_wcsicmp(filesystem, L"NTFS") == 0) return std::make_unique<NtfsRecovery>(volume, progress);
     if (_wcsicmp(filesystem, L"exFAT") == 0) return std::make_unique<ExFatRecovery>(volume, progress);
+    if (_wcsicmp(filesystem, L"FAT") == 0 || _wcsicmp(filesystem, L"FAT32") == 0)
+        return std::make_unique<FatRecovery>(volume, progress);
     throw Failure{ {}, ERROR_NOT_SUPPORTED };
 }
 
@@ -83,6 +86,30 @@ std::wstring RecoveryShared::Recover(const Record& record, const std::wstring& f
 {
     progress.Check();
     return RecoverFile(record, ValidateDestination(folder), progress);
+}
+
+void RecoveryShared::ReadVolume(const ULONGLONG offset, const std::span<BYTE> bytes,
+    const ULONGLONG length, const DWORD alignment)
+{
+    if (!std::has_single_bit(alignment) || alignment > 65536 || bytes.empty() ||
+        bytes.size() > MAXDWORD - 2 * alignment || length > LLONG_MAX ||
+        offset > length || bytes.size() > length - offset) throw Failure{ {}, ERROR_INVALID_DATA };
+    const DWORD prefix = static_cast<DWORD>(offset % alignment);
+    const size_t take = (prefix + bytes.size() + alignment - 1) & ~size_t(alignment - 1);
+    if (take > length - (offset - prefix)) throw Failure{ {}, ERROR_INVALID_DATA };
+    if (take > m_rawBufferSize)
+    {
+        m_rawBuffer = _aligned_malloc(take, 65536);
+        m_rawBufferSize = m_rawBuffer.IsValid() ? take : 0;
+    }
+    if (!m_rawBuffer.IsValid()) throw Failure{ {}, ERROR_NOT_ENOUGH_MEMORY };
+    LARGE_INTEGER position{ .QuadPart = static_cast<LONGLONG>(offset - prefix) };
+    DWORD returned = 0;
+    if (!SetFilePointerEx(m_volume, position, nullptr, FILE_BEGIN) ||
+        !ReadFile(m_volume, m_rawBuffer.Get(), static_cast<DWORD>(take), &returned, nullptr))
+        throw Failure{ {}, GetLastError() };
+    if (returned != take) throw Failure{ {}, ERROR_HANDLE_EOF };
+    std::memcpy(bytes.data(), static_cast<const BYTE*>(m_rawBuffer.Get()) + prefix, bytes.size());
 }
 
 std::wstring RecoveryShared::ValidateDestination(const std::wstring& folder)
@@ -215,7 +242,16 @@ void RecoveryShared::ResolveRecyclePaths(Progress& progress, ScanResult& result,
 
 std::wstring RecoveryShared::SafeName(const std::wstring_view name)
 {
-    std::wstring result(name.substr(0, 160));
+    std::wstring result(name.substr(0, 255));
+
+    // Prefix only reserved device names, leaving ordinary recovered filenames unchanged.
+    auto stem = result.substr(0, result.find(L'.'));
+    while (!stem.empty() && stem.back() == L' ') stem.pop_back();
+    bool reserved = stem.size() == 4 && std::wstring_view(L"123456789\u00b9\u00b2\u00b3").contains(stem[3]) &&
+        (_wcsnicmp(stem.c_str(), L"COM", 3) == 0 || _wcsnicmp(stem.c_str(), L"LPT", 3) == 0);
+    for (const auto device : { L"CON", L"PRN", L"AUX", L"NUL", L"CONIN$", L"CONOUT$" })
+        reserved |= _wcsicmp(stem.c_str(), device) == 0;
+    if (reserved) result = L"_" + result.substr(0, 254);
     if (!result.empty() && result.back() >= 0xd800 && result.back() <= 0xdbff) result.pop_back();
     for (size_t i = 0; i < result.size(); ++i)
     {
@@ -226,8 +262,7 @@ std::wstring RecoveryShared::SafeName(const std::wstring_view name)
             c = L'_';
     }
     while (!result.empty() && (result.back() == L'.' || result.back() == L' ')) result.pop_back();
-    // A prefix also makes DOS device names and dot components harmless.
-    return L"_" + result;
+    return result.empty() ? L"_" : result;
 }
 
 RecoveryShared::OutputFile::OutputFile(const std::wstring& folder, const Record& record)
@@ -236,9 +271,13 @@ RecoveryShared::OutputFile::OutputFile(const std::wstring& folder, const Record&
     if (!GetDiskFreeSpaceExW(folder.c_str(), &free, nullptr, nullptr))
         throw Failure{ {}, GetLastError() };
     if (free.QuadPart < record.data.size) throw Failure{ {}, ERROR_DISK_FULL };
-    const auto name = std::format(L"{}-{}{}", record.number, record.sequence, SafeName(record.name));
-    m_path = (std::filesystem::path(folder) / name).wstring();
-    m_file = CreateFileW((m_path + L".partial").c_str(), GENERIC_WRITE | DELETE,
+
+    // Keep record identifiers on temporary files so completed files retain their recovered names.
+    m_path = (std::filesystem::path(folder) / SafeName(record.name)).wstring();
+    auto temporary = (std::filesystem::path(folder) /
+        std::format(L"{}-{}.partial", record.number, record.sequence)).wstring();
+    if (_wcsicmp(temporary.c_str(), m_path.c_str()) == 0) temporary += L".partial";
+    m_file = CreateFileW(temporary.c_str(), GENERIC_WRITE | DELETE,
         0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (!m_file.IsValid()) throw Failure{ {}, GetLastError() };
 }

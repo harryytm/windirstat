@@ -142,32 +142,11 @@ ExFatRecovery::ExFatRecovery(const std::wstring& volumeName, Progress* const pro
     Initialize(progress);
 }
 
-void ExFatRecovery::ReadRaw(const ULONGLONG offset, const std::span<BYTE> bytes)
-{
-    const auto prefix = static_cast<DWORD>(offset % m_alignment);
-    const size_t length = (prefix + bytes.size() + m_alignment - 1) & ~size_t(m_alignment - 1);
-    if (length > ReadSize + 4096 || offset - prefix > m_length || length > m_length - (offset - prefix))
-        throw Failure{ {}, ERROR_INVALID_DATA };
-    if (length > m_rawBufferSize)
-    {
-        m_rawBuffer = _aligned_malloc(length, 4096);
-        m_rawBufferSize = m_rawBuffer.IsValid() ? length : 0;
-    }
-    if (!m_rawBuffer.IsValid()) throw Failure{ {}, ERROR_NOT_ENOUGH_MEMORY };
-    LARGE_INTEGER position{ .QuadPart = static_cast<LONGLONG>(offset - prefix) };
-    DWORD returned = 0;
-    if (!SetFilePointerEx(m_volume, position, nullptr, FILE_BEGIN) ||
-        !ReadFile(m_volume, m_rawBuffer.Get(), static_cast<DWORD>(length), &returned, nullptr))
-        throw Failure{ {}, GetLastError() };
-    if (returned != length) throw Failure{ {}, ERROR_HANDLE_EOF };
-    std::memcpy(bytes.data(), static_cast<const BYTE*>(m_rawBuffer.Get()) + prefix, bytes.size());
-}
-
 void ExFatRecovery::ReadAt(const ULONGLONG offset, const std::span<BYTE> bytes)
 {
     if (bytes.empty() || bytes.size() > ReadSize || offset > m_length || bytes.size() > m_length - offset)
         throw Failure{ {}, ERROR_INVALID_DATA };
-    ReadRaw(offset, bytes);
+    ReadVolume(offset, bytes, m_length, m_alignment);
 }
 
 ULONGLONG ExFatRecovery::ClusterOffset(const DWORD cluster) const
