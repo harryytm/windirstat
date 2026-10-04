@@ -293,40 +293,40 @@ bool CPropertySheet::OnInitDialog()
     for (const auto& page : m_pages)
     {
         captions.push_back([templateId = page->m_nIDTemplate]() -> std::wstring
+        {
+            const HINSTANCE instance = GetAppInstance();
+            const HRSRC resource = FindResourceW(instance, MAKEINTRESOURCEW(templateId), RT_DIALOG);
+            if (resource == nullptr) return {};
+
+            const DWORD resourceSize = SizeofResource(instance, resource);
+            const HGLOBAL global = LoadResource(instance, resource);
+            const auto* begin = global != nullptr ? static_cast<const WORD*>(LockResource(global)) : nullptr;
+            if (begin == nullptr || resourceSize < 2 * sizeof(WORD)) return {};
+
+            const size_t wordCount = resourceSize / sizeof(WORD);
+            const size_t headerWords = begin[0] == 1 && begin[1] == 0xFFFF ? 13 : 9;
+            if (wordCount < headerWords) return {};
+
+            const WORD* const end = begin + wordCount;
+            const auto skipResourceOrString = [end](const WORD* value)
             {
-                const HINSTANCE instance = GetAppInstance();
-                const HRSRC resource = FindResourceW(instance, MAKEINTRESOURCEW(templateId), RT_DIALOG);
-                if (resource == nullptr) return {};
-
-                const DWORD resourceSize = SizeofResource(instance, resource);
-                const HGLOBAL global = LoadResource(instance, resource);
-                const auto* begin = global != nullptr ? static_cast<const WORD*>(LockResource(global)) : nullptr;
-                if (begin == nullptr || resourceSize < 2 * sizeof(WORD)) return {};
-
-                const size_t wordCount = resourceSize / sizeof(WORD);
-                const size_t headerWords = begin[0] == 1 && begin[1] == 0xFFFF ? 13 : 9;
-                if (wordCount < headerWords) return {};
-
-                const WORD* const end = begin + wordCount;
-                const auto skipResourceOrString = [end](const WORD* value)
-                    {
-                        if (value >= end) return static_cast<const WORD*>(nullptr);
-                        if (*value == 0) return value + 1;
-                        if (*value == 0xFFFF) return end - value >= 2 ? value + 2 : nullptr;
-                        while (value < end && *value != 0) ++value;
-                        return value < end ? value + 1 : nullptr;
-                    };
-
-                const WORD* value = skipResourceOrString(begin + headerWords); // menu
-                if (value == nullptr) return {};
-                value = skipResourceOrString(value); // window class
-                if (value == nullptr || value >= end || *value == 0 || *value == 0xFFFF) return {};
-
-                const WORD* const start = value;
+                if (value >= end) return static_cast<const WORD*>(nullptr);
+                if (*value == 0) return value + 1;
+                if (*value == 0xFFFF) return end - value >= 2 ? value + 2 : nullptr;
                 while (value < end && *value != 0) ++value;
-                if (value >= end) return {};
-                return { reinterpret_cast<const wchar_t*>(start), static_cast<size_t>(value - start) };
-            }());
+                return value < end ? value + 1 : nullptr;
+            };
+
+            const WORD* value = skipResourceOrString(begin + headerWords); // menu
+            if (value == nullptr) return {};
+            value = skipResourceOrString(value); // window class
+            if (value == nullptr || value >= end || *value == 0 || *value == 0xFFFF) return {};
+
+            const WORD* const start = value;
+            while (value < end && *value != 0) ++value;
+            if (value >= end) return {};
+            return { reinterpret_cast<const wchar_t*>(start), static_cast<size_t>(value - start) };
+        }());
     }
 
     for (const auto [i, page] : std::views::enumerate(m_pages))
@@ -363,14 +363,16 @@ bool CPropertySheet::OnInitDialog()
     // Buttons (bottom-right: OK, Cancel, Apply)
     const int btnY = pageY + maxH + gap;
     int bx = margin + maxW - 3 * btnW - 2 * btnGap;
+
     const auto createButton = [this, btnY, btnW, btnH](const int x, const UINT id, const LPCWSTR text, const DWORD style)
-        {
-            const HWND button = CreateWindowExW(0, WC_BUTTONW, text, WS_CHILD | WS_VISIBLE | WS_TABSTOP | style,
-                x, btnY, btnW, btnH, m_hWnd, reinterpret_cast<HMENU>(static_cast<UINT_PTR>(id)),
-                GetAppInstance(), nullptr);
-            ::SendMessageW(button, WM_SETFONT, reinterpret_cast<WPARAM>(GetAppFont(button)), true);
-            return button;
-        };
+    {
+        const HWND button = CreateWindowExW(0, WC_BUTTONW, text, WS_CHILD | WS_VISIBLE | WS_TABSTOP | style,
+            x, btnY, btnW, btnH, m_hWnd, reinterpret_cast<HMENU>(static_cast<UINT_PTR>(id)),
+            GetAppInstance(), nullptr);
+        ::SendMessageW(button, WM_SETFONT, reinterpret_cast<WPARAM>(GetAppFont(button)), true);
+        return button;
+    };
+
     createButton(bx, IDOK, L"IDS_GENERIC_OK", BS_DEFPUSHBUTTON);
     bx += btnW + btnGap;
     createButton(bx, IDCANCEL, L"IDS_GENERIC_CANCEL", BS_PUSHBUTTON);
