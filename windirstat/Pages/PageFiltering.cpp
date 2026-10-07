@@ -154,6 +154,9 @@ void CPageFiltering::OnSettingChanged()
     if (!IsInitialized())
         return;
 
+    const int unit = m_ctlFilteringSizeUnits.GetCurSel();
+    EnforceNumericInputRange(GetDlgItem(IDC_FILTERING_SIZE_MIN), 0, (unit == 4) ? 16ull * wds::Mi - 1 : 2ull * wds::Gi - 1);
+    EnforceNumericInputRange(GetDlgItem(IDC_FILTERING_MAX_AGE_DAYS), 0, wds::maxFilteringAgeDays);
     SetModified();
     SetToolTips();
 }

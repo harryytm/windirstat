@@ -495,6 +495,25 @@ bool ExecuteCommandInConsole(const std::wstring& command, const std::wstring& ti
     return ShellExecuteWrapper(cmd, cmdline, L"runas");
 }
 
+void EnforceNumericInputRange(const WindowRef wnd, const ULONGLONG min, const ULONGLONG max)
+{
+    assert(wnd.m_hWnd != nullptr && (wnd.GetStyle() & ES_NUMBER));
+    if (!wnd.m_hWnd || !(wnd.GetStyle() & ES_NUMBER)) return;
+
+    const std::wstring input = wnd.GetText();
+    const std::wstring validInput = std::to_wstring(input.empty() ? min :
+        std::clamp(std::wcstoull(input.c_str(), nullptr, 10), min, max));
+
+    auto triggerClamp = [&](const std::wstring& targetText)
+    {
+        MessageBeep(MB_OK);
+        wnd.SetText(targetText);
+        wnd.SendMessage(EM_SETSEL, 0, -1);
+    };
+
+    if (input != validInput) triggerClamp(validInput);
+}
+
 std::wstring GetLocalizedMenuText(const std::wstring_view textId, const std::wstring_view detail)
 {
     static const std::wregex decorations(LR"(\s*\(&.\)(?:\t.*)?$|\t.*$|&(&?))",

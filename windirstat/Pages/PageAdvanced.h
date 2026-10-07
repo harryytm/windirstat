@@ -53,6 +53,7 @@ public:
 protected:
     CComboBox m_priorityCombo;
 
+    void OnSettingChanged();
     void OnBnClickedResetPreferences();
 };
 

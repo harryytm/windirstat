@@ -63,6 +63,16 @@ std::optional<CPropertyPage::ValidationError> CPageAdvanced::PrepareSettings()
     return {};
 }
 
+void CPageAdvanced::OnSettingChanged()
+{
+    if (!IsInitialized())
+        return;
+
+    EnforceNumericInputRange(GetDlgItem(IDC_LARGEST_FILE_COUNT), COptions::LargeFileCount.Min(), COptions::LargeFileCount.Max());
+    EnforceNumericInputRange(GetDlgItem(IDC_FOLDER_HISTORY_COUNT), COptions::FolderHistoryCount.Min(), COptions::FolderHistoryCount.Max());
+    SetModified();
+}
+
 void CPageAdvanced::OnBnClickedResetPreferences()
 {
     CDirStatApp::Get()->RestartApplication(true);
