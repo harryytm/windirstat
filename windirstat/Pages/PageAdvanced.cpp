@@ -20,6 +20,9 @@ void CPageAdvanced::InitializePage()
     LoadBinds(CheckboxBindings);
 
     LoadBinds(NumberBindings);
+
+    AttachNumericInputRange(GetDlgItem(IDC_LARGEST_FILE_COUNT), COptions::LargeFileCount.Min(), COptions::LargeFileCount.Max());
+    AttachNumericInputRange(GetDlgItem(IDC_FOLDER_HISTORY_COUNT), 20, COptions::FolderHistoryCount.Max());
 }
 
 std::optional<CPropertyPage::ValidationError> CPageAdvanced::PrepareSettings()
@@ -68,9 +71,9 @@ void CPageAdvanced::OnSettingChanged()
     if (!IsInitialized())
         return;
 
-    EnforceNumericInputRange(GetDlgItem(IDC_LARGEST_FILE_COUNT), COptions::LargeFileCount.Min(), COptions::LargeFileCount.Max(), m_largestFileTimer);
+    //EnforceNumericInputRange(GetDlgItem(IDC_LARGEST_FILE_COUNT), COptions::LargeFileCount.Min(), COptions::LargeFileCount.Max(), m_largestFileTimer);
     //EnforceNumericInputRange(GetDlgItem(IDC_FOLDER_HISTORY_COUNT), COptions::FolderHistoryCount.Min(), COptions::FolderHistoryCount.Max(), m_folderHistoryTimer);
-    EnforceNumericInputRange(GetDlgItem(IDC_FOLDER_HISTORY_COUNT), 20, COptions::FolderHistoryCount.Max(), m_folderHistoryTimer);
+    //EnforceNumericInputRange(GetDlgItem(IDC_FOLDER_HISTORY_COUNT), 20, COptions::FolderHistoryCount.Max(), m_folderHistoryTimer);
     SetModified();
 }
 

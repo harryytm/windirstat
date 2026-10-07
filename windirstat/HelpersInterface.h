@@ -110,6 +110,7 @@ bool ShellExecuteWrapper(const std::wstring& lpFile, const std::wstring& lpParam
         const std::wstring& lpDirectory = L"", INT nShowCmd = SW_NORMAL, ULONG fMask = 0, HANDLE* process = nullptr);
 bool ExecuteCommandInConsole(const std::wstring& command, const std::wstring& title = L"");
 void EnforceNumericInputRange(const WindowRef wnd, const ULONGLONG min, const ULONGLONG max, NumericInputTimer& timer, const std::optional<UINT> delay = std::nullopt);
+void AttachNumericInputRange(const WindowRef wnd, const ULONGLONG min, const ULONGLONG max, const std::optional<UINT> delay = std::nullopt);
 std::optional<std::wstring> RemoveSelectedHistoryEntry(const MSG* pMsg, CComboBox& comboBox,
     std::vector<std::wstring>& history);
 

@@ -871,3 +871,172 @@ void NumericInputTimer::TimerProc(HWND, UINT, UINT_PTR id, DWORD) noexcept
         self->m_wnd.SendMessage(EM_SETSEL, 0, -1);
     }
 }
+
+namespace
+{
+    struct NumericSubclassData
+    {
+        ULONGLONG min = 0;
+        ULONGLONG max = 0;
+        std::optional<UINT> delay = std::nullopt;
+        UINT_PTR timerId = 0;
+    };
+
+    constexpr UINT_PTR NumericSubclassId = 0x4E554D; // Unique identifier representing 'NUM'
+
+    LRESULT CALLBACK NumericInputSubclassProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+    {
+        auto* const data = reinterpret_cast<NumericSubclassData*>(dwRefData);
+        if (!data) return ::DefSubclassProc(hWnd, uMsg, wParam, lParam);
+
+        switch (uMsg)
+        {
+        case WM_NCDESTROY:
+        {
+            if (data->timerId)
+            {
+                ::KillTimer(hWnd, data->timerId);
+                data->timerId = 0;
+            }
+            ::RemoveWindowSubclass(hWnd, &NumericInputSubclassProc, uIdSubclass);
+            delete data;
+            return ::DefSubclassProc(hWnd, uMsg, wParam, lParam);
+        }
+
+        case WM_TIMER:
+        {
+            if (wParam == data->timerId)
+            {
+                ::KillTimer(hWnd, data->timerId);
+                data->timerId = 0;
+
+                const WindowRef wnd(hWnd);
+                const std::wstring string = wnd.GetText();
+                if (!string.empty())
+                {
+                    const ULONGLONG value = std::wcstoull(string.c_str(), nullptr, 10);
+                    if (value < data->min)
+                    {
+                        MessageBeep(MB_OK);
+                        wnd.SetText(std::to_wstring(data->min));
+                        wnd.SendMessage(EM_SETSEL, 0, -1);
+                    }
+                }
+                return 0;
+            }
+            break;
+        }
+
+        case WM_CHAR:
+        case WM_PASTE:
+        case WM_CUT:
+        case WM_CLEAR:
+        case WM_KEYDOWN:
+        {
+            if (uMsg == WM_KEYDOWN && wParam != VK_DELETE)
+            {
+                break;
+            }
+
+            const LRESULT result = ::DefSubclassProc(hWnd, uMsg, wParam, lParam);
+
+            if (data->timerId)
+            {
+                ::KillTimer(hWnd, data->timerId);
+                data->timerId = 0;
+            }
+
+            const WindowRef wnd(hWnd);
+            auto triggerClamp = [&](const ULONGLONG targetVal)
+                {
+                    MessageBeep(MB_OK);
+                    wnd.SetText(std::to_wstring(targetVal));
+                    wnd.SendMessage(EM_SETSEL, 0, -1);
+                };
+
+            constexpr auto countDigits = [](ULONGLONG number) noexcept -> size_t
+                {
+                    size_t length = 1;
+                    for (; number >= 10; number /= 10) length++;
+                    return length;
+                };
+
+            const std::wstring string = wnd.GetText();
+            if (string.empty())
+            {
+                triggerClamp(data->min);
+                return result;
+            }
+
+            const ULONGLONG value = std::wcstoull(string.c_str(), nullptr, 10);
+            if (value > data->max)
+            {
+                triggerClamp(data->max);
+                return result;
+            }
+
+            if (string.front() == L'0' && (data->min > 0 || string.length() > 1))
+            {
+                triggerClamp(value < data->min ? data->min : value);
+                return result;
+            }
+
+            if (value >= data->min)
+            {
+                return result;
+            }
+
+            const size_t currentLen = string.length();
+            const size_t maxLen = countDigits(data->max);
+            if (currentLen >= maxLen)
+            {
+                triggerClamp(data->min);
+                return result;
+            }
+
+            ULONGLONG multiplier = 1;
+            for (size_t i = currentLen; i < maxLen; ++i) multiplier *= 10;
+
+            const ULONGLONG maxPotentialVal = (value * multiplier) + (multiplier - 1);
+            if (maxPotentialVal < data->min)
+            {
+                triggerClamp(data->min);
+                return result;
+            }
+
+            const UINT actualDelay = data->delay.value_or(COptions::EnforceNumericInputRangeDelay.Obj());
+            data->timerId = 1;
+            ::SetTimer(hWnd, data->timerId, actualDelay, nullptr);
+
+            return result;
+        }
+
+        default:
+            break;
+        }
+
+        return ::DefSubclassProc(hWnd, uMsg, wParam, lParam);
+    }
+}
+
+void AttachNumericInputRange(const WindowRef wnd, const ULONGLONG min, const ULONGLONG max, const std::optional<UINT> delay)
+{
+    assert(wnd.m_hWnd != nullptr && (wnd.GetStyle() & ES_NUMBER));
+    if (!wnd.m_hWnd || !(wnd.GetStyle() & ES_NUMBER)) return;
+
+    DWORD_PTR refData = 0;
+    if (::GetWindowSubclass(wnd.m_hWnd, &NumericInputSubclassProc, NumericSubclassId, &refData) && refData != 0)
+    {
+        auto* const existingData = reinterpret_cast<NumericSubclassData*>(refData);
+        existingData->min = min;
+        existingData->max = max;
+        existingData->delay = delay;
+        return;
+    }
+
+    auto* const data = new NumericSubclassData{ min, max, delay, 0 };
+    if (!::SetWindowSubclass(wnd.m_hWnd, &NumericInputSubclassProc, NumericSubclassId, reinterpret_cast<DWORD_PTR>(data)))
+    {
+        delete data;
+    }
+}
