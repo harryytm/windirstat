@@ -45,6 +45,8 @@ protected:
     CToolTipCtrl m_toolTip;
     bool m_refreshOnFilteringChange = true;
     bool m_filtersChanged = false;
+    NumericInputTimer m_filteringSizeMinTimer;
+    NumericInputTimer m_filteringMaxAgeDaysTimer;
 
 public:
     static std::span<const RouteEntry> Routes();

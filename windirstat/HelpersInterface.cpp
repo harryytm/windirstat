@@ -495,6 +495,49 @@ bool ExecuteCommandInConsole(const std::wstring& command, const std::wstring& ti
     return ShellExecuteWrapper(cmd, cmdline, L"runas");
 }
 
+void EnforceNumericInputRange(const WindowRef wnd, const ULONGLONG min, const ULONGLONG max, NumericInputTimer& timer, const std::optional<UINT> delay)
+{
+    assert(wnd.m_hWnd != nullptr && (wnd.GetStyle() & ES_NUMBER));
+    if (!wnd.m_hWnd || !(wnd.GetStyle() & ES_NUMBER)) return;
+
+    auto triggerClamp = [&](const ULONGLONG targetVal)
+    {
+        MessageBeep(MB_OK);
+        wnd.SetText(std::to_wstring(targetVal));
+        wnd.SendMessage(EM_SETSEL, 0, -1);
+    };
+
+    constexpr auto countDigits = [](ULONGLONG number) noexcept -> size_t
+    {
+        size_t length = 1;
+        for (; number >= 10; number /= 10) length++;
+        return length;
+    };
+
+    timer.Cancel();
+
+    const std::wstring string = wnd.GetText();
+    if (string.empty()) return triggerClamp(min);
+
+    const ULONGLONG value = std::wcstoull(string.c_str(), nullptr, 10);
+    if (value > max) return triggerClamp(max);
+    if (string.front() == L'0' && (min > 0 || string.length() > 1)) return triggerClamp(value < min ? min : value);
+    if (value >= min) return;
+
+    const size_t currentLen = string.length();
+    const size_t maxLen = countDigits(max);
+    if (currentLen >= maxLen) return triggerClamp(min);
+
+    ULONGLONG multiplier = 1;
+    for (size_t i = currentLen; i < maxLen; ++i) multiplier *= 10;
+
+    const ULONGLONG maxPotentialVal = (value * multiplier) + (multiplier - 1);
+    if (maxPotentialVal < min) return triggerClamp(min);
+
+    const UINT actualDelay = delay.value_or(COptions::EnforceNumericInputRangeDelay.Obj());
+    timer.Arm(wnd, min, actualDelay);
+}
+
 std::wstring GetLocalizedMenuText(const std::wstring_view textId, const std::wstring_view detail)
 {
     static const std::wregex decorations(LR"(\s*\(&.\)(?:\t.*)?$|\t.*$|&(&?))",
@@ -779,4 +822,52 @@ std::optional<std::wstring> RemoveSelectedHistoryEntry(const MSG* pMsg, CComboBo
     const int count = comboBox.GetCount();
     comboBox.SetCurSel(count > 0 ? std::min(selection, count - 1) : -1);
     return removed;
+}
+
+static std::unordered_map<UINT_PTR, NumericInputTimer*> s_activeTimers;
+
+void NumericInputTimer::Cancel() noexcept
+{
+    if (m_timerId)
+    {
+        s_activeTimers.erase(m_timerId);
+        ::KillTimer(nullptr, m_timerId);
+        m_timerId = 0;
+    }
+}
+
+void NumericInputTimer::Arm(const WindowRef wnd, const ULONGLONG min, const UINT delay) noexcept
+{
+    Cancel();
+    m_wnd = wnd;
+    m_min = min;
+    m_timerId = ::SetTimer(nullptr, 0, delay, &NumericInputTimer::TimerProc);
+    if (m_timerId)
+    {
+        s_activeTimers[m_timerId] = this;
+    }
+}
+
+void NumericInputTimer::TimerProc(HWND, UINT, UINT_PTR id, DWORD) noexcept
+{
+    ::KillTimer(nullptr, id);
+    const auto it = s_activeTimers.find(id);
+    if (it == s_activeTimers.end()) return;
+
+    NumericInputTimer* const self = it->second;
+    s_activeTimers.erase(it);
+    self->m_timerId = 0;
+
+    if (!IsWindow(self->m_wnd.m_hWnd)) return;
+
+    const std::wstring currentInput = self->m_wnd.GetText();
+    if (currentInput.empty()) return;
+
+    const ULONGLONG currentVal = std::wcstoull(currentInput.c_str(), nullptr, 10);
+    if (currentVal < self->m_min)
+    {
+        MessageBeep(MB_OK);
+        self->m_wnd.SetText(std::to_wstring(self->m_min));
+        self->m_wnd.SendMessage(EM_SETSEL, 0, -1);
+    }
 }

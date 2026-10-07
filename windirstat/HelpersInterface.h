@@ -35,6 +35,26 @@ private:
     const bool m_initialized;
 };
 
+class NumericInputTimer final
+{
+public:
+    NumericInputTimer() noexcept = default;
+    ~NumericInputTimer() noexcept { Cancel(); }
+
+    NumericInputTimer(const NumericInputTimer&) = delete;
+    NumericInputTimer& operator=(const NumericInputTimer&) = delete;
+
+    void Cancel() noexcept;
+    void Arm(const WindowRef wnd, const ULONGLONG min, const UINT delay) noexcept;
+
+private:
+    static void CALLBACK TimerProc(HWND, UINT, UINT_PTR id, DWORD) noexcept;
+
+    WindowRef m_wnd{};
+    ULONGLONG m_min = 0;
+    UINT_PTR m_timerId = 0;
+};
+
 // Interface helpers declarations
 
 // Locale and formatting
@@ -89,6 +109,7 @@ bool ShellExecuteWrapper(const std::wstring& lpFile, const std::wstring& lpParam
         const std::wstring& lpVerb = L"", HWND hwnd = GetMainWindowHandle(),
         const std::wstring& lpDirectory = L"", INT nShowCmd = SW_NORMAL, ULONG fMask = 0, HANDLE* process = nullptr);
 bool ExecuteCommandInConsole(const std::wstring& command, const std::wstring& title = L"");
+void EnforceNumericInputRange(const WindowRef wnd, const ULONGLONG min, const ULONGLONG max, NumericInputTimer& timer, const std::optional<UINT> delay = std::nullopt);
 std::optional<std::wstring> RemoveSelectedHistoryEntry(const MSG* pMsg, CComboBox& comboBox,
     std::vector<std::wstring>& history);
 

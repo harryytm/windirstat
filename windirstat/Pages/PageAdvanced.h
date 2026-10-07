@@ -52,7 +52,10 @@ public:
 
 protected:
     CComboBox m_priorityCombo;
+    NumericInputTimer m_largestFileTimer;
+    NumericInputTimer m_folderHistoryTimer;
 
+    void OnSettingChanged();
     void OnBnClickedResetPreferences();
 };
 
