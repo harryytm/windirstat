@@ -243,3 +243,53 @@ void WindowRef::CenterWindow(WindowRef alternate)
 
     ::SetWindowPos(m_hWnd, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
 }
+
+void LimitNumericInput(const WindowRef wnd, const ULONGLONG min, const ULONGLONG max, const bool allowEmpty, const std::optional<UINT> delay)
+{
+    assert(wnd.m_hWnd != nullptr && (wnd.GetStyle() & ES_NUMBER));
+    if (!wnd.m_hWnd || !(wnd.GetStyle() & ES_NUMBER)) return;
+
+    constexpr auto countDigits = [](ULONGLONG number) noexcept -> size_t
+    {
+        if (number == 0) return 1;
+
+        static constexpr size_t Log10_2_Numerator = 1233;
+        static constexpr size_t Log10_2_Shift = 12;
+
+        static constexpr auto bitWidthToIndex = []() constexpr
+            {
+                std::array<uint8_t, 65> map{};
+                for (size_t bits = 1; bits <= 64; ++bits)
+                {
+                    map[bits] = static_cast<uint8_t>((bits * Log10_2_Numerator) >> Log10_2_Shift);
+                }
+                return map;
+            }();
+
+        const size_t index = bitWidthToIndex[std::bit_width(number)];
+        return index + (number >= powersOf10Lut[index] ? 1 : 0);
+    };
+
+    DWORD_PTR refData = 0;
+    const UINT effectiveDelay = delay.value_or(COptions::LimitNumericInputDelay.Obj());
+    if (GetWindowSubclass(wnd.m_hWnd, &NumericInputSubclassProc, NumericSubclassId, &refData) && refData != 0)
+    {
+        auto* const existingData = reinterpret_cast<NumericSubclassData*>(refData);
+        existingData->delay = effectiveDelay;
+        const bool allowEmptyChanged = (existingData->allowEmpty != allowEmpty);
+        existingData->allowEmpty = allowEmpty;
+        if (existingData->min != min || existingData->max != max || allowEmptyChanged)
+        {
+            existingData->min = min;
+            existingData->max = max;
+            existingData->maxLen = countDigits(max);
+            wnd.SendMessage(WM_NULL, NumericSubclassId, 0);
+        }
+        return;
+    }
+
+    auto* const data = new NumericSubclassData{ min, max, countDigits(max), effectiveDelay, 0, allowEmpty };    if (!SetWindowSubclass(wnd.m_hWnd, &NumericInputSubclassProc, NumericSubclassId, reinterpret_cast<DWORD_PTR>(data)))
+    {
+        delete data;
+    }
+}

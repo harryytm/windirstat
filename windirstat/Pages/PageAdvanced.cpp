@@ -20,6 +20,8 @@ void CPageAdvanced::InitializePage()
     LoadBinds(CheckboxBindings);
 
     LoadBinds(NumberBindings);
+    LimitNumericInput(GetDlgItem(IDC_LARGEST_FILE_COUNT), COptions::LargeFileCount.Min(), COptions::LargeFileCount.Max());
+    LimitNumericInput(GetDlgItem(IDC_FOLDER_HISTORY_COUNT), 8, COptions::FolderHistoryCount.Max());
 }
 
 std::optional<CPropertyPage::ValidationError> CPageAdvanced::PrepareSettings()

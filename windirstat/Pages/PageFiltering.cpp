@@ -42,6 +42,10 @@ void CPageFiltering::InitializePage()
     SetComboSelection(IDC_FILTERING_MAX_AGE_COMPARISON, COptions::FilteringMaxAgeComparison);
     LoadBinds(FilterBindings);
 
+    const int initialUnit = m_ctlFilteringSizeUnits.GetCurSel();
+    LimitNumericInput(GetDlgItem(IDC_FILTERING_SIZE_MIN), 0, (initialUnit == 4) ? 16ull * wds::Mi - 1 : 2ull * wds::Gi - 1);
+    LimitNumericInput(GetDlgItem(IDC_FILTERING_MAX_AGE_DAYS), 0, wds::maxFilteringAgeDays);
+
     // Initialize the tooltip control
     m_toolTip.Create(this);
     SetToolTips();
@@ -154,6 +158,8 @@ void CPageFiltering::OnSettingChanged()
     if (!IsInitialized())
         return;
 
+    const int unit = m_ctlFilteringSizeUnits.GetCurSel();
+    LimitNumericInput(GetDlgItem(IDC_FILTERING_SIZE_MIN), 6, (unit == 4) ? 16ull * wds::Mi - 1 : 2ull * wds::Gi - 1); // <-- Add/Insert
     SetModified();
     SetToolTips();
 }
