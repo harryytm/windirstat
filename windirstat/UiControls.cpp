@@ -840,3 +840,53 @@ void CTabControl::OnAppearanceChanged()
     SetContentBackgroundColor(DarkMode::IsDarkModeActive() ? DarkMode::Color(DarkMode::ColorRole::Window) :
         CLR_NONE);
 }
+
+void NumericInputLimiter::Attach(const WindowRef wnd, const ULONGLONG min, const ULONGLONG max, const bool allowEmpty, const std::optional<UINT> delay)
+{
+    assert(wnd.m_hWnd != nullptr && (wnd.GetStyle() & ES_NUMBER));
+    if (!wnd.m_hWnd || !(wnd.GetStyle() & ES_NUMBER)) return;
+
+    constexpr auto countDigits = [](ULONGLONG number) noexcept -> size_t
+        {
+            if (number == 0) return 1;
+
+            static constexpr size_t Log10_2_Numerator = 1233;
+            static constexpr size_t Log10_2_Shift = 12;
+
+            static constexpr auto bitWidthToIndex = []() constexpr
+                {
+                    std::array<uint8_t, 65> map{};
+                    for (size_t bits = 1; bits <= 64; ++bits)
+                    {
+                        map[bits] = static_cast<uint8_t>((bits * Log10_2_Numerator) >> Log10_2_Shift);
+                    }
+                    return map;
+                }();
+
+            const size_t index = bitWidthToIndex[std::bit_width(number)];
+            return index + (number >= PowersOf10[index] ? 1 : 0);
+        };
+
+    DWORD_PTR refData = 0;
+    const UINT effectiveDelay = delay.value_or(COptions::LimitNumericInputDelay.Obj());
+    if (GetWindowSubclass(wnd.m_hWnd, &NumericInputLimiter::SubclassProc, NumericInputLimiter::SubclassId, &refData) && refData != 0)
+    {
+        auto* const existingData = reinterpret_cast<SubclassData*>(refData);
+        existingData->delay = effectiveDelay;
+        const bool allowEmptyChanged = (existingData->allowEmpty != allowEmpty);
+        existingData->allowEmpty = allowEmpty;
+        if (existingData->min != min || existingData->max != max || allowEmptyChanged)
+        {
+            existingData->min = min;
+            existingData->max = max;
+            existingData->maxLen = countDigits(max);
+            wnd.SendMessage(WM_NULL, NumericInputLimiter::SubclassId, 0);
+        }
+        return;
+    }
+
+    auto* const data = new NumericInputLimiter::SubclassData{ min, max, countDigits(max), effectiveDelay, 0, allowEmpty };    if (!SetWindowSubclass(wnd.m_hWnd, &NumericInputLimiter::SubclassProc, NumericInputLimiter::SubclassId, reinterpret_cast<DWORD_PTR>(data)))
+    {
+        delete data;
+    }
+}

@@ -416,6 +416,144 @@ private:
     CRect m_rect;
 };
 
+class NumericInputLimiter final
+{
+public:
+    NumericInputLimiter() = delete;
+
+    static void Attach(const WindowRef wnd, const ULONGLONG min, const ULONGLONG max,
+        const bool allowEmpty = false, const std::optional<UINT> delay = std::nullopt);
+
+private:
+    static constexpr UINT_PTR SubclassId = 0x4E554D;
+
+    struct SubclassData
+    {
+        ULONGLONG min = 0;
+        ULONGLONG max = 0;
+        size_t maxLen = 0;
+        UINT delay = 0;
+        UINT_PTR timerId = 0;
+        bool allowEmpty = false;
+    };
+
+    static inline constexpr auto PowersOf10 = []() constexpr
+    {
+        std::array<ULONGLONG, 20> values{};
+        ULONGLONG current = 1;
+        for (size_t i = 0; i < 20; ++i)
+        {
+            values[i] = current;
+            if (i + 1 < 20) current *= 10;
+        }
+        return values;
+    }();
+
+    static inline constexpr auto MaxU64Buffer = []() constexpr
+    {
+        std::array<wchar_t, 20> digits{};
+        ULONGLONG value = std::numeric_limits<ULONGLONG>::max();
+        for (size_t i = digits.size(); i > 0; --i)
+        {
+            digits[i - 1] = static_cast<wchar_t>(L'0' + (value % 10));
+            value /= 10;
+        }
+        return digits;
+    }();
+
+    static inline constexpr std::wstring_view MaxU64String{ MaxU64Buffer.data(), MaxU64Buffer.size() };
+
+    static inline LRESULT CALLBACK SubclassProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+    {
+        auto* const data = reinterpret_cast<SubclassData*>(dwRefData);
+        if (!data) return ::DefSubclassProc(hWnd, uMsg, wParam, lParam);
+
+        const WindowRef wnd(hWnd);
+
+        auto triggerClamp = [&](const ULONGLONG targetVal)
+        {
+            MessageBeep(MB_OK);
+            wnd.SetText(std::to_wstring(targetVal));
+            wnd.SendMessage(EM_SETSEL, 0, -1);
+        };
+
+        auto validateAndEnforce = [&]()
+        {
+            if (const auto id = std::exchange(data->timerId, 0)) KillTimer(hWnd, id);
+
+            const std::wstring string = wnd.GetText();
+            if (string.empty() && data->allowEmpty) return;
+
+            if (!string.empty())
+            {
+                const ULONGLONG value = std::wcstoull(string.c_str(), nullptr, 10);
+                const size_t len = string.length();
+                const bool isOverflow = (len > data->maxLen) ||
+                    (data->max == std::numeric_limits<ULONGLONG>::max() && len == 20 && string > MaxU64String);
+                if (isOverflow || value > data->max) return triggerClamp(data->max);
+                if (string.front() == L'0' && (data->min > 0 || string.length() > 1))
+                    return triggerClamp(std::max(data->min, value));
+                if (value >= data->min) return;
+
+                const size_t currentLen = string.length();
+                if (currentLen < data->maxLen)
+                {
+                    const ULONGLONG multiplier = PowersOf10[data->maxLen - currentLen];
+                    if ((value * multiplier) + (multiplier - 1) >= data->min)
+                    {
+                        data->timerId = reinterpret_cast<UINT_PTR>(data);
+                        SetTimer(hWnd, data->timerId, data->delay, nullptr);
+                        return;
+                    }
+                }
+            }
+
+            triggerClamp(data->min);
+        };
+
+        if (uMsg == WM_NCDESTROY)
+        {
+            if (const auto id = std::exchange(data->timerId, 0)) KillTimer(hWnd, id);
+            RemoveWindowSubclass(hWnd, &NumericInputLimiter::SubclassProc, uIdSubclass);
+            delete data;
+            return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+        }
+
+        if (uMsg == WM_TIMER && wParam == data->timerId)
+        {
+            KillTimer(hWnd, std::exchange(data->timerId, 0));
+            const std::wstring string = wnd.GetText();
+            if (!string.empty() && std::wcstoull(string.c_str(), nullptr, 10) < data->min)
+                triggerClamp(data->min);
+            return 0;
+        }
+
+        if (uMsg == WM_KILLFOCUS)
+        {
+            if (const auto id = std::exchange(data->timerId, 0)) KillTimer(hWnd, id);
+            const std::wstring string = wnd.GetText();
+            if (string.empty() ? !data->allowEmpty : std::wcstoull(string.c_str(), nullptr, 10) < data->min)
+                triggerClamp(data->min);
+            return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+        }
+
+        auto isAnyOf = [](const auto val, const auto... set) noexcept { return ((std::cmp_equal(val, set)) || ...); };
+
+        auto forwardAndValidate = [&]()
+            {
+                const LRESULT result = DefSubclassProc(hWnd, uMsg, wParam, lParam);
+                validateAndEnforce();
+                return result;
+            };
+
+        if (isAnyOf(uMsg, WM_CHAR, WM_PASTE, WM_CUT, WM_CLEAR)) return forwardAndValidate();
+        if (uMsg == WM_KEYDOWN && wParam == VK_DELETE) return forwardAndValidate();
+        if (uMsg == WM_NULL && wParam == SubclassId) return forwardAndValidate();
+
+        return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+    }
+};
+
 // -----------------------------------------------------------------------------
 //  Native common-dialog helpers
 // -----------------------------------------------------------------------------

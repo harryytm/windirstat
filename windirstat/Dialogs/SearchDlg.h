@@ -36,6 +36,8 @@ protected:
     void OnSelectSearchTerm();
     void OnChangeSearchTerm();
     void UpdateControlStatus();
+    void UpdateSizeLimits();
+    void OnChangeUnits();
     void OnGetMinMaxInfo(MINMAXINFO* pMMI);
 
     CComboBox m_searchTerm;
@@ -60,10 +62,10 @@ inline std::span<const RouteEntry> SearchDlg::Routes()
         Route::Control<&UpdateControlStatus>(BN_CLICKED, IDC_SEARCH_CASE),
         Route::Control<&UpdateControlStatus>(EN_CHANGE, IDC_SEARCH_SIZE_MIN),
         Route::Control<&UpdateControlStatus>(EN_CHANGE, IDC_SEARCH_SIZE_MAX),
-        Route::Control<&UpdateControlStatus>(CBN_SELCHANGE, IDC_SEARCH_SIZE_UNITS),
+        Route::Control<&OnChangeUnits>(CBN_SELCHANGE, IDC_SEARCH_SIZE_UNITS),
         Route::Control<&UpdateControlStatus>(EN_CHANGE, IDC_SEARCH_PHYSICAL_MIN),
         Route::Control<&UpdateControlStatus>(EN_CHANGE, IDC_SEARCH_PHYSICAL_MAX),
-        Route::Control<&UpdateControlStatus>(CBN_SELCHANGE, IDC_SEARCH_PHYSICAL_UNITS),
+        Route::Control<&OnChangeUnits>(CBN_SELCHANGE, IDC_SEARCH_PHYSICAL_UNITS),
         Route::Control<&UpdateControlStatus>(BN_CLICKED, IDC_SEARCH_FILES),
         Route::Control<&UpdateControlStatus>(BN_CLICKED, IDC_SEARCH_FOLDERS),
         Route::Window<&OnGetMinMaxInfo>(WM_GETMINMAXINFO),

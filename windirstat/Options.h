@@ -162,6 +162,7 @@ class COptions final
 public:
     inline static Setting<bool> AutomaticallyResizeColumns{ OptionsGeneral,
         L"AutomaticallyResizeColumns", true, CheckboxBind(IDC_COLUMN_AUTOSIZE) };
+    inline static Setting<int> LimitNumericInputDelay{ OptionsGeneral, L"LimitNumericInputDelay", 500, 100, 10000 };
     inline static Setting<bool> ExcludeJunctions{ OptionsGeneral,
         L"ExcludeJunctions", true, CheckboxBind(IDC_EXCLUDE_JUNCTIONS) };
     inline static Setting<bool> ExcludeSymbolicLinksDirectory{ OptionsGeneral,
