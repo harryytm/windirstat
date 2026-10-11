@@ -42,6 +42,11 @@ void CPageFiltering::InitializePage()
     SetComboSelection(IDC_FILTERING_MAX_AGE_COMPARISON, COptions::FilteringMaxAgeComparison);
     LoadBinds(FilterBindings);
 
+    const int initialUnit = std::clamp(m_ctlFilteringSizeUnits.GetCurSel(), 0, 4);
+    const ULONGLONG maximumSize = std::min<ULONGLONG>(INT_MAX, ULLONG_MAX >> (10 * initialUnit));
+    NumericInputLimiter::Attach(GetDlgItem(IDC_FILTERING_SIZE_MIN), 0, maximumSize);
+    NumericInputLimiter::Attach(GetDlgItem(IDC_FILTERING_MAX_AGE_DAYS), 0, wds::maxFilteringAgeDays);
+
     // Initialize the tooltip control
     m_toolTip.Create(this);
     SetToolTips();
@@ -154,6 +159,9 @@ void CPageFiltering::OnSettingChanged()
     if (!IsInitialized())
         return;
 
+    const int unit = std::clamp(m_ctlFilteringSizeUnits.GetCurSel(), 0, 4);
+    const ULONGLONG maximumSize = std::min<ULONGLONG>(INT_MAX, ULLONG_MAX >> (10 * unit));
+    NumericInputLimiter::Attach(GetDlgItem(IDC_FILTERING_SIZE_MIN), 0, maximumSize);
     SetModified();
     SetToolTips();
 }
