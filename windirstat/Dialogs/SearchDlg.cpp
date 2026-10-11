@@ -111,6 +111,7 @@ bool SearchDlg::OnInitDialog()
     SetChecked(IDC_SEARCH_FILES, COptions::SearchIncludeFiles);
     SetChecked(IDC_SEARCH_FOLDERS, COptions::SearchIncludeFolders);
     SetText(IDC_SEARCH_OWNER, COptions::SearchOwner.Obj());
+    UpdateSizeLimits();
 
     UpdateControlStatus();
     return true;
@@ -257,6 +258,25 @@ void SearchDlg::UpdateControlStatus()
     // combination rather than running a search that cannot return anything
     GetDlgItem(IDOK).EnableWindow(sizesValid && (criteria.includeFiles || criteria.includeFolders) &&
         (regexTest.flags() & std::regex_constants::optimize) != 0);
+}
+
+void SearchDlg::UpdateSizeLimits()
+{
+    for (const auto& [minimum, maximum, units] : {
+           std::tuple{ IDC_SEARCH_SIZE_MIN, IDC_SEARCH_SIZE_MAX, IDC_SEARCH_SIZE_UNITS },
+           std::tuple{ IDC_SEARCH_PHYSICAL_MIN, IDC_SEARCH_PHYSICAL_MAX, IDC_SEARCH_PHYSICAL_UNITS } })
+    {
+        const int shift = 10 * std::clamp<int>(GetComboSelection(units), 0, 4);
+        const ULONGLONG maximumVal = std::numeric_limits<ULONGLONG>::max() >> shift;
+        NumericInputLimiter::Attach(GetDlgItem(minimum), 0, maximumVal, true);
+        NumericInputLimiter::Attach(GetDlgItem(maximum), 0, maximumVal, true);
+    }
+}
+
+void SearchDlg::OnChangeUnits()
+{
+    UpdateSizeLimits();
+    UpdateControlStatus();
 }
 
 void SearchDlg::OnGetMinMaxInfo(MINMAXINFO* pMMI)
