@@ -180,6 +180,7 @@ public:
     inline static Setting<bool> FollowVolumeMountPoints{ OptionsGeneral, L"FollowVolumeMountPoints", false };
     inline static Setting<bool> UseSizeSuffixes{ OptionsGeneral,
         L"UseSizeSuffixes", true, CheckboxBind(IDC_SIZE_SUFFIXES) };
+    inline static Setting<int> LimitNumericInputDelay{ OptionsGeneral, L"LimitNumericInputDelay", 500, 100, 10000 };
     inline static Setting<bool> ListFullRowSelection{ OptionsGeneral,
         L"ListFullRowSelection", true, CheckboxBind(IDC_FULL_ROW_SELECTION) };
     inline static Setting<bool> ListGrid{ OptionsGeneral, L"ListGrid", false, CheckboxBind(IDC_SHOW_GRID) };
