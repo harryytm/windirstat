@@ -90,6 +90,7 @@ public:
     void TrackPane(int pane, std::function<void(bool)> onToggle, std::function<void()> onMinimize);
 
 protected:
+    void StartTracking() override;
     bool PreCreateWindow(CREATESTRUCT& cs) override;
 
     struct PaneTracking
