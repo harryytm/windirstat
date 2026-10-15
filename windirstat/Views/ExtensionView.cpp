@@ -60,7 +60,7 @@ void CExtensionView::OnUpdate(CWnd* /*sender*/, const MODEL_CHANGE change, CItem
     case MODEL_CHANGE_ZOOM:
         if (IsShowTypes() && CWinDirStatModel::Get()->IsRootDone())
         {
-            if (CWinDirStatModel::Get()->IsZoomed())
+            if (COptions::FilterFileTypesByZoom && CWinDirStatModel::Get()->IsZoomed())
             {
                 const CItem* zoomItem = CWinDirStatModel::Get()->GetZoomItem();
                 RebuildScopedExtensionData(zoomItem);
