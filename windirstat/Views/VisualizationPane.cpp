@@ -98,6 +98,7 @@ void CVisualizationPane::ShowVisualization(const bool show)
     {
         active->ShowWindow(SW_HIDE);
         active->TrimRenderCache();
+        CWinDirStatModel::Get()->StartScanningEngine({});
         return;
     }
 
