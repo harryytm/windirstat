@@ -343,6 +343,8 @@ void CExtensionListControl::OnItemContextMenu(CPoint point)
     menu.Append(MF_STRING | (CWinDirStatModel::Get()->IsScanSettled() ? MF_ENABLED : MF_GRAYED) |
         (COptions::GroupUnregisteredTypes ? MF_CHECKED : 0),
         ID_VIEW_GROUP_TYPES, Localization::Lookup(IDS_MENU_GROUP_TYPES).c_str());
+    menu.Append(MF_STRING | (COptions::SyncViewsWithZoom ? MF_CHECKED : 0),
+        ID_SYNC_VIEWS_WITH_ZOOM, Localization::Lookup(IDS_MENU_SYNC_VIEWS_WITH_ZOOM).c_str());
     menu.Append(MF_STRING | aggregateFlags, ID_FILTER_EXCLUDE_ITEM, Localization::Lookup(IDS_MENU_EXCLUDE_ITEM));
     menu.SetDefaultItem(ID_EXTLIST_SEARCH_EXTENSION);
 
@@ -360,7 +362,7 @@ void CExtensionListControl::OnItemContextMenu(CPoint point)
     menu.SetItemInfo(ID_EXTLIST_SEARCH_EXTENSION, &mii, CMenu::ItemLookup::Command);
     if (const UINT id = menu.ShowPopup(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, point, this))
     {
-        (id == ID_VIEW_GROUP_TYPES) ? GetMainWindow()->RouteCommand(ID_VIEW_GROUP_TYPES, CommandCode, nullptr)
+        (id == ID_VIEW_GROUP_TYPES || id == ID_SYNC_VIEWS_WITH_ZOOM) ? GetMainWindow()->RouteCommand(id, CommandCode, nullptr)
             : RouteCommand(id, CommandCode, nullptr);
     }
 }

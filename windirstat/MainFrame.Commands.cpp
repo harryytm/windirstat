@@ -631,6 +631,20 @@ void CMainFrame::OnViewGroupUnregisteredTypes() const
     CWinDirStatModel::Get()->NotifyPanes(MODEL_CHANGE_TREEMAP_STYLE);
 }
 
+void CMainFrame::OnViewSyncViewsWithZoom()
+{
+    COptions::SyncViewsWithZoom = !COptions::SyncViewsWithZoom;
+    if (CWinDirStatModel::Get()->IsRootDone())
+    {
+        GetExtensionView()->OnUpdate(nullptr, MODEL_CHANGE_ZOOM, nullptr);
+    }
+}
+
+void CMainFrame::OnUpdateViewSyncViewsWithZoom(CCmdUI* pCmdUI) const
+{
+    pCmdUI->SetCheck(COptions::SyncViewsWithZoom);
+}
+
 void CMainFrame::OnViewShowExtensionsOnTreeMap() const
 {
     if (GetGraphPaneType() != GraphPane::TreeMap) return;

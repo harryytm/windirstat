@@ -267,6 +267,7 @@
 #define ID_SCAN_SUSPEND                 32821
 #define ID_SEARCH                       32822
 #define ID_TOOLS_CHKDSK_BASE            32823
+#define ID_SYNC_VIEWS_WITH_ZOOM         32824
 #define ID_TOOLS_DEFRAG_BASE            32849
 #define ID_TOOLS_PERMISSIONS            32875
 #define ID_TOOLS_RECOVERY               32876
