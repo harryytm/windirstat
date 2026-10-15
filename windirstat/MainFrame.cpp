@@ -104,6 +104,14 @@ CWdsSplitterWnd::CWdsSplitterWnd(double* splitterPos) :
     m_wasTrackedByUser = (*splitterPos > 0 && *splitterPos < 1);
 }
 
+void CWdsSplitterWnd::StartTracking()
+{
+    if (COptions::SuspendVisualizationRedrawOnResize && CMainFrame::Get())
+    {
+        CMainFrame::Get()->GetVisualizationPane()->SuspendRecalculationDrawing(true);
+    }
+}
+
 bool CWdsSplitterWnd::PreCreateWindow(CREATESTRUCT& cs)
 {
     cs.style |= WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
@@ -115,8 +123,12 @@ void CWdsSplitterWnd::StopTracking(const bool bAccept)
     CSplitterWnd::StopTracking(bAccept);
     if (!bAccept) return;
 
-    const int currentPos = GetPaneSize(0);
+    if (COptions::SuspendVisualizationRedrawOnResize && CMainFrame::Get())
+    {
+        CMainFrame::Get()->GetVisualizationPane()->SuspendRecalculationDrawing(false);
+    }
 
+    const int currentPos = GetPaneSize(0);
     const CRect rcClient  = GetClientRect();
     const int   totalSize = IsVertical() ? rcClient.Width() : rcClient.Height();
     if (totalSize <= 0) return;
