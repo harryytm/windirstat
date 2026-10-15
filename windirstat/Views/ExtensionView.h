@@ -29,6 +29,8 @@ public:
 
     void OnUpdate(CWnd* sender, MODEL_CHANGE change, CItem* item) override;
     void SetSelection();
+    void RebuildScopedExtensionData(const CItem* rootItem);
+    CExtensionData m_scopedExtensionData;
 
     bool m_showTypes = true; // Whether this view shall be shown (F8 option)
     CExtensionListControl m_extensionListControl; // The list control
