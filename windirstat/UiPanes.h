@@ -66,6 +66,7 @@ public:
     }
 
 protected:
+    virtual void StartTracking() {}
     virtual void StopTracking(bool bAccept);
     virtual void OnTrackingChanged(bool) {}
 
@@ -177,6 +178,7 @@ inline void CSplitterWnd::OnLButtonDown(UINT, const CPoint pt)
     m_nTrackStart = m_paneSizes[0];
     m_nTrackOffset = IsVertical() ? pt.x - rect.left : pt.y - rect.top;
     SetCapture();
+    StartTracking();
 }
 inline void CSplitterWnd::OnMouseMove(UINT, const CPoint pt)
 {
