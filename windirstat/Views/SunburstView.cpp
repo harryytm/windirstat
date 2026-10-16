@@ -104,6 +104,7 @@ CItem* CSunburstView::FindItemAtPoint(const CPoint point)
 
 bool CSunburstView::UpdateHoverDetails(const CItem* item, const bool itemChanged)
 {
+    CGraphView::UpdateHoverDetails(item, itemChanged); // Update m_hoverItem
     if (item == nullptr) m_hitRemainderSize = 0;
     const bool hoveringRemainder = m_hitRemainderSize != 0;
     if (!itemChanged && hoveringRemainder == m_hoveringRemainder) return false;
