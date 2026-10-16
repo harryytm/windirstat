@@ -291,6 +291,8 @@ protected:
     void OnViewAbsolutePercentages() const;
     void OnViewShowFileTypes();
     void OnViewGroupUnregisteredTypes() const;
+    void OnViewFilterFileTypesByZoom();
+    void OnUpdateViewFilterFileTypesByZoom(CCmdUI* pCmdUI) const;
     void OnViewShowExtensionsOnTreeMap() const;
     void OnUpdateViewShowExtensionsOnTreeMap(CCmdUI* pCmdUI) const;
     void OnViewShowFolderFramesOnTreeMap() const;
@@ -398,6 +400,7 @@ inline std::span<const RouteEntry> CMainFrame::Routes()
         Route::Command<&OnConfigure>(ID_CONFIGURE),
         Route::Command<&OnViewShowFileTypes>(ID_VIEW_SHOWFILETYPES),
         Route::Command<&OnViewGroupUnregisteredTypes>(ID_VIEW_GROUP_TYPES),
+        Route::Command<&OnViewFilterFileTypesByZoom>(ID_VIEW_FILTER_FILETYPES_BY_ZOOM),
         Route::Command<&OnViewShowVisualization>(ID_VIEW_SHOWVISUALIZATION),
         Route::Command<&OnViewTreeMapStyle>(ID_VIEW_TREEMAP_ROWS, ID_VIEW_TREEMAP_MOORE),
         Route::Command<&OnViewGraphPreset>(ID_VIEW_GRAPH_PRESET_CLASSIC, ID_VIEW_GRAPH_PRESET_CUSTOM),
@@ -422,6 +425,7 @@ inline std::span<const RouteEntry> CMainFrame::Routes()
         Route::Update<&OnUpdateTreeMapUseLogical>(ID_TREEMAP_LOGICAL_SIZE),
         Route::Update<&OnUpdateTreeMapUsePhysical>(ID_TREEMAP_PHYSICAL_SIZE),
         Route::Update<&OnUpdateViewAbsolutePercentages>(ID_VIEW_ABSOLUTE_PERCENTAGES),
+        Route::Update<&OnUpdateViewFilterFileTypesByZoom>(ID_VIEW_FILTER_FILETYPES_BY_ZOOM),
         Route::Command<&OnViewShowExtensionsOnTreeMap>(ID_TREEMAP_SHOW_EXTENSIONS),
         Route::Update<&OnUpdateViewShowExtensionsOnTreeMap>(ID_TREEMAP_SHOW_EXTENSIONS),
         Route::Command<&OnViewShowFolderFramesOnTreeMap>(ID_TREEMAP_SHOW_FOLDER_FRAMES),

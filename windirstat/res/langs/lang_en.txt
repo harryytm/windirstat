@@ -177,6 +177,7 @@ IDS_MENU_STATUS_BAR=Sh&ow Statusbar
 IDS_MENU_STORAGE_ANALYTICS=Storage &Analytics
 IDS_MENU_STORAGE_SENSE=Microsoft Storage Settings
 IDS_MENU_SUNBURST=Su&nburst
+IDS_MENU_SYNC_VIEWS_WITH_ZOOM=Sync File Types with Zoom
 IDS_MENU_TOOL_BAR=Show Tool&bar
 IDS_MENU_TOOLBAR_SIZE=Too&lbar Size
 IDS_MENU_TOOLS=&Tools
