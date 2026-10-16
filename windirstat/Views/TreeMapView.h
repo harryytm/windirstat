@@ -16,7 +16,7 @@ class CItem;
 //
 // CTreeMapView. The treemap window.
 //
-class CTreeMapView final : public CGraphView
+class CTreeMapView final : public MessageTarget<CTreeMapView, CGraphView>
 {
 public:
     CTreeMapView() = default;
@@ -47,5 +47,15 @@ public:
     static constexpr int ZoomFrameWidth = 4;
 
     CTreeMap m_treeMap;               // Treemap generator
+
+    static std::span<const RouteEntry> Routes();
+
+protected:
+    int OnCreate(LPCREATESTRUCT lpCreateStruct);
+    bool PreprocessMessage(MSG* pMsg) override;
+    void UpdateToolTip(const CPoint point);
+
+    CToolTipCtrl m_toolTip;
+    const CItem* m_pLastToolTipItem = nullptr;
 
 };
