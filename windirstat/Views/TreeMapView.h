@@ -16,7 +16,7 @@ class CItem;
 //
 // CTreeMapView. The treemap window.
 //
-class CTreeMapView final : public CGraphView
+class CTreeMapView final : public MessageTarget<CTreeMapView, CGraphView>
 {
 public:
     CTreeMapView() = default;

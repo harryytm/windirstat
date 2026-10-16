@@ -1153,3 +1153,80 @@ COLORREF CItem::GetPercentageColor() const noexcept
     const int i = GetIndent() % COptions::FileTreeColorCount;
     return COptions::FileTreeColors[i];
 }
+
+std::wstring CItem::GetToolTipText() const
+{
+    std::wstring tip;
+
+    // Header
+    tip += ((IsTypeOrFlag(IT_MYCOMPUTER, IT_DRIVE, IT_FREESPACE, IT_UNKNOWN, IT_HLINKS, IT_HLINKS_SET, IT_HLINKS_IDX)) ?
+        std::wstring(GetNameView(IsTypeOrFlag(IT_DRIVE))) : GetFolderPath()) + L"\n\n";
+
+    // Store the raw data requirements in a vector to allow for pre-calculation
+    std::vector<std::pair<std::wstring_view, std::wstring>> rows;
+
+    if (IsTypeOrFlag(IT_FILE))
+    {
+        rows.emplace_back(L"IDS_COL_NAME", std::wstring(GetNameView()));
+    }
+
+    if (IsTypeOrFlag(IT_MYCOMPUTER,IT_DIRECTORY, IT_DRIVE))
+    {
+        rows.emplace_back(L"IDS_COL_ITEMS", FormatCount(GetItemsCount()));
+        rows.emplace_back(L"IDS_COL_FILES", FormatCount(GetFilesCount()));
+        rows.emplace_back(L"IDS_COL_FOLDERS", FormatCount(GetFoldersCount()));
+    }
+
+    rows.emplace_back(L"IDS_COL_PERCENTAGE", GetText(COL_PERCENTAGE));
+    rows.emplace_back(L"IDS_COL_SIZE_PHYSICAL", FormatSizeSuffixes(GetSizePhysical()));
+
+    if (IsTypeOrFlag(IT_MYCOMPUTER, IT_FILE, IT_DIRECTORY, IT_DRIVE))
+    {
+        rows.emplace_back(L"IDS_COL_SIZE_LOGICAL", FormatSizeSuffixes(GetSizeLogical()));
+        rows.emplace_back(L"IDS_COL_ATTRIBUTES", FormatAttributes(GetAttributes()));
+        rows.emplace_back(L"IDS_COL_LAST_CHANGE", FormatFileTime(GetLastChange(), true));
+    }
+
+    if (IsTypeOrFlag(IT_FILE, IT_DIRECTORY))
+    {
+        rows.emplace_back(L"IDS_COL_OWNER", GetOwner(true));
+    }
+
+    // Evaluate the string to determine its true visual footprint on the screen
+    auto calculateVisualWidth = [](const std::wstring_view text) -> int {
+        int visualWidth = 0;
+        for (const wchar_t character : text) {
+            if ((character >= 0x2E80 && character <= 0x9FFF) ||
+                (character >= 0xAC00 && character <= 0xD7A3) ||
+                (character >= 0xFF00 && character <= 0xFFEF))
+            {
+                visualWidth += 2;
+            }
+            else
+            {
+                visualWidth += 1;
+            }
+        }
+        return visualWidth;
+    };
+
+    // Determine the maximum visual width strictly among the active labels without colons
+    int maxVisualWidth = 0;
+    for (const auto& [labelId, value] : rows)
+    {
+        maxVisualWidth = std::max(maxVisualWidth, calculateVisualWidth(Localization::Lookup(labelId)));
+    }
+
+    // Generate the formatted text utilizing a hybrid alignment of dynamic padding and a single tab stop
+    for (const auto& [labelId, value] : rows)
+    {
+        const std::wstring label = Localization::Lookup(labelId);
+        const int paddingNeeded = maxVisualWidth - calculateVisualWidth(label);
+        // Apply figure spaces to equalize the physical baseline, followed by a single native tab
+        tip += std::format(L"{}{}\t{}\n", label, std::wstring(paddingNeeded, L'\u2007'), value);
+    }
+
+    if (!tip.empty() && tip.back() == L'\n') tip.pop_back();
+
+    return tip;
+}

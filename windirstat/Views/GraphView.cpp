@@ -475,9 +475,46 @@ void CGraphView::OnMouseMove(UINT /*nFlags*/, const CPoint point)
     if (detailsChanged) CMainFrame::Get()->UpdatePaneText();
 }
 
+int CGraphView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
+{
+    if (CWinDirStatPane::OnCreate(lpCreateStruct) == -1) return -1;
+    if (m_toolTip.Create(this))
+    {
+        m_toolTip.Activate();
+        m_toolTip.AddTool(this, L"");
+        m_toolTip.SendNativeMessage(TTM_SETDELAYTIME, TTDT_INITIAL, 1000);
+    }
+    return 0;
+}
+
+bool CGraphView::PreprocessMessage(MSG* pMsg)
+{
+    if (pMsg != nullptr && IsWindow(m_toolTip.m_hWnd))
+    {
+        m_toolTip.RelayEvent(pMsg);
+    }
+    return CWinDirStatPane::PreprocessMessage(pMsg);
+}
+
 bool CGraphView::UpdateHoverDetails(const CItem* item, const bool itemChanged)
 {
     if (!itemChanged) return false;
+
+    if (IsWindow(m_toolTip.Handle()))
+    {
+        if (item == nullptr)
+        {
+            m_toolTip.UpdateTipText(this, wds::strEmpty);
+            m_toolTip.Pop();
+        }
+        else
+        {
+            m_toolTip.SetFont(GetAppFont(m_toolTip.Handle()));
+            m_toolTip.SetMaxTipWidth(ScaleForDpi(1000));
+            m_toolTip.UpdateTipText(this, item->GetToolTipText());
+        }
+    }
+
     const std::wstring path = item == nullptr ? std::wstring{} : item->GetPath();
     const ULONGLONG size = item == nullptr ? 0 : !item->HasSizePhysical() ? item->GetSizeLogical() : item->TmiGetSize();
     if (path == m_paneTextOverride && size == m_paneSizeOverride) return false;
