@@ -252,6 +252,7 @@ public:
     bool SupportsSpaceItems() const noexcept;
     std::vector<CItem*> GetDriveItems() const;
     std::vector<CItem*> GetSpaceItems() const;
+    std::wstring GetToolTipText() const;
     ULONGLONG GetProgressRange() const;
     ULONGLONG GetProgressPos() const;
     static int GetSizeProportionWidth() { return 105; }
