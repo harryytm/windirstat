@@ -89,11 +89,14 @@ protected:
     CBitmap m_bitmap;
     CSize m_dimmedSize{ 0, 0 };
     CBitmap m_dimmed;
+    CToolTipCtrl m_toolTip;
 
 public:
     static std::span<const RouteEntry> Routes();
 
 protected:
+    int OnCreate(LPCREATESTRUCT lpCreateStruct);
+    bool PreprocessMessage(MSG* pMsg) override;
     void OnSize(UINT nType, int cx, int cy);
     void OnLButtonDblClk(UINT nFlags, CPoint point);
     void OnLButtonDown(UINT nFlags, CPoint point);
@@ -110,6 +113,7 @@ inline std::span<const RouteEntry> CGraphView::Routes()
 {
     static constexpr std::array entries
     {
+        Route::Window<&OnCreate>(WM_CREATE),
         Route::Window<&OnSize>(WM_SIZE),
         Route::Window<&OnLButtonDblClk>(WM_LBUTTONDBLCLK),
         Route::Window<&OnLButtonDown>(WM_LBUTTONDOWN),
