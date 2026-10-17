@@ -208,6 +208,7 @@ protected:
     void OnTreeMapZoomIn();
     void OnTreeMapZoomOut();
     void OnTreeMapZoomReset();
+    void OnTreeListSelect();
     void OnRemoveRoamingProfiles() const;
     void OnRemoveLocalProfiles();
     void OnDisableHibernateFile();
@@ -276,6 +277,8 @@ inline std::span<const RouteEntry> CWinDirStatModel::Routes()
         Route::Update<&OnUpdateCentralHandler>(ID_TREEMAP_ZOOMRESET),
         Route::Command<&OnExplorerSelect>(ID_CLEANUP_EXPLORER_SELECT),
         Route::Update<&OnUpdateCentralHandler>(ID_CLEANUP_EXPLORER_SELECT),
+        Route::Command<&OnTreeListSelect>(ID_TREELIST_SELECT),
+        Route::Update<&OnUpdateCentralHandler>(ID_TREELIST_SELECT),
         Route::Command<&OnCommandPromptHere>(ID_CLEANUP_OPEN_IN_CONSOLE),
         Route::Update<&OnUpdateCentralHandler>(ID_CLEANUP_OPEN_IN_CONSOLE),
         Route::Command<&OnPowerShellHere>(ID_CLEANUP_OPEN_IN_PWSH),
