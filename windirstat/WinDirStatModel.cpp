@@ -16,6 +16,7 @@
 #include "FinderRemote.h"
 #include "FinderWsl.h"
 #include "ProgressDlg.h"
+#include "WinDirStatModel.h"
 
 CWinDirStatModel::CWinDirStatModel()
 {
@@ -493,6 +494,33 @@ void CWinDirStatModel::RebuildExtensionData()
         else
         {
             individual[unit.second]->second.color = color;
+        }
+    }
+}
+
+void CWinDirStatModel::BuildScopedExtensionData(const CItem* rootItem, CExtensionData& targetData, const CExtensionData* colorSource)
+{
+    targetData.clear();
+    if (rootItem == nullptr) return;
+
+    std::vector<const CItem*> stack{ rootItem };
+    while (!stack.empty())
+    {
+        const CItem* item = stack.back();
+        stack.pop_back();
+
+        if (item->HasChildren()) stack.append_range(item->GetChildren());
+        else if (item->IsTypeOrFlag(IT_FILE))
+        {
+            const std::wstring ext = item->GetExtension();
+            auto& record = targetData[ext];
+            record.AddFile(item->GetSizeLogical());
+
+            if (colorSource != nullptr)
+            {
+                if (const auto it = colorSource->find(ext); it != colorSource->end())
+                    record.color = it->second.color;
+            }
         }
     }
 }

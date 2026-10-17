@@ -285,6 +285,8 @@ protected:
     void OnViewAbsolutePercentages() const;
     void OnViewShowFileTypes();
     void OnViewGroupUnregisteredTypes() const;
+    void OnViewFilterFileTypesByZoom();
+    void OnUpdateViewFilterFileTypesByZoom(CCmdUI* pCmdUI) const;
     void OnViewTreeMapOverlay(UINT commandId) const;
     void OnUpdateViewTreeMapOverlay(CCmdUI* pCmdUI) const;
     void OnViewAllFiles() const { GetFileTabbedView()->SetActiveTab(FileTab::Tree); }
@@ -388,6 +390,7 @@ inline std::span<const RouteEntry> CMainFrame::Routes()
         Route::Command<&OnConfigure>(ID_CONFIGURE),
         Route::Command<&OnViewShowFileTypes>(ID_VIEW_SHOWFILETYPES),
         Route::Command<&OnViewGroupUnregisteredTypes>(ID_VIEW_GROUP_TYPES),
+        Route::Command<&OnViewFilterFileTypesByZoom>(ID_VIEW_FILTER_FILETYPES_BY_ZOOM),
         Route::Command<&OnViewShowVisualization>(ID_VIEW_SHOWVISUALIZATION),
         Route::Command<&OnViewTreeMapStyle>(ID_VIEW_TREEMAP_ROWS, ID_VIEW_TREEMAP_MOORE),
         Route::Command<&OnViewGraphPreset>(ID_VIEW_GRAPH_PRESET_CLASSIC, ID_VIEW_GRAPH_PRESET_CUSTOM),
@@ -410,6 +413,7 @@ inline std::span<const RouteEntry> CMainFrame::Routes()
         Route::Update<&OnUpdateViewGroupUnregisteredTypes>(ID_VIEW_GROUP_TYPES),
         Route::Update<&OnUpdateViewTreeMapSize>(ID_TREEMAP_LOGICAL_SIZE, ID_TREEMAP_PHYSICAL_SIZE),
         Route::Update<&OnUpdateViewAbsolutePercentages>(ID_VIEW_ABSOLUTE_PERCENTAGES),
+        Route::Update<&OnUpdateViewFilterFileTypesByZoom>(ID_VIEW_FILTER_FILETYPES_BY_ZOOM),
         Route::Command<&OnViewTreeMapOverlay>(ID_TREEMAP_SHOW_EXTENSIONS, ID_TREEMAP_SHOW_FOLDER_FRAMES),
         Route::Update<&OnUpdateViewTreeMapOverlay>(ID_TREEMAP_SHOW_EXTENSIONS, ID_TREEMAP_SHOW_FOLDER_FRAMES),
         Route::Update<&OnUpdateViewShowWatcher>(ID_TOOLS_WATCHER),
