@@ -833,6 +833,11 @@ void CTreeListControl::OnItemContextMenu(const CPoint pt)
     const auto sub = m_contextMenu.GetSubMenu(0);
     if (sub == nullptr) return;
 
+    if (m_logicalFocus == LF_FILETREE)
+    {
+        sub.Remove(ID_TREELIST_SELECT, MF_BYCOMMAND);
+    }
+
     // Populate default menu items
     if (item != nullptr && item->GetTreeListChildCount() == 0)
     {
