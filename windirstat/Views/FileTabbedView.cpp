@@ -172,6 +172,11 @@ void CFileTabbedView::OnUpdate(CWnd* sender, const MODEL_CHANGE change, CItem* i
         ResetOptionalTabVisibility();
     }
 
+    if (change == MODEL_CHANGE_SELECTION_ACTION && !IsFileTreeViewTabActive())
+    {
+        SetActiveFileTreeView();
+    }
+
     for (auto* pane : { static_cast<CWinDirStatPane*>(m_fileTreeView),
         static_cast<CWinDirStatPane*>(m_fileTopView),
         static_cast<CWinDirStatPane*>(m_fileDupeView),
