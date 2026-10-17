@@ -57,10 +57,22 @@ void CExtensionView::OnUpdate(CWnd* /*sender*/, const MODEL_CHANGE change, CItem
     {
     case MODEL_CHANGE_NEW_ROOT:
     case MODEL_CHANGE_NONE:
+    case MODEL_CHANGE_ZOOM:
         if (IsShowTypes() && CWinDirStatModel::Get()->IsRootDone())
         {
-            m_extensionListControl.SetRootSize(CWinDirStatModel::Get()->GetRootSize());
-            m_extensionListControl.SetExtensionData(CWinDirStatModel::Get()->GetExtensionData());
+            if (COptions::FilterFileTypesByZoom && CWinDirStatModel::Get()->IsZoomed())
+            {
+                const CItem* zoomItem = CWinDirStatModel::Get()->GetZoomItem();
+                CWinDirStatModel::BuildScopedExtensionData(zoomItem, m_scopedExtensionData, CWinDirStatModel::Get()->GetExtensionData());
+                m_extensionListControl.SetRootSize(zoomItem->GetSizeLogical());
+                m_extensionListControl.SetExtensionData(&m_scopedExtensionData);
+            }
+            else
+            {
+                m_scopedExtensionData.clear();
+                m_extensionListControl.SetRootSize(CWinDirStatModel::Get()->GetRootSize());
+                m_extensionListControl.SetExtensionData(CWinDirStatModel::Get()->GetExtensionData());
+            }
 
             // If there is no vertical scroll bar, the header control doesn't repaint
             // correctly. Don't know why. But this helps:
@@ -77,9 +89,6 @@ void CExtensionView::OnUpdate(CWnd* /*sender*/, const MODEL_CHANGE change, CItem
         {
             SetSelection();
         }
-        break;
-
-    case MODEL_CHANGE_ZOOM:
         break;
 
     case MODEL_CHANGE_TREEMAP_STYLE:
