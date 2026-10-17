@@ -63,7 +63,7 @@ void CExtensionView::OnUpdate(CWnd* /*sender*/, const MODEL_CHANGE change, CItem
             if (COptions::FilterFileTypesByZoom && CWinDirStatModel::Get()->IsZoomed())
             {
                 const CItem* zoomItem = CWinDirStatModel::Get()->GetZoomItem();
-                RebuildScopedExtensionData(zoomItem);
+                CWinDirStatModel::BuildScopedExtensionData(zoomItem, m_scopedExtensionData, CWinDirStatModel::Get()->GetExtensionData());
                 m_extensionListControl.SetRootSize(zoomItem->GetSizeLogical());
                 m_extensionListControl.SetExtensionData(&m_scopedExtensionData);
             }
@@ -131,42 +131,6 @@ void CExtensionView::SetSelection()
         m_extensionListControl.GetSelectedExtension() != ext)
     {
         m_extensionListControl.SelectExtension(ext);
-    }
-}
-
-void CExtensionView::RebuildScopedExtensionData(const CItem* rootItem)
-{
-    m_scopedExtensionData.clear();
-    if (rootItem == nullptr) return;
-
-    const auto* globalData = CWinDirStatModel::Get()->GetExtensionData();
-    std::vector<const CItem*> stack{ rootItem };
-    while (!stack.empty())
-    {
-        const CItem* item = stack.back();
-        stack.pop_back();
-
-        if (item->HasChildren())
-        {
-            for (const CItem* child : item->GetChildren())
-            {
-                stack.push_back(child);
-            }
-        }
-        else if (item->IsTypeOrFlag(IT_FILE))
-        {
-            const std::wstring ext = item->GetExtension();
-            auto& record = m_scopedExtensionData[ext];
-            record.AddFile(item->GetSizeLogical());
-
-            if (globalData != nullptr)
-            {
-                if (const auto it = globalData->find(ext); it != globalData->end())
-                {
-                    record.color = it->second.color;
-                }
-            }
-        }
     }
 }
 
