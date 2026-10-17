@@ -43,6 +43,7 @@ void CWinDirStatModel::OnUpdateCentralHandler(CCmdUI* pCmdUI)
     static bool (*canZoomOut)(CItem*) = [](CItem*) { return model->GetZoomItem() != model->GetRootItem(); };
     static bool (*parentNotNull)(CItem*) = [](CItem* i) { return i != nullptr && i->GetParent() != nullptr; };
     static bool (*reselectAvail)(CItem*) = [](CItem*) { return model->IsReselectChildAvailable(); };
+    static bool (*canSelectInTree)(CItem*) = [](CItem* i) { return parentNotNull(i) || (i && model->HasRootItem() && (i == model->GetRootItem() || model->GetRootItem()->FindItemByPath(i->GetPath(), false))); };
 
     // Define item capability checks for shell and filesystem-specific commands.
     static bool (*isShellChild)(CItem*) = [](CItem* item)
@@ -145,6 +146,7 @@ void CWinDirStatModel::OnUpdateCentralHandler(CCmdUI* pCmdUI)
         { ID_TREEMAP_ZOOMIN,          { false, false, false, LF_FILETREE, IT_MYCOMPUTER | IT_DRIVE | IT_DIRECTORY | IT_FILE, canZoomIn } },
         { ID_TREEMAP_ZOOMOUT,         { true,  true,  false, LF_FILETREE, ITF_ANY, canZoomOut } },
         { ID_VIEW_SHOWFREESPACE,      { true,  true,  false, LF_NONE,     ITF_ANY } },
+        { ID_TREELIST_SELECT,         { false, false, true,  LF_NONE,     IT_DIRECTORY | IT_FILE, canSelectInTree } },
         { ID_VIEW_SHOWUNKNOWN,        { true,  true,  false, LF_NONE,     ITF_ANY } }
     };
 
@@ -455,6 +457,28 @@ void CWinDirStatModel::OnTreeMapZoomReset()
     {
         SetZoomItem(GetRootItem());
     }
+}
+
+void CWinDirStatModel::OnTreeListSelect()
+{
+    const auto selected = GetSelectedItemsView();
+    if (selected.size() != 1) return;
+
+    CItem* targetItem = selected.front();
+    auto* const treeControl = CFileTreeControl::Get();
+    if (targetItem == nullptr || treeControl == nullptr || !HasRootItem()) return;
+
+    // Resolve detached snapshots (such as Watcher items) to the live item in the scan tree
+    if (targetItem != GetRootItem() && targetItem->GetParent() == nullptr)
+    {
+        targetItem = GetRootItem()->FindItemByPath(targetItem->GetPath(), true);
+        if (targetItem == nullptr) return;
+    }
+
+    CMainFrame::Get()->GetFileTabbedView()->SetActiveFileTreeView();
+    treeControl->ExpandPathToItem(targetItem);
+    treeControl->SelectItem(targetItem, true, true, true);
+    NotifyPanes(MODEL_CHANGE_SELECTION_ACTION, targetItem);
 }
 
 void CWinDirStatModel::OnExplorerSelect()
