@@ -124,6 +124,7 @@ public:
 
     void RecurseRefreshReparsePoints(CItem* items) const;
     void RebuildExtensionData();
+    static void BuildScopedExtensionData(const CItem* rootItem, CExtensionData& targetData, const CExtensionData* colorSource = nullptr);
     void RebuildRegisteredExtensions();
     void DeletePhysicalItems(const std::vector<CItem*>& items, bool toTrashBin, bool emptyOnly = false) const;
     void SetZoomItem(CItem* item);

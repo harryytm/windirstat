@@ -366,13 +366,14 @@
 #define ID_WATCHER_START                32967
 #define ID_WDS_CONTROL                  32968
 #define ID_FILE_SELECT_CLOUD            32969
+#define ID_VIEW_FILTER_FILETYPES_BY_ZOOM 32970
 
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        124
-#define _APS_NEXT_COMMAND_VALUE         32970
+#define _APS_NEXT_COMMAND_VALUE         32971
 #define _APS_NEXT_CONTROL_VALUE         1204
 #define _APS_NEXT_SYMED_VALUE           124
 #endif

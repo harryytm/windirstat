@@ -240,6 +240,7 @@ public:
         L"ShowDupeDetectionCloudLinksWarning", true, CheckboxBind(IDC_CLOUD_LINKS_WARNING) };
     inline static Setting<bool> AutoElevate{ OptionsGeneral, L"AutoElevate", false, CheckboxBind(IDC_AUTO_ELEVATE) };
     inline static Setting<bool> AutoMapDrivesWhenElevated{ OptionsGeneral, L"AutoMapDrivesWhenElevated", true };
+    inline static Setting<bool> FilterFileTypesByZoom{ OptionsGeneral, L"FilterFileTypesByZoom", true };
     inline static Setting<bool> TreeMapGrid{ OptionsTreeMap, L"TreeMapGrid", (CTreeMap::GetDefaults().grid) };
     inline static Setting<bool> TreeMapShowExtensions{ OptionsTreeMap, L"TreeMapShowExtensions", (CTreeMap::GetDefaults().showExtensions) };
     inline static Setting<bool> TreeMapShowFolderFrames{ OptionsTreeMap, L"TreeMapShowFolderFrames", (CTreeMap::GetDefaults().showFolderFrames) };
