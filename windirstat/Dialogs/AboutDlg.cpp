@@ -156,7 +156,7 @@ CAboutDlg::CAboutDlg()
 
 std::wstring CAboutDlg::GetAppVersion()
 {
-    return std::format(L"{} ({}) Experimental Features Build\nGit Commit: {}", GetAppTitle(),
+    return std::format(L"{} ({}) Prototype Build\nGit Commit: {}", GetAppTitle(),
         _CRT_WIDE(GIT_DATE), _CRT_WIDE(GIT_COMMIT));
 }
 
