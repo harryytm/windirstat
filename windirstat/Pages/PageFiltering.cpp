@@ -160,6 +160,7 @@ void CPageFiltering::OnSettingChanged()
 
 bool CPageFiltering::PreprocessMessage(MSG* pMsg)
 {
+    m_toolTip.SetFont(GetAppFont(m_toolTip.Handle()));
     m_toolTip.RelayEvent(pMsg);
 
     return CSettingsPage::PreprocessMessage(pMsg);
