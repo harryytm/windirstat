@@ -141,7 +141,7 @@ void CWinDirStatModel::OnUpdateCentralHandler(CCmdUI* pCmdUI)
         { ID_TOOLS_SET_DATES,         { true,  true,  false, LF_FILETREE, IT_DRIVE | IT_DIRECTORY, filesystemOnly } },
         { ID_TREEMAP_RESELECT_CHILD,  { true,  true,  false, LF_FILETREE, ITF_ANY, reselectAvail } },
         { ID_TREEMAP_SELECT_PARENT,   { false, false, false, LF_FILETREE, ITF_ANY, parentNotNull } },
-        { ID_TREEMAP_ZOOMRESET,       { true,  true,  false, LF_FILETREE, ITF_ANY, isZoomed } },
+        { ID_TREEMAP_ZOOMRESET,       { true,  true,  false, LF_NONE,     ITF_ANY, isZoomed } },
         { ID_TREEMAP_ZOOMIN,          { false, false, false, LF_FILETREE, IT_MYCOMPUTER | IT_DRIVE | IT_DIRECTORY | IT_FILE, canZoomIn } },
         { ID_TREEMAP_ZOOMOUT,         { true,  true,  false, LF_FILETREE, ITF_ANY, canZoomOut } },
         { ID_VIEW_SHOWFREESPACE,      { true,  true,  false, LF_NONE,     ITF_ANY } },
