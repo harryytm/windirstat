@@ -187,6 +187,18 @@ void DarkMode::AdjustControls(const HWND hWnd)
     ProcessWindow(hWnd, 0);
     EnumChildWindows(hWnd, ProcessWindow, 0);
 
+    // Adjust tooltips for dark mode
+    EnumThreadWindows(GetWindowThreadProcessId(hWnd, nullptr), [](const HWND topWnd, const LPARAM) -> BOOL
+    {
+        WCHAR szClass[MAX_CLASS_NAME];
+        if (GetClassNameW(topWnd, szClass, MAX_CLASS_NAME) && wcscmp(szClass, TOOLTIPS_CLASSW) == 0)
+        {
+            if (s_darkModeSupported) AllowDarkModeForWindow(topWnd, s_darkModeEnabled);
+            SetWindowTheme(topWnd, s_darkModeEnabled ? L"DarkMode_Explorer" : nullptr, nullptr);
+        }
+        return TRUE;
+    }, 0);
+
     SetWindowPos(hWnd, nullptr, 0, 0, 0, 0,
         SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
 }

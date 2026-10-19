@@ -93,10 +93,6 @@ void CFileTreeControl::OnFontSizeChanged(const int oldPercent, const int newPerc
     if (!IsWindow(m_toolTip.Handle())) return;
 
     ClearPortionToolTip();
-
-    // The tooltip is a popup window, so ApplyAppFont's child enumeration misses it.
-    m_toolTip.SetFont(GetAppFont(m_toolTip.Handle()));
-    m_toolTip.SetMaxTipWidth(ScaleForDpi(400));
 }
 
 void CFileTreeControl::OnHScroll(const UINT nSBCode, const UINT nPos, WindowRef pScrollBar)
@@ -182,6 +178,9 @@ void CFileTreeControl::OnMouseMove(const UINT nFlags, const CPoint point)
     ClearPortionToolTip();
     m_portionToolTipRect = rect;
     m_portionToolTipText = std::move(text);
+    // The tooltip is a popup window, so ApplyAppFont's child enumeration misses it.
+    m_toolTip.SetFont(GetAppFont(m_toolTip.Handle()));
+    m_toolTip.SetMaxTipWidth(ScaleForDpi(400));
     m_toolTip.SetToolRect(this, PortionToolTipId, m_portionToolTipRect);
     MSG message = CurrentMessage();
     m_toolTip.RelayEvent(&message);
