@@ -91,6 +91,15 @@ void CControlView::OnLvnItemChanged(NMHDR* pNMHDR, LRESULT* pResult)
         return;
     }
 
+    // Reset treemap zoom when selection changes in other views to ensure selection is visible.
+    if (auto* frame = CMainFrame::Get(); frame && frame->GetFileTabbedView())
+    {
+        if (!frame->GetFileTabbedView()->IsActive(FileTab::Tree))
+        {
+            frame->SendMessage(WM_COMMAND, ID_TREEMAP_ZOOMRESET);
+        }
+    }
+
     // Defer selection processing for very large selections
     GetControl().PostSelectionChanged();
 
