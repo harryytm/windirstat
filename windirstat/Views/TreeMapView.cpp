@@ -7,64 +7,6 @@
 #include "pch.h"
 #include "TreeMapView.h"
 
-std::span<const RouteEntry> CTreeMapView::Routes()
-{
-    static constexpr std::array entries
-    {
-        Route::Window<&OnCreate>(WM_CREATE),
-    };
-    return entries;
-}
-
-int CTreeMapView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
-{
-    if (CGraphView::OnCreate(lpCreateStruct) == -1) return -1;
-    if (m_toolTip.Create(this))
-    {
-        m_toolTip.Activate();
-        m_toolTip.AddTool(this, L"");
-        m_toolTip.SetMaxTipWidth(ScaleForDpi(300));
-        m_toolTip.SendNativeMessage(TTM_SETDELAYTIME, TTDT_INITIAL, 1000);
-    }
-    return 0;
-}
-
-bool CTreeMapView::PreprocessMessage(MSG* pMsg)
-{
-    if (pMsg != nullptr && IsWindow(m_toolTip.m_hWnd))
-    {
-        m_toolTip.RelayEvent(pMsg);
-        if (pMsg->message == WM_MOUSEMOVE)
-        {
-            UpdateToolTip(CPoint(static_cast<short>(LOWORD(pMsg->lParam)), static_cast<short>(HIWORD(pMsg->lParam))));
-        }
-    }
-    return CGraphView::PreprocessMessage(pMsg);
-}
-
-void CTreeMapView::UpdateToolTip(const CPoint point)
-{
-    const CItem* item = ResolveItemAtPoint(point);
-    if (item == m_pLastToolTipItem) return;
-    m_pLastToolTipItem = item;
-    if (item == nullptr)
-    {
-        m_toolTip.UpdateTipText(this, L"");
-        m_toolTip.Pop();
-        return;
-    }
-
-    const std::wstring tip = std::format(
-        L"{}\n\n{}: {}\n{}: {}\n{}: {}\n{}: {}",
-        item->GetPath(),
-        Localization::Lookup(IDS_COL_SIZE_LOGICAL), FormatSizeSuffixes(item->GetSizeLogical()),
-        Localization::Lookup(IDS_COL_SIZE_PHYSICAL), FormatSizeSuffixes(item->GetSizePhysical()),
-        Localization::Lookup(IDS_COL_LAST_CHANGE), FormatFileTime(item->GetLastChange(), true),
-        Localization::Lookup(IDS_COL_ATTRIBUTES), FormatAttributes(item->GetAttributes())
-    );
-    m_toolTip.UpdateTipText(this, tip);
-}
-
 void CTreeMapView::DrawEmptyPlaceholder(CDC* pDC, const CRect& rect)
 {
     CTreeMap::Options options = COptions::TreeMapOptions;

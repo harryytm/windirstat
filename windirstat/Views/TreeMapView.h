@@ -48,14 +48,4 @@ public:
 
     CTreeMap m_treeMap;               // Treemap generator
 
-    static std::span<const RouteEntry> Routes();
-
-protected:
-    int OnCreate(LPCREATESTRUCT lpCreateStruct);
-    bool PreprocessMessage(MSG* pMsg) override;
-    void UpdateToolTip(const CPoint point);
-
-    CToolTipCtrl m_toolTip;
-    const CItem* m_pLastToolTipItem = nullptr;
-
 };
