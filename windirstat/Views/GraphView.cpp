@@ -477,8 +477,11 @@ void CGraphView::OnMouseMove(UINT /*nFlags*/, const CPoint point)
 
 int CGraphView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
 {
+    // Call base class first to ensure proper initialization
     if (CWinDirStatPane::OnCreate(lpCreateStruct) == -1) return -1;
-    if (m_toolTip.Create(this))
+
+    // Create tooltip control for hover details if enabled in options
+    if (COptions::GraphViewEnableTooltip && m_toolTip.Create(this))
     {
         m_toolTip.Activate();
         m_toolTip.AddTool(this, L"");
