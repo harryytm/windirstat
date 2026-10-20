@@ -186,6 +186,7 @@ public:
         L"UseSizeSuffixes", true, CheckboxBind(IDC_SIZE_SUFFIXES) };
     inline static Setting<bool> ListFullRowSelection{ OptionsGeneral,
         L"ListFullRowSelection", true, CheckboxBind(IDC_FULL_ROW_SELECTION) };
+    inline static Setting<bool> GraphViewEnableTooltip{ OptionsGeneral, L"GraphViewEnableTooltip", true };
     inline static Setting<bool> ListGrid{ OptionsGeneral, L"ListGrid", false, CheckboxBind(IDC_SHOW_GRID) };
     inline static Setting<bool> ListStripes{ OptionsGeneral, L"ListStripes", false, CheckboxBind(IDC_SHOW_STRIPES) };
     inline static Setting<bool> PacmanAnimation{ OptionsGeneral, L"PacmanAnimation", true };
