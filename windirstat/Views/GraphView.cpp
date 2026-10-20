@@ -471,12 +471,17 @@ void CGraphView::OnMouseMove(UINT /*nFlags*/, const CPoint point)
 
 int CGraphView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
 {
+    // Call base class first to ensure proper initialization
     if (CWinDirStatPane::OnCreate(lpCreateStruct) == -1) return -1;
+
+    // Create tooltip control for hover details
     if (m_toolTip.Create(this))
     {
+        const int delay = std::max(1, COptions::GraphViewTooltipDelay.Obj());
         m_toolTip.AddTool(this, HoverToolTipId, CRect(), LPSTR_TEXTCALLBACKW);
         m_toolTip.SetMaxTipWidth(ScaleForDpi(1000));
-        m_toolTip.SendNativeMessage(TTM_SETDELAYTIME, TTDT_INITIAL, 1000);
+        m_toolTip.SendNativeMessage(TTM_SETDELAYTIME, TTDT_INITIAL, delay);
+        m_toolTip.SendNativeMessage(TTM_SETDELAYTIME, TTDT_RESHOW, delay);
         m_toolTip.Activate();
     }
     return 0;
@@ -489,7 +494,7 @@ void CGraphView::UpdateToolTip(const CItem* item)
     m_toolTip.Pop();
     m_toolTipText.clear();
     m_toolTip.SetToolRect(this, HoverToolTipId, CRect());
-    if (item == nullptr) return;
+    if (item == nullptr || !COptions::GraphViewEnableTooltip) return;
 
     m_toolTip.SetToolRect(this, HoverToolTipId, GetClientRect());
     MSG message = CurrentMessage();
