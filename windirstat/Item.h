@@ -46,6 +46,7 @@ enum ITEMTYPE : std::uint32_t
     IT_HLINKS_SET  = 1u << 7,  // Pseudo Folder "Index Set N" under <Hardlinks>
     IT_HLINKS_IDX  = 1u << 8,  // Pseudo Folder "Index N" under Index Set
     IT_HLINKS_FILE = 1u << 9,  // Pseudo File reference under Index N
+    IT_PSEUDO_NODE = IT_MYCOMPUTER | IT_FREESPACE | IT_UNKNOWN | IT_HLINKS | IT_HLINKS_SET | IT_HLINKS_IDX,
     IT_CONTAINER   = IT_MYCOMPUTER | IT_DRIVE | IT_DIRECTORY | IT_HLINKS | IT_HLINKS_SET | IT_HLINKS_IDX,
     IT_MASK        = 0x00003FFF,
 
