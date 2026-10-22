@@ -1155,77 +1155,67 @@ COLORREF CItem::GetPercentageColor() const noexcept
 
 std::wstring CItem::GetToolTipText() const
 {
-    std::wstring tip;
+    // Conditions
+    const bool isDrive    = IsTypeOrFlag(IT_DRIVE);
+    const bool isFile     = IsTypeOrFlag(IT_FILE);
+    const bool isFileType = IsTypeOrFlag(IT_FILE, IT_HLINKS_FILE);
+    const bool isDirFile  = IsTypeOrFlag(IT_DIRECTORY, IT_FILE);
+    const bool isPath     = IsTypeOrFlag(IT_MYCOMPUTER, IT_DRIVE, IT_DIRECTORY);
+    const bool isFullPath = IsTypeOrFlag(IT_MYCOMPUTER, IT_DRIVE, IT_DIRECTORY, IT_FILE);
 
-    // Header
-    tip += ((IsTypeOrFlag(IT_MYCOMPUTER, IT_DRIVE, IT_FREESPACE, IT_UNKNOWN, IT_HLINKS, IT_HLINKS_SET, IT_HLINKS_IDX)) ?
-        std::wstring(GetNameView(IsTypeOrFlag(IT_DRIVE))) : GetFolderPath()) + L"\n\n";
+    // Tooltip header with item name or folder path
+    std::wstring output = [&] {
+        return (!isFileType) ? std::wstring(GetNameView(isDrive)) : GetFolderPath();
+    }() + L"\n\n";
 
-    // Store the raw data requirements in a vector to allow for pre-calculation
-    std::vector<std::pair<std::wstring_view, std::wstring>> rows;
+    std::vector<std::pair<std::wstring, std::wstring>> activeRows;
+    activeRows.reserve(10); // Reserve space for the most common number of rows to avoid reallocations
 
-    if (IsTypeOrFlag(IT_FILE))
-    {
-        rows.emplace_back(L"IDS_COL_NAME", std::wstring(GetNameView()));
-    }
+    // Helper lambda to conditionally add rows to the tooltip
+    auto addRow = [&](const bool condition, const std::wstring_view labelId, auto lazyValue) {
+        if (condition) activeRows.emplace_back(Localization::Lookup(labelId), lazyValue());
+    };
 
-    if (IsTypeOrFlag(IT_MYCOMPUTER,IT_DIRECTORY, IT_DRIVE))
-    {
-        rows.emplace_back(L"IDS_COL_ITEMS", FormatCount(GetItemsCount()));
-        rows.emplace_back(L"IDS_COL_FILES", FormatCount(GetFilesCount()));
-        rows.emplace_back(L"IDS_COL_FOLDERS", FormatCount(GetFoldersCount()));
-    }
+    //     Condition   Label                     Value
+    addRow(isFile,     L"IDS_COL_NAME",          [&] { return std::wstring(GetNameView());           });
+    addRow(isPath,     L"IDS_COL_ITEMS",         [&] { return FormatCount(GetItemsCount());          });
+    addRow(isPath,     L"IDS_COL_FILES",         [&] { return FormatCount(GetFilesCount());          });
+    addRow(isPath,     L"IDS_COL_FOLDERS",       [&] { return FormatCount(GetFoldersCount());        });
+    addRow(true,       L"IDS_COL_PERCENTAGE",    [&] { return GetText(COL_PERCENTAGE);               });
+    addRow(true,       L"IDS_COL_SIZE_PHYSICAL", [&] { return FormatSizeSuffixes(GetSizePhysical()); });
+    addRow(isFullPath, L"IDS_COL_SIZE_LOGICAL",  [&] { return FormatSizeSuffixes(GetSizeLogical());  });
+    addRow(isFullPath, L"IDS_COL_ATTRIBUTES",    [&] { return FormatAttributes(GetAttributes());     });
+    addRow(isFullPath, L"IDS_COL_LAST_CHANGE",   [&] { return FormatFileTime(GetLastChange(), true); });
+    addRow(isDirFile,  L"IDS_COL_OWNER",         [&] { return GetOwner(true);                        });
 
-    rows.emplace_back(L"IDS_COL_PERCENTAGE", GetText(COL_PERCENTAGE));
-    rows.emplace_back(L"IDS_COL_SIZE_PHYSICAL", FormatSizeSuffixes(GetSizePhysical()));
-
-    if (IsTypeOrFlag(IT_MYCOMPUTER, IT_FILE, IT_DIRECTORY, IT_DRIVE))
-    {
-        rows.emplace_back(L"IDS_COL_SIZE_LOGICAL", FormatSizeSuffixes(GetSizeLogical()));
-        rows.emplace_back(L"IDS_COL_ATTRIBUTES", FormatAttributes(GetAttributes()));
-        rows.emplace_back(L"IDS_COL_LAST_CHANGE", FormatFileTime(GetLastChange(), true));
-    }
-
-    if (IsTypeOrFlag(IT_FILE, IT_DIRECTORY))
-    {
-        rows.emplace_back(L"IDS_COL_OWNER", GetOwner(true));
-    }
-
-    // Evaluate the string to determine its true visual footprint on the screen
-    auto calculateVisualWidth = [](const std::wstring_view text) -> int {
+    // Calculate the maximum visual width of the labels to align the values in the tooltip
+    static constexpr auto calculateVisualWidth = [](const std::wstring_view text) -> int {
         int visualWidth = 0;
-        for (const wchar_t character : text) {
-            if ((character >= 0x2E80 && character <= 0x9FFF) ||
+        for (const wchar_t character : text)
+        {
+            visualWidth += ((character >= 0x2E80 && character <= 0x9FFF) ||
                 (character >= 0xAC00 && character <= 0xD7A3) ||
-                (character >= 0xFF00 && character <= 0xFFEF))
-            {
-                visualWidth += 2;
-            }
-            else
-            {
-                visualWidth += 1;
-            }
+                (character >= 0xFF00 && character <= 0xFFEF)) ? 2 : 1;
         }
         return visualWidth;
     };
 
-    // Determine the maximum visual width strictly among the active labels without colons
+    // Calculate the maximum visual width of the labels to align the values in the tooltip
     int maxVisualWidth = 0;
-    for (const auto& [labelId, value] : rows)
+    for (const auto& [label, value] : activeRows)
     {
-        maxVisualWidth = std::max(maxVisualWidth, calculateVisualWidth(Localization::Lookup(labelId)));
+        maxVisualWidth = std::max(maxVisualWidth, calculateVisualWidth(label));
     }
 
-    // Generate the formatted text utilizing a hybrid alignment of dynamic padding and a single tab stop
-    for (const auto& [labelId, value] : rows)
+    // Format the tooltip text with aligned labels and values
+    for (const auto& [label, value] : activeRows)
     {
-        const std::wstring label = Localization::Lookup(labelId);
         const int paddingNeeded = maxVisualWidth - calculateVisualWidth(label);
-        // Apply figure spaces to equalize the physical baseline, followed by a single native tab
-        tip += std::format(L"{}{}\t{}\n", label, std::wstring(paddingNeeded, L'\u2007'), value);
+        output.append(std::format(L"{}{}\t{}\n", label, std::wstring(paddingNeeded, L'\u2007'), value));
     }
 
-    if (!tip.empty() && tip.back() == L'\n') tip.pop_back();
+    // Remove the trailing newline character if present
+    if (!output.empty() && output.back() == L'\n') output.pop_back();
 
-    return tip;
+    return output;
 }
