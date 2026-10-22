@@ -411,7 +411,7 @@ bool CDirStatApp::InitInstance()
     if (autoElevate && (hideApp || cmdInfo.IsLegacyUninstallRequested())) RunElevated(m_lpCmdLine);
 
     // proof of concept for first-run detection: show a message box on first run
-    if (COptions::FirstRun)
+    if (!InPortableMode() && COptions::FirstRun)
     {
         // Enable portable mode if the user chooses "Yes"
         SetPortableMode(ShowMessageBox(L"Hey mate! Seems like you're running WinDirStat for the first time.\nWould you like me to stay away from your spotless registry?", MB_YESNO | MB_ICONQUESTION) == IDYES, false);
