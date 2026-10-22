@@ -106,7 +106,16 @@ protected:
     void OnMouseMove(UINT nFlags, CPoint point);
     void OnMouseLeave();
     bool OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
-    void OnFontSizeChanged(int, int) override { TrimRenderCache(); Invalidate(false); }
+    void OnFontSizeChanged(int, int) override
+    {
+        if (IsWindow(m_toolTip.Handle()))
+        {
+            m_toolTip.Pop();
+            m_toolTip.SetMaxTipWidth(ScaleForDpi(1000));
+        }
+        TrimRenderCache();
+        Invalidate(false);
+    }
 };
 
 inline std::span<const RouteEntry> CGraphView::Routes()

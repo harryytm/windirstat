@@ -469,16 +469,17 @@ int CGraphView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
     if (CWinDirStatPane::OnCreate(lpCreateStruct) == -1) return -1;
     if (m_toolTip.Create(this))
     {
-        m_toolTip.Activate();
         m_toolTip.AddTool(this, L"");
+        m_toolTip.SetMaxTipWidth(ScaleForDpi(1000));
         m_toolTip.SendNativeMessage(TTM_SETDELAYTIME, TTDT_INITIAL, 1000);
+        m_toolTip.Activate();
     }
     return 0;
 }
 
 bool CGraphView::PreprocessMessage(MSG* pMsg)
 {
-    if (pMsg != nullptr && IsWindow(m_toolTip.m_hWnd))
+    if (pMsg != nullptr && IsWindow(m_toolTip.Handle()))
     {
         m_toolTip.RelayEvent(pMsg);
     }
@@ -498,8 +499,6 @@ bool CGraphView::UpdateHoverDetails(const CItem* item, const bool itemChanged)
         }
         else
         {
-            m_toolTip.SetFont(GetAppFont(m_toolTip.Handle()));
-            m_toolTip.SetMaxTipWidth(ScaleForDpi(1000));
             m_toolTip.UpdateTipText(this, item->GetToolTipText());
         }
     }
