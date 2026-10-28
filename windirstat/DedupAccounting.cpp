@@ -124,7 +124,7 @@ std::expected<std::shared_ptr<const CDedupAccounting::Volume>, std::wstring> CDe
         return std::shared_ptr<const Volume>{};
     }
     const auto candidates = std::ranges::partition(files, [&](const CItem* item)
-    { return candidate(item) || !item->IsTypeOrFlag(ITF_SINGLE_LINK) && item->GetSizePhysicalRaw() != 0; });
+    { return candidate(item) || !item->IsTypeOrFlag(ITF_SINGLELINK) && item->GetSizePhysicalRaw() != 0; });
     const auto count = static_cast<std::size_t>(candidates.begin() - files.begin());
     std::ranges::sort(files.begin(), candidates.begin(), {}, &CItem::GetIndex);
 
@@ -171,7 +171,7 @@ std::expected<std::shared_ptr<const CDedupAccounting::Volume>, std::wstring> CDe
             {
                 if (auto info = CDedupStore::ReadReparseData(item->GetPathLong())) file.maps = std::move(info->maps);
             }
-            if (file.maps.empty() && file.last - file.first == 1 && item->IsTypeOrFlag(ITF_SINGLE_LINK))
+            if (file.maps.empty() && file.last - file.first == 1 && item->IsTypeOrFlag(ITF_SINGLELINK))
                 file.links = 1;
             else if (item->GetSizePhysicalRaw() != 0 || !file.maps.empty() || file.last - file.first > 1)
             {

@@ -228,7 +228,7 @@ static CItem* BuildAndAttachItem(const std::wstring& namePath, const std::wstrin
     std::wstring_view dedupFreed = {}, std::wstring_view dedupShared = {}, std::wstring_view allocated = {})
 {
     const auto type = static_cast<ITEMTYPE>(wcstoull(wdsAttr.data(), nullptr, 16)) &
-        ~(ITF_ACCOUNTED | ITF_SINGLE_LINK);
+        ~(ITF_ACCOUNTED | ITF_SINGLELINK);
     if (allocated == L"null") allocated = {};
     const bool isMtp = (type & ITF_MTP) != 0;
     const bool isRemote = (type & ITF_REMOTE) != 0;
@@ -614,7 +614,7 @@ static bool SaveResultsCsv(std::ofstream& outf, const std::vector<const CItem*>&
     {
         const bool nonPathItem = item->IsTypeOrFlag(IT_MYCOMPUTER);
         const ITEMTYPE itemType = item->GetRawType() &
-            ~(ITF_HARDLINK | ITHASH_MASK | ITF_EXTDATA | ITF_SINGLE_LINK | ITF_ACCOUNTED);
+            ~(ITF_HARDLINK | ITHASH_MASK | ITF_EXTDATA | ITF_SINGLELINK | ITF_ACCOUNTED);
         const auto adjIt = adjustedSizes.find(item);
         const auto adjustedSize = adjIt != adjustedSizes.end() ? adjIt->second : 0;
         // MTP indices are process-local path registrations and must not be serialized
@@ -685,7 +685,7 @@ static bool SaveResultsJson(std::ofstream& outf,
     {
         const bool nonPathItem = item->IsTypeOrFlag(IT_MYCOMPUTER);
         const ITEMTYPE itemType = item->GetRawType() &
-            ~(ITF_HARDLINK | ITHASH_MASK | ITF_EXTDATA | ITF_SINGLE_LINK | ITF_ACCOUNTED);
+            ~(ITF_HARDLINK | ITHASH_MASK | ITF_EXTDATA | ITF_SINGLELINK | ITF_ACCOUNTED);
         const auto adjIt = adjustedSizes.find(item);
         const auto adjustedSize = adjIt != adjustedSizes.end() ? adjIt->second : 0;
         // MTP indices are process-local path registrations and must not be serialized

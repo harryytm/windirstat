@@ -393,7 +393,7 @@ CItem* CItem::AddFile(const Finder& finder, ScanBatch& batch)
     // Preserve MTP shell metadata under the child index for later access
     if (IsTypeOrFlag(ITF_MTP))
         child->SetIndex(FinderMtp::RegisterPath({}, finder.GetShellPath(), finder.GetShellPidl()));
-    child->SetFlag(ITF_SINGLE_LINK, !finder.IsSingleLink());
+    child->SetFlag(ITF_SINGLELINK, !finder.IsSingleLink());
     child->SetSizePhysical(finder.GetFileSizePhysical());
     child->SetSizeLogical(finder.GetFileSizeLogical());
     child->SetLastChange(finder.GetLastWriteTime());
@@ -1221,7 +1221,7 @@ void CItem::UpdateStatsFromDisk()
                 UpwardAddSizePhysical(finder.GetFileSizePhysical());
                 UpwardAddSizeLogical(finder.GetFileSizeLogical());
                 SetIndex(finder.GetIndex());
-                SetFlag(ITF_SINGLE_LINK, true);
+                SetFlag(ITF_SINGLELINK, true);
                 ExtensionDataAdd();
             }
         }
