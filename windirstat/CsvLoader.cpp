@@ -326,7 +326,7 @@ static CItem* BuildAndAttachItem(const std::wstring& namePath, const std::wstrin
     return newitem;
 }
 
-static CItem* LoadResultsCsv(std::ifstream& reader)
+static CItem* LoadResultsCsv(std::ifstream& reader, CProgressDlg* pdlg = nullptr)
 {
     CItem* newroot = nullptr;
     std::string linebuf;
@@ -335,9 +335,11 @@ static CItem* LoadResultsCsv(std::ifstream& reader)
 
     bool headerProcessed = false;
     size_t maxRequiredField = 0;
+    size_t recordsRead = 0;
     for (std::vector<std::wstring_view> fields; std::getline(reader, linebuf); fields.clear())
     {
         if (linebuf.empty()) continue;
+        if (pdlg != nullptr && (++recordsRead & 8 * wds::Ki - 1) == 0) pdlg->SetProgress(static_cast<size_t>(reader.tellg()));
 
         // Convert to wide string
         line.resize(linebuf.size() + 1);
@@ -414,7 +416,7 @@ static CItem* LoadResultsCsv(std::ifstream& reader)
 
 // ── JSON load ─────────────────────────────────────────────────────────────────
 
-static CItem* LoadResultsJson(std::ifstream& reader)
+static CItem* LoadResultsJson(std::ifstream& reader, CProgressDlg* pdlg = nullptr)
 {
     // Build the same column-name → field-index mapping reused from CSV
     const std::unordered_map<std::wstring, DWORD> keyToField =
@@ -446,9 +448,11 @@ static CItem* LoadResultsJson(std::ifstream& reader)
         if (*p == '[') break;
     }
 
+    size_t objectsRead = 0;
     // Read each object in the array
     while (JsonReadObject(reader, obj))
     {
+        if (pdlg != nullptr && (++objectsRead & 2 * wds::Ki - 1) == 0) pdlg->SetProgress(static_cast<size_t>(reader.tellg()));
         std::wstring fieldValues[FIELD_COUNT];
         for (auto& [key, val] : obj)
         {
@@ -476,7 +480,7 @@ static CItem* LoadResultsJson(std::ifstream& reader)
     return newroot;
 }
 
-CItem* LoadResults(const std::wstring& path)
+CItem* LoadResults(const std::wstring& path, CProgressDlg* pdlg)
 {
     std::ifstream reader(path);
     std::vector<char> buffer(1ul * wds::Mi);
@@ -490,7 +494,7 @@ CItem* LoadResults(const std::wstring& path)
         reader.seekg(0);
     }
 
-    return IsJsonPath(path) ? LoadResultsJson(reader) : LoadResultsCsv(reader);
+    return IsJsonPath(path) ? LoadResultsJson(reader, pdlg) : LoadResultsCsv(reader, pdlg);
 }
 
 // Walk the item tree breadth-first and return a flat ordered list
