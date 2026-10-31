@@ -1157,15 +1157,14 @@ std::wstring CItem::GetToolTipText() const
 {
     // Conditions
     const bool isDrive    = IsTypeOrFlag(IT_DRIVE);
-    const bool isFile     = IsTypeOrFlag(IT_FILE);
-    const bool isFileType = IsTypeOrFlag(IT_FILE, IT_HLINKS_FILE);
+    const bool isFile     = IsTypeOrFlag(IT_FILE, IT_HLINKS_FILE);
     const bool isDirFile  = IsTypeOrFlag(IT_DIRECTORY, IT_FILE);
     const bool isPath     = IsTypeOrFlag(IT_MYCOMPUTER, IT_DRIVE, IT_DIRECTORY);
     const bool isFullPath = IsTypeOrFlag(IT_MYCOMPUTER, IT_DRIVE, IT_DIRECTORY, IT_FILE);
 
     // Tooltip header with item name or folder path
     std::wstring output = [&] {
-        return (!isFileType) ? std::wstring(GetNameView(isDrive)) : GetFolderPath();
+        return (!isFile) ? std::wstring(GetNameView(isDrive)) : GetFolderPath();
     }() + L"\n\n";
 
     std::vector<std::pair<std::wstring, std::wstring>> activeRows;
