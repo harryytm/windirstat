@@ -9,7 +9,9 @@
 #include "pch.h"
 #include "ItemPerm.h"
 
+class CProgressDlg;
+
 bool SaveResults(const std::wstring& path, CItem* rootItem);
-CItem* LoadResults(const std::wstring& path);
+CItem* LoadResults(const std::wstring& path, CProgressDlg* pdlg = nullptr);
 bool SaveDuplicates(const std::wstring& path, const CItemDupe* rootDupe);
 bool SavePermissions(const std::wstring& path, const std::vector<const CItemPerm*>& items);
