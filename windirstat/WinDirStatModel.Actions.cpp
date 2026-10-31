@@ -295,10 +295,12 @@ void CWinDirStatModel::OnLoadResults()
     const auto path = ChooseReportPath(CDialog::FilePickerMode::Open);
     if (!path) return;
 
+    std::error_code ec;
+    const auto fileSize = std::filesystem::file_size(*path, ec);
     CItem* newroot = nullptr;
-    CProgressDlg(0, CProgressDlg::Flags::NoCancel, GetMainWindow(), [&](CProgressDlg*)
+    CProgressDlg(ec ? 0 : fileSize, CProgressDlg::Flags::NoCancel | CProgressDlg::Flags::PercentageOnly, GetMainWindow(), [&](CProgressDlg* pdlg)
     {
-        newroot = LoadResults(*path);
+        newroot = LoadResults(*path, pdlg);
     }).ShowModal();
 
     if (newroot != nullptr) Get()->OpenLoadedScan(newroot);
