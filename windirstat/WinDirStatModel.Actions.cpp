@@ -280,11 +280,14 @@ void CWinDirStatModel::OnSaveReport(const UINT commandId) const
 {
     const auto path = ChooseReportPath(CDialog::FilePickerMode::Save);
     if (!path) return;
-    CProgressDlg(0, CProgressDlg::Flags::NoCancel, GetMainWindow(), [&](CProgressDlg*)
+    const bool showProgress = commandId == ID_SAVE_RESULTS;
+    const ULONGLONG totalItems = showProgress ? GetRootItem()->GetItemsCount() + 1 : 0;
+    const auto flags = showProgress ? CProgressDlg::Flags::None : CProgressDlg::Flags::NoCancel;
+    CProgressDlg(totalItems, flags, GetMainWindow(), [&](CProgressDlg* pdlg)
     {
         switch (commandId)
         {
-            case ID_SAVE_RESULTS: SaveResults(*path, GetRootItem()); break;
+            case ID_SAVE_RESULTS: SaveResults(*path, GetRootItem(), pdlg); break;
             case ID_SAVE_DUPLICATES: SaveDuplicates(*path, CFileDupeControl::Get()->GetRootItem()); break;
             case ID_SAVE_PERMISSIONS: SavePermissions(*path, CFilePermsControl::Get()->GetPermItems()); break;
         }

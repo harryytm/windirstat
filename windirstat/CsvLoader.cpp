@@ -649,7 +649,7 @@ static bool FlushReportBuffer(std::ofstream& outf, std::string& buffer, const bo
 }
 
 static bool SaveCsv(std::ofstream& outf, const std::vector<std::wstring>& cols, const auto& items,
-    const bool trailingNewline, const auto& writeItem)
+    const bool trailingNewline, const auto& writeItem, CProgressDlg* pdlg = nullptr)
 {
     std::string buffer;
     buffer.reserve(ReportBufferSize);
@@ -662,6 +662,11 @@ static bool SaveCsv(std::ofstream& outf, const std::vector<std::wstring>& cols, 
     // Separate records with CRLF and retain each report's final-line convention.
     for (const auto& item : items)
     {
+        if (pdlg != nullptr)
+        {
+            if (pdlg->IsCancelled()) return false;
+            pdlg->Increment();
+        }
         buffer += "\r\n";
         writeItem(item, buffer);
         if (!FlushReportBuffer(outf, buffer)) return false;
@@ -672,7 +677,7 @@ static bool SaveCsv(std::ofstream& outf, const std::vector<std::wstring>& cols, 
 
 static bool SaveResultsCsv(std::ofstream& outf, const std::vector<const CItem*>& items,
     const std::vector<std::wstring>& cols, const std::unordered_map<const CItem*, LONGLONG>& adjustedSizes,
-    const bool includeOwner)
+    const bool includeOwner, CProgressDlg* pdlg = nullptr)
 {
     return SaveCsv(outf, cols, items, false, [&](const CItem* item, std::string& buffer)
     {
@@ -697,13 +702,13 @@ static bool SaveResultsCsv(std::ofstream& outf, const std::vector<const CItem*>&
         std::format_to(std::back_inserter(buffer), ",{},{}",
             QuoteAndConvert(scanOutcomes[static_cast<size_t>(result.outcome)]),
             QuoteAndConvert(StorageSource::EscapeName(result.error, true)));
-    });
+    }, pdlg);
 }
 
 // ── JSON save ─────────────────────────────────────────────────────────────────
 
 static bool SaveJson(std::ofstream& outf, const std::vector<std::wstring>& cols,
-    const auto& items, const auto& writeItem)
+    const auto& items, const auto& writeItem, CProgressDlg* pdlg = nullptr)
 {
     // Pre-quote all column key strings once.
     std::vector<std::string> keys;
@@ -714,6 +719,11 @@ static bool SaveJson(std::ofstream& outf, const std::vector<std::wstring>& cols,
     bool first = true;
     for (const auto& item : items)
     {
+        if (pdlg != nullptr)
+        {
+            if (pdlg->IsCancelled()) return false;
+            pdlg->Increment();
+        }
         if (!first) buffer += ",\r\n";
         first = false;
         writeItem(item, keys, buffer);
@@ -727,7 +737,7 @@ static bool SaveResultsJson(std::ofstream& outf,
     const std::vector<const CItem*>& items,
     const std::vector<std::wstring>& cols,
     const std::unordered_map<const CItem*, LONGLONG>& adjustedSizes,
-    const bool includeOwner)
+    const bool includeOwner, CProgressDlg* pdlg = nullptr)
 {
     return SaveJson(outf, cols, items, [&](const CItem* item, const auto& keys, std::string& buffer)
     {
@@ -760,10 +770,10 @@ static bool SaveResultsJson(std::ofstream& outf,
         std::format_to(std::back_inserter(buffer), ",\r\n  {}: {},\r\n  {}: {}\r\n}}",
             keys[keys.size() - 2], JsonQuoteW(scanOutcomes[static_cast<size_t>(result.outcome)]),
             keys.back(), JsonQuoteW(StorageSource::EscapeName(result.error, true)));
-    });
+    }, pdlg);
 }
 
-bool SaveResults(const std::wstring& path, CItem* rootItem)
+bool SaveResults(const std::wstring& path, CItem* rootItem, CProgressDlg* pdlg)
 {
     const std::vector<const CItem*> items       = CollectItems(rootItem);
     const auto                      adjustedSizes = ComputeAdjustedSizes(items);
@@ -775,9 +785,18 @@ bool SaveResults(const std::wstring& path, CItem* rootItem)
     std::ofstream outf = OpenReport(path);
     if (!outf.is_open()) return false;
 
-    return IsJsonPath(path)
-        ? SaveResultsJson(outf, items, cols, adjustedSizes, includeOwner)
-        : SaveResultsCsv (outf, items, cols, adjustedSizes, includeOwner);
+    const bool success = IsJsonPath(path)
+        ? SaveResultsJson(outf, items, cols, adjustedSizes, includeOwner, pdlg)
+        : SaveResultsCsv(outf, items, cols, adjustedSizes, includeOwner, pdlg);
+
+    if (!success)
+    {
+        outf.close();
+        if (!IsStdoutPath(path)) DeleteFile(path.c_str());
+        return false;
+    }
+
+    return true;
 }
 
 static std::vector<std::tuple<std::wstring, const CItem*, bool>>
