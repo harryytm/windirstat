@@ -261,9 +261,10 @@ void CWinDirStatModel::OnSaveResults() const
     const auto path = ChooseReportPath(CDialog::FilePickerMode::Save);
     if (!path) return;
 
-    CProgressDlg(0, CProgressDlg::Flags::NoCancel, GetMainWindow(), [&](CProgressDlg*)
+    const ULONGLONG totalItems = GetRootItem()->GetItemsCount() + 1;
+    CProgressDlg(totalItems, CProgressDlg::Flags::None, GetMainWindow(), [&](CProgressDlg* pdlg)
     {
-        SaveResults(*path, GetRootItem());
+        SaveResults(*path, GetRootItem(), pdlg);
     }).ShowModal();
 }
 
