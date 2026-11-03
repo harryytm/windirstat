@@ -29,7 +29,7 @@ constexpr bool IsJsonPath(const std::wstring_view path) noexcept
         IsEqualIgnoreCase(path.substr(path.size() - ext.size()), ext);
 }
 
-bool SaveResults(const std::wstring& path, CItem* rootItem);
+bool SaveResults(const std::wstring& path, CItem* rootItem, CProgressDlg* pdlg = nullptr);
 CItem* LoadResults(const std::wstring& path, CProgressDlg* pdlg = nullptr);
 bool SaveDuplicates(const std::wstring& path, const CItemDupe* rootDupe);
 bool SavePermissions(const std::wstring& path, const std::vector<const CItemPerm*>& items);
