@@ -1153,3 +1153,69 @@ COLORREF CItem::GetPercentageColor() const noexcept
     const int i = GetIndent() % COptions::FileTreeColorCount;
     return COptions::FileTreeColors[i];
 }
+
+std::wstring CItem::GetToolTipText() const
+{
+    // Conditions
+    const bool isDrive    = IsTypeOrFlag(IT_DRIVE);
+    const bool isFile     = IsTypeOrFlag(IT_FILE, IT_HLINKS_FILE);
+    const bool isDirFile  = IsTypeOrFlag(IT_DIRECTORY, IT_FILE);
+    const bool isPath     = IsTypeOrFlag(IT_MYCOMPUTER, IT_DRIVE, IT_DIRECTORY);
+    const bool isFullPath = IsTypeOrFlag(IT_MYCOMPUTER, IT_DRIVE, IT_DIRECTORY, IT_FILE);
+
+    // Tooltip header with item name or folder path
+    std::wstring output = [&] {
+        return (isFile) ? GetFolderPath() : std::wstring(GetNameView(isDrive));
+    }() + L"\n\n";
+
+    std::vector<std::pair<std::wstring, std::wstring>> activeRows;
+    activeRows.reserve(10); // Reserve space for the most common number of rows to avoid reallocations
+
+    // Helper lambda to conditionally add rows to the tooltip
+    auto addRow = [&](const bool condition, const std::wstring_view labelId, auto lazyValue) {
+        if (condition) activeRows.emplace_back(Localization::Lookup(labelId), lazyValue());
+    };
+
+    //     Condition   Label                     Value
+    addRow(isFile,     L"IDS_COL_NAME",          [&] { return std::wstring(GetNameView());           });
+    addRow(isPath,     L"IDS_COL_ITEMS",         [&] { return FormatCount(GetItemsCount());          });
+    addRow(isPath,     L"IDS_COL_FILES",         [&] { return FormatCount(GetFilesCount());          });
+    addRow(isPath,     L"IDS_COL_FOLDERS",       [&] { return FormatCount(GetFoldersCount());        });
+    addRow(true,       L"IDS_COL_PERCENTAGE",    [&] { return GetText(COL_PERCENTAGE);               });
+    addRow(true,       L"IDS_COL_SIZE_PHYSICAL", [&] { return FormatSizeSuffixes(GetSizePhysical()); });
+    addRow(isFullPath, L"IDS_COL_SIZE_LOGICAL",  [&] { return FormatSizeSuffixes(GetSizeLogical());  });
+    addRow(isFullPath, L"IDS_COL_ATTRIBUTES",    [&] { return FormatAttributes(GetAttributes());     });
+    addRow(isFullPath, L"IDS_COL_LAST_CHANGE",   [&] { return FormatFileTime(GetLastChange(), true); });
+    addRow(isDirFile,  L"IDS_COL_OWNER",         [&] { return GetOwner(true);                        });
+
+    // Calculate the maximum visual width of the labels to align the values in the tooltip
+    static constexpr auto calculateVisualWidth = [](const std::wstring_view text) -> int {
+        int visualWidth = 0;
+        for (const wchar_t character : text)
+        {
+            visualWidth += ((character >= 0x2E80 && character <= 0x9FFF) ||
+                (character >= 0xAC00 && character <= 0xD7A3) ||
+                (character >= 0xFF00 && character <= 0xFFEF)) ? 2 : 1;
+        }
+        return visualWidth;
+    };
+
+    // Calculate the maximum visual width of the labels to align the values in the tooltip
+    int maxVisualWidth = 0;
+    for (const auto& [label, value] : activeRows)
+    {
+        maxVisualWidth = std::max(maxVisualWidth, calculateVisualWidth(label));
+    }
+
+    // Format the tooltip text with aligned labels and values
+    for (const auto& [label, value] : activeRows)
+    {
+        const int paddingNeeded = maxVisualWidth - calculateVisualWidth(label);
+        output.append(std::format(L"{}{}\t{}\n", label, std::wstring(paddingNeeded, L'\u2007'), value));
+    }
+
+    // Remove the trailing newline character if present
+    if (!output.empty() && output.back() == L'\n') output.pop_back();
+
+    return output;
+}
