@@ -509,19 +509,15 @@ void CWinDirStatModel::DeletePhysicalItems(const std::vector<CItem*>& items, con
         for (const auto& item : items) filePaths.emplace_back(item->GetPath());
 
         // Display the file deletion warning dialog with custom width and height
-        if (![&]() -> bool {
-            const std::wstring warning = emptyOnly ? Localization::Lookup(IDS_EMPTY_FOLDER_WARNING) : hasRemoteItems ?
-                Localization::Format(IDS_OPERATION_CONFIRMATIONs, GetLocalizedMenuText(IDS_MENU_DELETE)) :
-                Localization::Lookup(IDS_DELETE_WARNING);
-            const auto result = CMessageBoxDlg::Show(warning, filePaths,
-                Localization::Lookup(IDS_DONT_SHOW_AGAIN), false, MB_YESNO | MB_ICONWARNING, GetMainWindow(), { 600, 400 }, Localization::Lookup(IDS_DELETE_TITLE));
+        const std::wstring warning = emptyOnly ? Localization::Lookup(IDS_EMPTY_FOLDER_WARNING) : hasRemoteItems ?
+            Localization::Format(IDS_OPERATION_CONFIRMATIONs, GetLocalizedMenuText(IDS_MENU_DELETE)) :
+            Localization::Lookup(IDS_DELETE_WARNING);
+        const auto [nID, isChecked] = CMessageBoxDlg::Show(
+            warning, filePaths, Localization::Lookup(IDS_DONT_SHOW_AGAIN), false, MB_YESNO | MB_ICONWARNING,
+            GetMainWindow(), { 600, 400 }, Localization::Lookup(IDS_DELETE_TITLE));
 
-            if (result.nID != IDYES) return false;
-
-            // Save off the deletion warning preference
-            showDeleteWarning = !result.isChecked;
-            return true;
-        }()) return;
+        if (nID != IDYES) return;
+        showDeleteWarning = !isChecked;
     }
 
     // Clear active selections
@@ -746,10 +742,8 @@ bool CWinDirStatModel::ConfirmOperation(const std::wstring_view operationId, Set
         Localization::Format(IDS_OPERATION_CONFIRMATIONs, operation), affectedPaths,
         Localization::Lookup(IDS_DONT_SHOW_AGAIN), false, MB_YESNO | MB_ICONWARNING, GetMainWindow(),
         affectedPaths.empty() ? CSize{} : CSize{ 600, 400 }, Localization::Lookup(IDS_DELETE_TITLE));
-    if (nID != IDYES) return false;
 
-    prompt = !isChecked;
-    return true;
+    return nID == IDYES && (prompt = !isChecked, true);
 }
 
 void CWinDirStatModel::PerformUserDefinedCleanup(USERDEFINEDCLEANUP* udc, const CItem* item)
