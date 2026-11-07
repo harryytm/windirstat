@@ -91,6 +91,8 @@ bool ShellExecuteWrapper(const std::wstring& lpFile, const std::wstring& lpParam
 bool ExecuteCommandInConsole(const std::wstring& command, const std::wstring& title = L"");
 std::optional<std::wstring> RemoveSelectedHistoryEntry(const MSG* pMsg, CComboBox& comboBox,
     std::vector<std::wstring>& history);
+void ShowEmptyFolderFailures(const std::vector<std::pair<std::wstring, DWORD>>& failures);
+//bool IsUnsafeDirectory(const CItem* item) noexcept;
 
 std::wstring GetLocalizedMenuText(std::wstring_view textId, std::wstring_view detail = {});
 

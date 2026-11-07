@@ -858,3 +858,21 @@ std::optional<std::wstring> RemoveSelectedHistoryEntry(const MSG* pMsg, CComboBo
     comboBox.SetCurSel(count > 0 ? std::min(selection, count - 1) : -1);
     return removed;
 }
+
+// Name what was left behind of an empty-folder removal, each with its own reason: the parent of a folder
+// in use fails as not empty, which must not hide why the folder inside it stayed
+void ShowEmptyFolderFailures(const std::vector<std::pair<std::wstring, DWORD>>& failures)
+{
+    if (failures.empty()) return;
+
+    std::vector<std::wstring> lines;
+    lines.reserve(failures.size());
+    for (const auto& [failedPath, error] : failures)
+    {
+        std::wstring reason = TranslateError(static_cast<HRESULT>(error));
+        reason.resize(reason.find_last_not_of(L" \t\r\n") + 1);
+        lines.emplace_back(failedPath + L": " + reason);
+    }
+    CMessageBoxDlg::Show(GetLocalizedMenuText(IDS_MENU_REMOVE_EMPTY), lines, {}, false,
+        MB_OK | MB_ICONWARNING, GetMainWindow(), { 600, 400 }, Localization::Lookup(IDS_DELETE_TITLE));
+}

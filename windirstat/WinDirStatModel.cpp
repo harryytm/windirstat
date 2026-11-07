@@ -485,14 +485,14 @@ void CWinDirStatModel::RebuildExtensionData()
     }
 }
 
-void CWinDirStatModel::DeletePhysicalItems(const std::vector<CItem*>& items, const bool toTrashBin, const bool emptyOnly) const
+void CWinDirStatModel::DeletePhysicalItems(const std::vector<CItem*>& items, const bool toTrashBin, const bool emptyOnly, const bool suppressPrompt) const
 {
     const bool hasRemoteItems = std::ranges::any_of(items,
         [](const CItem* item) { return item->IsTypeOrFlag(ITF_REMOTE); });
     if (toTrashBin && hasRemoteItems) return;
     auto& showDeleteWarning = toTrashBin ?
         COptions::ShowDeleteToRecycleBinWarning : COptions::ShowDeletePermanentlyWarning;
-    if (showDeleteWarning)
+    if (!suppressPrompt && showDeleteWarning)
     {
         // Build list of file paths for the message box
         std::vector<std::wstring> filePaths;
