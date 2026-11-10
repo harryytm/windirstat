@@ -139,6 +139,7 @@ protected:
     void ExpandItem(int i, bool scroll = true);
     void ToggleExpansion(int i);
     void AutoShrinkColumn();
+    void AutoResizeProportionColumn(const CTreeListItem* contextItem, const std::vector<CWdsListItem*>& children, const bool checkShrink);
 
     //
     /////////////////////////////////////////////////////

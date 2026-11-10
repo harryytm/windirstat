@@ -536,6 +536,37 @@ void CTreeListControl::AutoShrinkColumn()
     if (GetColumnWidth(0) != width + padding) SetColumnWidth(0, width + padding);
 }
 
+void CTreeListControl::AutoResizeProportionColumn(const CTreeListItem* contextItem, const std::vector<CWdsListItem*>& children, const bool checkShrink)
+{
+    if (m_logicalFocus != LF_FILETREE || !COptions::AutomaticallyResizeColumns) return;
+
+    const int colIndex = SubItemToColumn(COL_SIZE_PROPORTION);
+    if (colIndex < 0) return;
+
+    int maxIndent = 0;
+    if (!children.empty())
+    {
+        maxIndent = static_cast<const CItem*>(contextItem)->GetIndent();
+        for (const auto* child : children)
+        {
+            maxIndent = std::max(maxIndent, static_cast<const CItem*>(child)->GetIndent());
+        }
+    }
+    else
+    {
+        for (int row = 0, count = GetItemCount(); row < count; ++row)
+        {
+            maxIndent = std::max(maxIndent, static_cast<const CItem*>(GetItem(row))->GetIndent());
+        }
+    }
+
+    const int targetWidth = CItem::GetSizeProportionWidth() + 30 + maxIndent * ScaleForDpi(COptions::SizeProportionIndent);
+    if (checkShrink ? GetColumnWidth(colIndex) != targetWidth : GetColumnWidth(colIndex) < targetWidth)
+    {
+        SetColumnWidth(colIndex, targetWidth);
+    }
+}
+
 void CTreeListControl::CollapseItem(const int i)
 {
     const CTreeListItem* item = GetItem(i);
@@ -568,6 +599,7 @@ void CTreeListControl::CollapseItem(const int i)
     item->SetExpanded(false);
     RedrawItems(i, i);
     AutoShrinkColumn();
+    AutoResizeProportionColumn(nullptr, {}, true);
 }
 
 bool CTreeListControl::SelectedItemCanToggle()
@@ -636,6 +668,7 @@ void CTreeListControl::ExpandItem(const int i, const bool scroll)
     // Sort at end so we do not invalidate position data
     if (childCount > 0 && !sortChildrenOnly) SortItems();
 
+    if (scroll) AutoResizeProportionColumn(item, children, false);
 }
 
 void CTreeListControl::OnKeyDown(const UINT nChar, UINT /*nRepCnt*/, UINT /*nFlags*/)
