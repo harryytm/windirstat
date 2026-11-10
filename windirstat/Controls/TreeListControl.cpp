@@ -267,6 +267,7 @@ void CTreeListControl::SetRootItem(CTreeListItem* root)
     {
         InsertItem(0, root);
         ExpandItem(0);
+        AutoShrinkColumn();
     }
 }
 
@@ -375,6 +376,7 @@ bool CTreeListControl::DeleteItem(const int i)
         SetItemState(target, LVIS_FOCUSED, LVIS_FOCUSED);
         SetSelectionMark(target);
     }
+    AutoShrinkColumn();
     return deleted;
 }
 
@@ -510,6 +512,23 @@ void CTreeListControl::ToggleExpansion(const int i)
     }
 }
 
+void CTreeListControl::AutoShrinkColumn()
+{
+    if (!COptions::AutomaticallyResizeColumnsShrink) return;
+
+    CClientDC dc(this);
+    const GdiObjectSelection font(&dc, GetFont());
+    int width = m_defaultColumnWidths.empty() ? ScaleForDpi(100) : m_defaultColumnWidths[0];
+
+    for (int i = 0, limit = GetItemCount(); i < limit; ++i)
+    {
+        if (auto* item = GetItem(i)) width = std::max(width, GetSubItemWidth(item, 0, &dc));
+    }
+
+    constexpr int padding = 3;
+    if (GetColumnWidth(0) != width + padding) SetColumnWidth(0, width + padding);
+}
+
 void CTreeListControl::CollapseItem(const int i)
 {
     const CTreeListItem* item = GetItem(i);
@@ -541,6 +560,7 @@ void CTreeListControl::CollapseItem(const int i)
     if (todelete > 0) RemoveListItem(i + 1, todelete);
     item->SetExpanded(false);
     RedrawItems(i, i);
+    AutoShrinkColumn();
 }
 
 bool CTreeListControl::SelectedItemCanToggle()
@@ -809,6 +829,7 @@ void CTreeListControl::OnItemsRemoved(const std::unordered_set<const CTreeListIt
         SetItemState(target, LVIS_FOCUSED, LVIS_FOCUSED);
         SetSelectionMark(target);
     }
+    AutoShrinkColumn();
 }
 
 void CTreeListControl::OnRemovingAllChildren(const CTreeListItem* parent)
