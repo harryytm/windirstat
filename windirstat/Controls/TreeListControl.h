@@ -138,6 +138,7 @@ protected:
     void CollapseItem(int i);
     void ExpandItem(int i, bool scroll = true);
     void ToggleExpansion(int i);
+    void AutoShrinkColumn();
 
     //
     /////////////////////////////////////////////////////

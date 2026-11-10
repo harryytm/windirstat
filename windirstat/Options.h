@@ -156,6 +156,8 @@ class COptions final
 public:
     inline static Setting<bool> AutomaticallyResizeColumns{ OptionsGeneral,
         L"AutomaticallyResizeColumns", true, CheckboxBind(IDC_COLUMN_AUTOSIZE) };
+    inline static Setting<bool> AutomaticallyResizeColumnsShrink{ OptionsGeneral,
+        L"AutomaticallyResizeColumnsShrink", false };
     inline static Setting<bool> ExcludeJunctions{ OptionsGeneral,
         L"ExcludeJunctions", true, CheckboxBind(IDC_EXCLUDE_JUNCTIONS) };
     inline static Setting<bool> ExcludeSymbolicLinksDirectory{ OptionsGeneral,
