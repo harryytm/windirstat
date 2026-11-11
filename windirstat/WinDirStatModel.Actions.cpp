@@ -17,6 +17,57 @@
 #include "SearchDlg.h"
 #include "ProgressDlg.h"
 #include "Filtering.h"
+#include <chrono>
+#include <cstdio>
+
+struct CConsoleSpinner
+{
+    HANDLE m_hConsole = INVALID_HANDLE_VALUE;
+    std::jthread m_thread;
+
+    CConsoleSpinner()
+    {
+        const bool isQuiet = !CDirStatApp::Get()->GetSaveToPath().empty() ||
+            !CDirStatApp::Get()->GetSaveDupesToPath().empty() ||
+            !CDirStatApp::Get()->GetSavePermsToPath().empty();
+        if (!isQuiet) return;
+
+        AttachConsole(ATTACH_PARENT_PROCESS);
+        m_hConsole = CreateFileW(L"CONOUT$", GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
+        if (m_hConsole == INVALID_HANDLE_VALUE) return;
+
+        m_thread = std::jthread([hConsole = m_hConsole, label = Localization::Lookup(IDS_SCANNING) + L"... "](std::stop_token stopToken)
+        {
+            constexpr wchar_t glyphs[] = { L'|', L'/', L'-', L'\\' };
+            size_t idx = 0;
+            DWORD written = 0;
+            while (!stopToken.stop_requested())
+            {
+                const std::wstring line = std::format(L"\r{}{}", label, glyphs[idx++ % std::size(glyphs)]);
+                WriteConsoleW(hConsole, line.data(), static_cast<DWORD>(line.size()), &written, nullptr);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+            const std::wstring clearLine = L"\r" + std::wstring(label.size() + 2, L' ') + L"\r";
+            WriteConsoleW(hConsole, clearLine.data(), static_cast<DWORD>(clearLine.size()), &written, nullptr);
+        });
+    }
+
+    void Stop()
+    {
+        if (m_thread.joinable())
+        {
+            m_thread.request_stop();
+            m_thread.join();
+        }
+        if (m_hConsole != INVALID_HANDLE_VALUE)
+        {
+            CloseHandle(m_hConsole);
+            m_hConsole = INVALID_HANDLE_VALUE;
+        }
+    }
+
+    ~CConsoleSpinner() { Stop(); }
+};
 
 static std::optional<std::wstring> ChooseReportPath(const CDialog::FilePickerMode mode)
 {
@@ -1251,6 +1302,7 @@ void CWinDirStatModel::StartScanningEngine(std::vector<CItem*> items)
     // Lambda captures assume the model exists for the duration of the scan.
     m_thread = std::jthread([this, items, visualInfo, recalcParents = std::move(recalcParents)] () mutable
     {
+        CConsoleSpinner spinner;
         std::unordered_map<const CItem*, FinderBasicContext> folderContexts;
 
         // Add items to processing queue
@@ -1410,6 +1462,9 @@ void CWinDirStatModel::StartScanningEngine(std::vector<CItem*> items)
         // Sorting and other finalization tasks
         CItem::ScanItemsFinalize(GetRootItem());
         Get()->RebuildExtensionData();
+
+        // Halt spinner telemetry before serializing report payload to stdout
+        spinner.Stop();
 
         // Handle quiet save mode if path is set
         if (const auto savePath = CDirStatApp::Get()->GetSaveToPath(); !savePath.empty())

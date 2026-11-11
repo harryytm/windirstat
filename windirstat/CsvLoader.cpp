@@ -8,11 +8,41 @@
 #include "CsvLoader.h"
 #include "FinderMtp.h"
 #include "StorageSource.h"
+#include <iostream>
+#include <fcntl.h>
+#include <io.h>
 
 static bool IsJsonPath(const std::wstring& path)
 {
     return path.size() >= 5 && _wcsicmp(path.c_str() + path.size() - 5, L".json") == 0;
 }
+
+struct OutputStreamSink
+{
+    std::ofstream fileStream;
+    std::ostream* stream = nullptr;
+
+    bool Open(const std::wstring& path)
+    {
+        if (path == L"-" || _wcsicmp(path.c_str(), L"stdout") == 0 ||
+            path == L"-.json" || _wcsicmp(path.c_str(), L"stdout.json") == 0)
+        {
+            if (GetStdHandle(STD_OUTPUT_HANDLE) == nullptr)
+                AttachConsole(ATTACH_PARENT_PROCESS);
+            _setmode(_fileno(stdout), _O_BINARY);
+            stream = &std::cout;
+            return true;
+        }
+
+        fileStream.open(path, std::ios::binary);
+        if (!fileStream.is_open()) return false;
+        stream = &fileStream;
+        return true;
+    }
+
+    std::ostream& operator*() const noexcept { return *stream; }
+    explicit operator bool() const noexcept { return stream != nullptr; }
+};
 
 // Wide string → UTF-8; Localization has no reverse equivalent so we keep this here
 static std::string WideToUtf8(const std::wstring_view wv)
@@ -544,16 +574,20 @@ static std::unordered_map<const CItem*, LONGLONG>
 static constexpr size_t ReportBufferSize = 64 * 1024;
 
 // Write complete rows in chunks while retaining the buffer for the next rows.
-static bool FlushReportBuffer(std::ofstream& outf, std::string& buffer, const bool finish = false)
+static bool FlushReportBuffer(std::ostream& outf, std::string& buffer, const bool finish = false)
 {
     if (buffer.size() < ReportBufferSize && !finish) return true;
     outf.write(buffer.data(), static_cast<std::streamsize>(buffer.size()));
     buffer.clear();
-    if (finish) outf.flush();
+    if (finish)
+    {
+        outf.flush();
+        fflush(stdout);
+    }
     return outf.good();
 }
 
-static bool SaveResultsCsv(std::ofstream& outf, const std::vector<const CItem*>& items,
+static bool SaveResultsCsv(std::ostream& outf, const std::vector<const CItem*>& items,
     const std::vector<std::wstring>& cols, const std::unordered_map<const CItem*, LONGLONG>& adjustedSizes,
     const bool includeOwner)
 {
@@ -594,7 +628,7 @@ static bool SaveResultsCsv(std::ofstream& outf, const std::vector<const CItem*>&
 
 // ── JSON save ─────────────────────────────────────────────────────────────────
 
-static bool SaveJson(std::ofstream& outf, const std::vector<std::wstring>& cols,
+static bool SaveJson(std::ostream& outf, const std::vector<std::wstring>& cols,
     const auto& items, const auto& writeItem)
 {
     // Pre-quote all column key strings once.
@@ -615,7 +649,7 @@ static bool SaveJson(std::ofstream& outf, const std::vector<std::wstring>& cols,
     return FlushReportBuffer(outf, buffer, true);
 }
 
-static bool SaveResultsJson(std::ofstream& outf,
+static bool SaveResultsJson(std::ostream& outf,
     const std::vector<const CItem*>& items,
     const std::vector<std::wstring>& cols,
     const std::unordered_map<const CItem*, LONGLONG>& adjustedSizes,
@@ -664,12 +698,12 @@ bool SaveResults(const std::wstring& path, CItem* rootItem)
     auto cols = GetScanColumns();
     if (!includeOwner) cols.erase(cols.begin() + FIELD_OWNER);
 
-    std::ofstream outf(path, std::ios::binary);
-    if (!outf.is_open()) return false;
+    OutputStreamSink outf;
+    if (!outf.Open(path)) return false;
 
     return IsJsonPath(path)
-        ? SaveResultsJson(outf, items, cols, adjustedSizes, includeOwner)
-        : SaveResultsCsv (outf, items, cols, adjustedSizes, includeOwner);
+        ? SaveResultsJson(*outf, items, cols, adjustedSizes, includeOwner)
+        : SaveResultsCsv(*outf, items, cols, adjustedSizes, includeOwner);
 }
 
 static std::vector<std::tuple<std::wstring, const CItem*, bool>>
@@ -694,7 +728,7 @@ static std::vector<std::tuple<std::wstring, const CItem*, bool>>
     return dupeItems;
 }
 
-static bool SaveDuplicatesCsv(std::ofstream& outf, const std::vector<std::wstring>& cols,
+static bool SaveDuplicatesCsv(std::ostream& outf, const std::vector<std::wstring>& cols,
     const std::vector<std::tuple<std::wstring, const CItem*, bool>>& dupeItems)
 {
     for (const auto [i, col] : std::views::enumerate(cols))
@@ -721,7 +755,7 @@ static bool SaveDuplicatesCsv(std::ofstream& outf, const std::vector<std::wstrin
 
 // ── JSON dupe save ─────────────────────────────────────────────────────────────
 
-static bool SaveDuplicatesJson(std::ofstream& outf,
+static bool SaveDuplicatesJson(std::ostream& outf,
     const std::vector<std::wstring>& cols,
     const std::vector<std::tuple<std::wstring, const CItem*, bool>>& dupeItems)
 {
@@ -746,8 +780,8 @@ static bool SaveDuplicatesJson(std::ofstream& outf,
 
 bool SaveDuplicates(const std::wstring& path, const CItemDupe* rootDupe)
 {
-    std::ofstream outf(path, std::ios::binary);
-    if (!outf.is_open()) return false;
+    OutputStreamSink outf;
+    if (!outf.Open(path)) return false;
 
     const std::vector cols =
     {
@@ -763,13 +797,13 @@ bool SaveDuplicates(const std::wstring& path, const CItemDupe* rootDupe)
     const auto dupeItems = CollectAndSortDupes(rootDupe);
 
     return IsJsonPath(path)
-        ? SaveDuplicatesJson(outf, cols, dupeItems)
-        : SaveDuplicatesCsv (outf, cols, dupeItems);
+        ? SaveDuplicatesJson(*outf, cols, dupeItems)
+        : SaveDuplicatesCsv(*outf, cols, dupeItems);
 }
 
 // ── permissions save ──────────────────────────────────────────────────────────
 
-static bool SavePermissionsCsv(std::ofstream& outf, const std::vector<std::wstring>& cols,
+static bool SavePermissionsCsv(std::ostream& outf, const std::vector<std::wstring>& cols,
     const std::vector<const CItemPerm*>& items)
 {
     for (const auto [i, col] : std::views::enumerate(cols))
@@ -794,7 +828,7 @@ static bool SavePermissionsCsv(std::ofstream& outf, const std::vector<std::wstri
     return FlushReportBuffer(outf, buffer, true);
 }
 
-static bool SavePermissionsJson(std::ofstream& outf, const std::vector<std::wstring>& cols,
+static bool SavePermissionsJson(std::ostream& outf, const std::vector<std::wstring>& cols,
     const std::vector<const CItemPerm*>& items)
 {
     // cols order: NAME, ACCOUNT, ACCESS, RIGHTS, APPLIES_TO, MASK, INHERITED
@@ -815,8 +849,8 @@ static bool SavePermissionsJson(std::ofstream& outf, const std::vector<std::wstr
 
 bool SavePermissions(const std::wstring& path, const std::vector<const CItemPerm*>& items)
 {
-    std::ofstream outf(path, std::ios::binary);
-    if (!outf.is_open()) return false;
+    OutputStreamSink outf;
+    if (!outf.Open(path)) return false;
 
     const std::vector cols =
     {
@@ -830,6 +864,6 @@ bool SavePermissions(const std::wstring& path, const std::vector<const CItemPerm
     };
 
     return IsJsonPath(path)
-        ? SavePermissionsJson(outf, cols, items)
-        : SavePermissionsCsv (outf, cols, items);
+        ? SavePermissionsJson(*outf, cols, items)
+        : SavePermissionsCsv(*outf, cols, items);
 }
