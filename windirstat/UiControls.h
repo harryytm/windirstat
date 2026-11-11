@@ -354,6 +354,56 @@ private:
     CRect m_rect;
 };
 
+class ConsoleTerminal final
+{
+public:
+    bool Open() noexcept;
+    bool IsOpen() const noexcept;
+
+    template <typename... Args>
+    void RewriteLine(const std::wformat_string<Args...> fmt, Args&&... args)
+    {
+        if (!IsOpen()) return;
+        m_lineBuffer.assign(L"\r");
+        std::format_to(std::back_inserter(m_lineBuffer), fmt, std::forward<Args>(args)...);
+        m_lineBuffer.append(L"\x1b[K");
+        FlushRaw(m_lineBuffer);
+    }
+
+    template <typename... Args>
+    void Write(const std::wformat_string<Args...> fmt, Args&&... args)
+    {
+        if (!IsOpen()) return;
+        m_lineBuffer.clear();
+        std::format_to(std::back_inserter(m_lineBuffer), fmt, std::forward<Args>(args)...);
+        FlushRaw(m_lineBuffer);
+    }
+
+    void ClearLine() noexcept;
+    void Close(const bool redrawPrompt = false) noexcept;
+
+private:
+    void FlushRaw(const std::wstring_view text) const noexcept;
+    HANDLE m_outHandle = INVALID_HANDLE_VALUE;
+    std::wstring m_lineBuffer;
+};
+
+class ConsoleSpinner final
+{
+public:
+    ConsoleSpinner(const std::wstring_view label, std::function<int()> getPercent = {});
+
+    void Stop(bool isStdout = false) noexcept;
+
+    ~ConsoleSpinner() noexcept { Stop(); }
+    ConsoleSpinner(const ConsoleSpinner&) = delete;
+    ConsoleSpinner& operator=(const ConsoleSpinner&) = delete;
+
+private:
+    ConsoleTerminal m_terminal;
+    std::jthread m_thread;
+};
+
 // -----------------------------------------------------------------------------
 //  Native common-dialog helpers
 // -----------------------------------------------------------------------------

@@ -768,3 +768,96 @@ int CToolBar::AddImage(const CBitmap& bmp)
     }
     return index;
 }
+
+inline bool ConsoleTerminal::Open() noexcept
+{
+    AttachConsole(ATTACH_PARENT_PROCESS);
+    m_outHandle = CreateFileW(L"CONOUT$", GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
+    if (!IsOpen()) return false;
+
+    if (DWORD consoleMode = 0; GetConsoleMode(m_outHandle, &consoleMode))
+        SetConsoleMode(m_outHandle, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    m_lineBuffer.reserve(128);
+    return true;
+}
+
+inline bool ConsoleTerminal::IsOpen() const noexcept
+{
+    return m_outHandle != INVALID_HANDLE_VALUE;
+}
+
+inline void ConsoleTerminal::ClearLine() noexcept
+{
+    if (!IsOpen()) return;
+    FlushRaw(L"\r\x1b[K");
+}
+
+inline void ConsoleTerminal::Close(const bool redrawPrompt) noexcept
+{
+    if (!IsOpen()) return;
+    CloseHandle(std::exchange(m_outHandle, INVALID_HANDLE_VALUE));
+    if (redrawPrompt)
+    {
+        const HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+        if (hIn != nullptr && hIn != INVALID_HANDLE_VALUE)
+        {
+            DWORD written = 0;
+            INPUT_RECORD ir{ .EventType = KEY_EVENT, .Event = { .KeyEvent = { .bKeyDown = TRUE,
+                .wRepeatCount = 1, .wVirtualKeyCode = VK_RETURN, .uChar = { .UnicodeChar = L'\r' } } } };
+            WriteConsoleInputW(hIn, &ir, 1, &written);
+        }
+    }
+}
+
+inline void ConsoleTerminal::FlushRaw(const std::wstring_view text) const noexcept
+{
+    DWORD written = 0;
+    WriteConsoleW(m_outHandle, text.data(), static_cast<DWORD>(text.size()), &written, nullptr);
+}
+
+ConsoleSpinner::ConsoleSpinner(const std::wstring_view label, std::function<int()> getPercent)
+{
+    if (label.empty() || !m_terminal.Open()) return;
+
+    m_thread = std::jthread([&terminal = m_terminal, prefix = std::wstring(label),
+        getPercent = std::move(getPercent)](const std::stop_token& stopToken)
+        {
+            static constexpr std::array glyphs{ L'|', L'/', L'-', L'\\' };
+            static constexpr std::chrono::milliseconds interval{ 250 };
+
+            // Supress Enter key presses in the console window while the spinner is active.
+            const std::unique_ptr<std::remove_pointer_t<HHOOK>, decltype(&UnhookWindowsHookEx)> hook(
+                GetConsoleWindow() ? SetWindowsHookExW(WH_KEYBOARD_LL,
+                    [](int nCode, WPARAM wParam, LPARAM lParam) noexcept -> LRESULT {
+                        return (nCode == HC_ACTION && GetForegroundWindow() == GetConsoleWindow())
+                            ? 1 : CallNextHookEx(nullptr, nCode, wParam, lParam);
+                    }, GetModuleHandleW(nullptr), 0) : nullptr, &UnhookWindowsHookEx);
+
+            for (size_t idx = 0; !stopToken.stop_requested(); ++idx)
+            {
+                if (const int pct = getPercent ? getPercent() : -1; pct >= 0)
+                    terminal.RewriteLine(L"{} {}%...{}", prefix, pct, glyphs[idx % glyphs.size()]);
+                else
+                    terminal.RewriteLine(L"{}...{}", prefix, glyphs[idx % glyphs.size()]);
+
+                for (const auto deadline = std::chrono::steady_clock::now() + interval; !stopToken.stop_requested();)
+                {
+                    const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        deadline - std::chrono::steady_clock::now()).count();
+                    if (remaining <= 0) break;
+                    MsgWaitForMultipleObjects(0, nullptr, FALSE, static_cast<DWORD>(remaining), QS_ALLINPUT);
+                    for (MSG msg{}; PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE); DispatchMessageW(&msg))
+                        TranslateMessage(&msg);
+                }
+            }
+            terminal.ClearLine();
+        });
+}
+
+void ConsoleSpinner::Stop(bool isStdout) noexcept
+{
+    if (m_thread.joinable()) { m_thread.request_stop(); m_thread.join(); }
+    m_terminal.Close(!isStdout);
+}
