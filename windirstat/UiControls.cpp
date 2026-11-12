@@ -912,3 +912,95 @@ void NumericInputLimiter::Attach(const WindowRef wnd, const ULONGLONG min, const
         delete data;
     }
 }
+
+inline LRESULT NumericInputLimiter::SubclassProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+{
+    auto* const data = reinterpret_cast<SubclassData*>(dwRefData);
+    if (!data) return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+
+    const WindowRef wnd(hWnd);
+
+    auto triggerClamp = [&](const ULONGLONG targetVal)
+        {
+            MessageBeep(MB_OK);
+            wnd.SetText(std::to_wstring(targetVal));
+            wnd.SendMessage(EM_SETSEL, 0, -1);
+        };
+
+    auto validateAndEnforce = [&]()
+        {
+            if (const auto id = std::exchange(data->timerId, 0)) KillTimer(hWnd, id);
+
+            const int textLen = GetWindowTextLengthW(hWnd);
+            data->textBuffer.resize(static_cast<size_t>(textLen));
+
+            if (textLen > 0) GetWindowTextW(hWnd, data->textBuffer.data(), textLen + 1);
+            const std::wstring& string = data->textBuffer;
+            if (string.empty() && data->allowEmpty) return;
+
+            if (!string.empty())
+            {
+                const ULONGLONG value = std::wcstoull(string.c_str(), nullptr, 10);
+                const size_t len = string.length();
+                const bool isOverflow = (len > data->maxLen) ||
+                    (data->max == std::numeric_limits<ULONGLONG>::max() && len == 20 && string > MaxU64String);
+                if (isOverflow || value > data->max) return triggerClamp(data->max);
+                if (string.front() == L'0' && (data->min > 0 || string.length() > 1))
+                    return triggerClamp(std::max(data->min, value));
+                if (value >= data->min) return;
+
+                const size_t currentLen = string.length();
+                if (currentLen < data->maxLen)
+                {
+                    const ULONGLONG multiplier = PowersOf10[data->maxLen - currentLen];
+                    if ((value * multiplier) + (multiplier - 1) >= data->min)
+                    {
+                        data->timerId = reinterpret_cast<UINT_PTR>(data);
+                        SetTimer(hWnd, data->timerId, data->delay, nullptr);
+                        return;
+                    }
+                }
+            }
+            triggerClamp(data->min);
+        };
+
+    if (uMsg == WM_NCDESTROY)
+    {
+        if (const auto id = std::exchange(data->timerId, 0)) KillTimer(hWnd, id);
+        RemoveWindowSubclass(hWnd, &NumericInputLimiter::SubclassProc, uIdSubclass);
+        delete data;
+        return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+    }
+
+    if (uMsg == WM_TIMER && wParam == data->timerId)
+    {
+        KillTimer(hWnd, std::exchange(data->timerId, 0));
+        const std::wstring string = wnd.GetText();
+        if (!string.empty() && std::wcstoull(string.c_str(), nullptr, 10) < data->min)
+            triggerClamp(data->min);
+        return 0;
+    }
+
+    if (uMsg == WM_KILLFOCUS)
+    {
+        if (const auto id = std::exchange(data->timerId, 0)) KillTimer(hWnd, id);
+        const std::wstring string = wnd.GetText();
+        if (string.empty() ? !data->allowEmpty : std::wcstoull(string.c_str(), nullptr, 10) < data->min)
+            triggerClamp(data->min);
+        return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+    }
+
+    auto isAnyOf = [](const auto val, const auto... set) noexcept { return ((std::cmp_equal(val, set)) || ...); };
+    auto forwardAndValidate = [&]()
+        {
+            const LRESULT result = DefSubclassProc(hWnd, uMsg, wParam, lParam);
+            validateAndEnforce();
+            return result;
+        };
+
+    if (isAnyOf(uMsg, WM_CHAR, WM_PASTE, WM_CUT, WM_CLEAR)) return forwardAndValidate();
+    if (uMsg == WM_KEYDOWN && wParam == VK_DELETE) return forwardAndValidate();
+    if (uMsg == WM_NULL && wParam == SubclassId) return forwardAndValidate();
+
+    return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+}
