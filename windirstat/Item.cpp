@@ -1138,14 +1138,6 @@ void CItem::SetDone()
     SetFlag(ITF_DONE);
 }
 
-void CItem::UpwardSetDone() noexcept
-{
-    for (auto p = this; p != nullptr; p = p->GetParent())
-    {
-        p->SetDone();
-    }
-}
-
 void CItem::UpwardSetUndone() noexcept
 {
     for (auto p = this; p != nullptr; p = p->GetParent())
