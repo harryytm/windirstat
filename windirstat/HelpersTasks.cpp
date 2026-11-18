@@ -648,22 +648,90 @@ bool SparsifyFile(const std::wstring& path, CProgressDlg* pdlg, const ULONGLONG 
     return true;
 }
 
-bool CreateHardlinkFromFile(const std::wstring& pathOne, const std::wstring& pathTwo)
+DWORD CreateHardlinkFromFile(const std::wstring& sourcePath, const std::wstring& targetPath,
+    const CProgressDlg& progress)
 {
-    // Construct a temporary name in the same directory
+    // Existing links already share their data and need no replacement.
+    std::error_code ec;
+    if (std::filesystem::equivalent(sourcePath, targetPath, ec)) return ERROR_SUCCESS;
+
+    // Keep both names and their streams stable while they are compared and the source is linked.
+    const auto open = [](const std::wstring& path)
+    {
+        return SmartPointer(CloseHandle, CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
+            OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_SEQUENTIAL_SCAN, nullptr));
+    };
+    auto source = open(sourcePath);
+    if (!source.IsValid()) return GetLastError();
+    auto target = open(targetPath);
+    if (!target.IsValid()) return GetLastError();
+
+    // Compare the names, lengths and bytes of every data stream, including the unnamed stream.
+    using Streams = std::vector<std::pair<std::wstring, LONGLONG>>;
+    const auto listStreams = [&](const std::wstring& path, const HANDLE file, Streams& streams) -> DWORD
+    {
+        BY_HANDLE_FILE_INFORMATION info{};
+        if (!GetFileInformationByHandle(file, &info)) return GetLastError();
+        if (info.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT))
+            return ERROR_NOT_SUPPORTED;
+
+        WIN32_FIND_STREAM_DATA data{};
+        const SmartPointer search(FindClose, FindFirstStreamW(path.c_str(), FindStreamInfoStandard, &data, 0));
+        if (!search.IsValid()) return GetLastError();
+        do { streams.emplace_back(data.cStreamName, data.StreamSize.QuadPart); }
+        while (FindNextStreamW(search, &data));
+        if (const DWORD error = GetLastError(); error != ERROR_HANDLE_EOF) return error;
+        std::ranges::sort(streams);
+        return ERROR_SUCCESS;
+    };
+    Streams sourceStreams, targetStreams;
+    if (const DWORD error = listStreams(sourcePath, source, sourceStreams)) return error;
+    if (const DWORD error = listStreams(targetPath, target, targetStreams)) return error;
+    if (sourceStreams != targetStreams) return ERROR_NOT_SAME_OBJECT;
+
+    constexpr DWORD chunkSize = 256 * wds::Ki;
+    const auto buffers = std::make_unique_for_overwrite<BYTE[]>(2 * chunkSize);
+    for (const auto& [name, size] : sourceStreams)
+    {
+        SmartPointer sourceStream(CloseHandle, HANDLE{}), targetStream(CloseHandle, HANDLE{});
+        if (name != L"::$DATA")
+        {
+            sourceStream = open(sourcePath + name);
+            if (!sourceStream.IsValid()) return GetLastError();
+            targetStream = open(targetPath + name);
+            if (!targetStream.IsValid()) return GetLastError();
+        }
+        const HANDLE first = sourceStream.IsValid() ? sourceStream.Get() : source.Get();
+        const HANDLE second = targetStream.IsValid() ? targetStream.Get() : target.Get();
+        for (LONGLONG remaining = size; remaining > 0;)
+        {
+            if (progress.IsCancelled()) return ERROR_CANCELLED;
+            const DWORD chunk = static_cast<DWORD>(std::min<LONGLONG>(remaining, chunkSize));
+            DWORD sourceRead = 0, targetRead = 0;
+            if (!ReadFile(first, buffers.get(), chunk, &sourceRead, nullptr) ||
+                !ReadFile(second, buffers.get() + chunkSize, chunk, &targetRead, nullptr)) return GetLastError();
+            if (sourceRead != chunk || targetRead != chunk) return ERROR_HANDLE_EOF;
+            if (memcmp(buffers.get(), buffers.get() + chunkSize, chunk) != 0) return ERROR_NOT_SAME_OBJECT;
+            remaining -= chunk;
+        }
+    }
+
+    // Link the verified source beside the target, then rename the link over the target in one step.
+    if (progress.IsCancelled()) return ERROR_CANCELLED;
     GUID guid;
-    if (FAILED(CoCreateGuid(&guid))) return false;
-    std::array<WCHAR, GUIDSTRING_MAX> guidStr;
-    (void) StringFromGUID2(guid, guidStr.data(), static_cast<int>(guidStr.size()));
+    if (FAILED(CoCreateGuid(&guid))) return ERROR_GEN_FAILURE;
+    std::array<WCHAR, GUIDSTRING_MAX> guidText;
+    (void) StringFromGUID2(guid, guidText.data(), static_cast<int>(guidText.size()));
+    const std::wstring tempPath = targetPath.substr(0, targetPath.find_last_of(L'\\') + 1) + guidText.data();
+    if (!CreateHardLink(tempPath.c_str(), sourcePath.c_str(), nullptr)) return GetLastError();
 
-    // Create hardlink to source and move it over the target
-    const std::wstring tempPath = pathTwo + guidStr.data();
-    if (CreateHardLink(tempPath.c_str(), pathOne.c_str(), nullptr) == 0) return false;
-    if (MoveFileEx(tempPath.c_str(), pathTwo.c_str(), MOVEFILE_REPLACE_EXISTING) != 0) return true;
-
-    // Do not leave the temporary link behind on failure
+    // Renaming the link needs both files closed; do not leave the temporary link behind on failure.
+    source.Release();
+    target.Release();
+    if (MoveFileEx(tempPath.c_str(), targetPath.c_str(), MOVEFILE_REPLACE_EXISTING)) return ERROR_SUCCESS;
+    const DWORD error = GetLastError();
     DeleteFile(tempPath.c_str());
-    return false;
+    return error;
 }
 
 // File hashing
