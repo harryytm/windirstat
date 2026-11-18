@@ -447,6 +447,31 @@ function Test-WslRunnerChecks {
     }
 }
 
+function Test-WslDiskCleanup {
+    param($Context, $Case)
+    $root = $Context.Fixture
+    $disk = New-TestFile (Join-Path $root 'holder\ext4.vhdx') 4096
+    $runner = New-TestRunner
+    $rows = Invoke-ScanReport $runner @($root) 'physical-disk'
+
+    # Represent the disk as a distribution from a saved scan without mounting or touching a live distribution.
+    $share = '\\wsl.localhost\wds-fixture-' + [guid]::NewGuid().ToString('N')
+    $row = $rows | Where-Object Name -EQ $disk
+    $row.Name = $share
+    $row.'WinDirStat Attributes' = '0x00002004'
+    $snapshot = Join-Path $Context.Root 'virtual-disk.csv'
+    $rows | Export-Csv -LiteralPath $snapshot -NoTypeInformation -Encoding utf8
+    $app = Start-TestApp -Runner $runner -Arguments @('/loadfrom', $snapshot)
+    $app.Roots = @($root)
+    $list = Get-AppList $app -AllFiles
+    Expand-AppDirectory $app $list 'holder' $share
+    Select-AppRows $app $list @('holder')
+    Invoke-AppCommand $app 'ID_CLEANUP_EMPTY_FOLDER'
+    Wait-AppIdle $app
+    Assert-True ([IO.Directory]::Exists([IO.Path]::GetDirectoryName($disk)) -and -not [IO.File]::Exists($disk)) `
+        'Empty Folder removes the physical virtual disk represented by the saved distribution'
+}
+
 Register-Scenario wsl.scan Wsl 'The WSL helper retries noexec storage and lists share names without entering mounts' `
     Test-WslScan -Tags Wsl,External -Requires Windows,Wsl
 Register-Scenario wsl.refresh Wsl 'Refreshing a WSL folder lists it again through the helper' `
@@ -455,6 +480,8 @@ Register-Scenario wsl.hardlinks Wsl 'Filtering and partial refresh count WSL har
     Test-WslHardlinks -Tags Wsl,Persistence -Requires Windows,Wsl
 Register-Scenario wsl.interruption Wsl 'Silent WSL helpers and error output do not block pause or stop' `
     Test-WslInterruption -Tags Wsl,Race -Requires Windows,Wsl
+Register-Scenario wsl.disk-cleanup Wsl 'Emptying a virtual disk folder uses its physical children' `
+    Test-WslDiskCleanup -Tags Desktop,Filesystem -Requires Windows,Desktop
 Register-Scenario wsl.disk Wsl 'A running distribution''s disk is listed as its files and reopens from a report' `
     Test-WslDiskScan -Tags Wsl,Persistence,External -Requires Windows,Wsl
 Register-Scenario wsl.runner Wsl 'The WSL runners preserve concurrent streams, deep paths, and cleanup' `
