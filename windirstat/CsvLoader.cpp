@@ -555,8 +555,8 @@ static std::unordered_map<const CItem*, LONGLONG>
 
 static constexpr size_t ReportBufferSize = 64 * 1024;
 
-// Open the report file, or standard output when the path is a dash.
-static std::ofstream OpenReport(const std::wstring& path)
+// Open the output file, or standard output when the path targets stdout.
+static std::ofstream OpenOutputStream(const std::wstring& path)
 {
     if (!IsStdoutPath(path)) return std::ofstream(path, std::ios::binary);
     if (const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE); hOut == nullptr || hOut == INVALID_HANDLE_VALUE)
@@ -704,7 +704,7 @@ bool SaveResults(const std::wstring& path, CItem* rootItem)
     auto cols = GetScanColumns();
     if (!includeOwner) cols.erase(cols.begin() + FIELD_OWNER);
 
-    std::ofstream outf = OpenReport(path);
+    std::ofstream outf = OpenOutputStream(path);
     if (!outf.is_open()) return false;
 
     return IsJsonPath(path)
@@ -778,7 +778,7 @@ static bool SaveDuplicatesJson(std::ofstream& outf,
 
 bool SaveDuplicates(const std::wstring& path, const CItemDupe* rootDupe)
 {
-    std::ofstream outf = OpenReport(path);
+    std::ofstream outf = OpenOutputStream(path);
     if (!outf.is_open()) return false;
 
     const std::vector cols =
@@ -838,7 +838,7 @@ static bool SavePermissionsJson(std::ofstream& outf, const std::vector<std::wstr
 
 bool SavePermissions(const std::wstring& path, const std::vector<const CItemPerm*>& items)
 {
-    std::ofstream outf = OpenReport(path);
+    std::ofstream outf = OpenOutputStream(path);
     if (!outf.is_open()) return false;
 
     const std::vector cols =

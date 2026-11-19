@@ -375,23 +375,48 @@ function Test-PermissionExport {
     Assert-Equal $entry.Access 'Allow' 'The permission export preserves the applied access type'
 }
 
-function Test-StdoutCsv {
+function Test-StdoutReport {
+    param($Context, $Case)
+    $format = $Case.Format
+    $targets = $Case.Targets
+    $root = New-TestTree
+    $runner = New-TestRunner
+    Invoke-ScanReport $runner @($root) 'file' -Format $format | Out-Null
+    $expected = [IO.File]::ReadAllBytes((Join-Path $Context.Root "file.$format"))
+    foreach ($target in $targets) {
+        $process = Start-TestProcess $runner @('/saveto', $target, $root) -Redirect
+        $stdout = [IO.MemoryStream]::new()
+        $copy = $process.StandardOutput.BaseStream.CopyToAsync($stdout)
+        Assert-True $process.WaitForExit($TimeoutSeconds * 1000) "A '$target' save to a pipe terminates"
+        $null = $copy.GetAwaiter().GetResult()
+        Assert-Equal $process.ExitCode 0 "A '$target' save to a pipe exits successfully"
+        Assert-Sequence $stdout.ToArray() $expected "Standard output for '$target' carries the same bytes as the $format file"
+    }
+    $closedTarget = $targets[0]
+    $closed = Start-TestProcess $runner @('/saveto', $closedTarget, $root) -Redirect
+    $closed.StandardOutput.Close()
+    Assert-True $closed.WaitForExit($TimeoutSeconds * 1000) "A '$closedTarget' save to a closed pipe terminates"
+    Assert-Equal $closed.ExitCode 1 "A closed pipe fails the '$closedTarget' save"
+}
+
+function Test-CommandLineHelp {
     param($Context, $Case)
     $root = New-TestTree
     $runner = New-TestRunner
-    Invoke-ScanReport $runner @($root) 'file' | Out-Null
-    $expected = [IO.File]::ReadAllBytes((Join-Path $Context.Root 'file.csv'))
-    $process = Start-TestProcess $runner @('/saveto', '-', $root) -Redirect
-    $stdout = [IO.MemoryStream]::new()
-    $copy = $process.StandardOutput.BaseStream.CopyToAsync($stdout)
-    Assert-True $process.WaitForExit($TimeoutSeconds * 1000) 'A dash save to a pipe terminates'
-    $null = $copy.GetAwaiter().GetResult()
-    Assert-Equal $process.ExitCode 0 'A dash save to a pipe exits successfully'
-    Assert-Sequence $stdout.ToArray() $expected 'Standard output carries the same bytes as the csv file'
-    $closed = Start-TestProcess $runner @('/saveto', '-', $root) -Redirect
-    $closed.StandardOutput.Close()
-    Assert-True $closed.WaitForExit($TimeoutSeconds * 1000) 'A dash save to a closed pipe terminates'
-    Assert-Equal $closed.ExitCode 1 'A closed pipe fails the save'
+    foreach ($flag in @('/help', '-help')) {
+        $process = Start-TestProcess $runner @($flag) -Redirect
+        $stdout = [IO.MemoryStream]::new()
+        $copy = $process.StandardOutput.BaseStream.CopyToAsync($stdout)
+        Assert-True $process.WaitForExit($TimeoutSeconds * 1000) "A '$flag' invocation terminates"
+        $null = $copy.GetAwaiter().GetResult()
+        Assert-Equal $process.ExitCode 0 "A '$flag' invocation exits successfully"
+        $text = [Text.Encoding]::UTF8.GetString($stdout.ToArray())
+        Assert-True ($text.Contains('USAGE:')) "Help output for '$flag' includes usage section"
+        Assert-True ($text.Contains('/saveto')) "Help output for '$flag' documents /saveto"
+        Assert-True ($text.Contains('stdout-json')) "Help output for '$flag' documents stdout-json"
+    }
+    $malformed = Invoke-TestProcess $runner @('/help', $root)
+    Assert-Equal $malformed.ExitCode 1 'Combining /help with extra arguments fails cleanly'
 }
 
 foreach ($algorithm in @(@{ Name = 'sha256'; Value = 2 }, @{ Name = 'xxhash'; Value = 5 })) {
@@ -419,8 +444,14 @@ Register-Scenario reports.quiet-failure Reports `
     'Invalid external CLI requests terminate and leave the next scan usable' `
     Test-QuietFailure -Tags External
 Register-Scenario reports.stdout-csv Reports `
-    'A dash save path writes the csv report to standard output' `
-    Test-StdoutCsv -Tags External
+    'Stdout CSV targets write the csv report to standard output' `
+    Test-StdoutReport -Tags External -Data @{ Format = 'csv'; Targets = @('-', 'stdout', 'stdout-csv') }
+Register-Scenario reports.stdout-json Reports `
+    'The stdout-json target writes the json report to standard output' `
+    Test-StdoutReport -Tags External -Data @{ Format = 'json'; Targets = @('stdout-json') }
+Register-Scenario reports.cli-help Reports `
+    'The /help flag writes usage information to standard output and rejects extra arguments' `
+    Test-CommandLineHelp -Tags External
 Register-Scenario reports.forced-portable Reports 'Forced portable settings remain local on read-only media' `
     Test-ForcedPortableSettings -Tags Filesystem,Persistence
 Register-Scenario reports.reordered-columns Reports 'CSV imports resolve reordered fields beyond 255 extra columns' `
