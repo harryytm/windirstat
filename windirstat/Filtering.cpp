@@ -36,6 +36,24 @@ static bool HasUnescapedTrailingDollar(const std::wstring_view pattern)
     return slashCount % 2 == 0;
 }
 
+struct FilterSyntaxError
+{
+    std::wstring_view detailKey;
+};
+
+static constexpr std::wstring_view RegexErrorDetail(const std::regex_constants::error_type code) noexcept
+{
+    using namespace std::regex_constants;
+    switch (code)
+    {
+        case error_escape:    return IDS_PAGE_FILTERING_ERROR_INVALID_ESCAPE;
+        case error_brack:     return IDS_PAGE_FILTERING_ERROR_MISMATCHED_BRACKETS;
+        case error_paren:     return IDS_PAGE_FILTERING_ERROR_MISMATCHED_PARENS;
+        case error_badrepeat: return IDS_PAGE_FILTERING_ERROR_UNEXPECTED_QUANTIFIER;
+        default:              return IDS_PAGE_FILTERING_ERROR_INVALID_SYNTAX;
+    }
+}
+
 static bool IsRemotePattern(const std::wstring_view pattern)
 {
     return StorageSource::IsPath(pattern) || pattern.starts_with(L'^') && StorageSource::IsPath(pattern.substr(1));
@@ -151,17 +169,38 @@ std::wregex CFiltering::CompilePattern(const std::wstring& pattern, const bool u
         (remote ? std::regex_constants::ECMAScript : std::regex_constants::icase));
 }
 
-std::optional<std::wstring> CFiltering::ValidateFilters(
+std::wstring CFiltering::FormatFilterError(
+    std::wstring_view section, const size_t line, std::wstring_view token, const std::wstring_view detail)
+{
+    while (!section.empty() && (iswspace(section.back()) || section.back() == L':' || section.back() == L'：'))
+    {
+        section.remove_suffix(1);
+    }
+    while (!token.empty() && (token.back() == L'\r' || token.back() == L'\n'))
+    {
+        token.remove_suffix(1);
+    }
+    return detail.empty()
+        ? std::format(L"{}({})\t{}", section, line, token)
+        : std::format(L"{}({})\t{}\t{}", section, line, detail, token);
+}
+
+std::vector<CFiltering::FilterError> CFiltering::ValidateFilters(
     const std::wstring& text, const bool useRegex, const bool pathFilter)
 {
+    std::vector<FilterError> errors;
+    size_t lineNumber = 0;
     for (auto& token : SplitString(text, L'\n'))
     {
+        ++lineNumber;
+        const std::wstring rawToken = token;
         while (!token.empty() && (token.back() == L'\r' || token.back() == L'\\')) token.pop_back();
         if (token.empty()) continue;
         try { CompilePattern(token, useRegex, pathFilter); }
-        catch (const std::regex_error&) { return token; }
+        catch (const FilterSyntaxError& e) { errors.push_back({ lineNumber, rawToken, Localization::Lookup(e.detailKey) }); }
+        catch (const std::regex_error& e) { errors.push_back({ lineNumber, rawToken, Localization::Lookup(RegexErrorDetail(e.code())) }); }
     }
-    return {};
+    return errors;
 }
 
 void CFiltering::CompileFilters()
@@ -172,18 +211,22 @@ void CFiltering::CompileFilters()
     IncludeFilesRegex.clear();
     IncludeDirsAnchors.clear();
     IncludeDirsMatchDescendants = true;
+    std::vector<std::wstring> invalidFilters;
 
-    for (const auto& [optionString, optionRegex] : {
-        std::pair{COptions::FilteringExcludeDirs.Obj(), std::ref(ExcludeDirsRegex)},
-        std::pair{COptions::FilteringExcludeFiles.Obj(), std::ref(ExcludeFilesRegex)},
-        std::pair{COptions::FilteringIncludeDirs.Obj(), std::ref(IncludeDirsRegex)},
-        std::pair{COptions::FilteringIncludeFiles.Obj(), std::ref(IncludeFilesRegex)}})
+    for (const auto& [optionString, optionRegex, sectionId] : {
+        std::tuple{COptions::FilteringExcludeDirs.Obj(), std::ref(ExcludeDirsRegex), IDS_PAGE_FILTERING_EXCLUDE_DIRS},
+        std::tuple{COptions::FilteringExcludeFiles.Obj(), std::ref(ExcludeFilesRegex), IDS_PAGE_FILTERING_EXCLUDE_FILES},
+        std::tuple{COptions::FilteringIncludeDirs.Obj(), std::ref(IncludeDirsRegex), IDS_PAGE_FILTERING_INCLUDE_DIRS},
+        std::tuple{COptions::FilteringIncludeFiles.Obj(), std::ref(IncludeFilesRegex), IDS_PAGE_FILTERING_INCLUDE_FILES}})
     {
         const bool isIncludeDirs = &optionRegex.get() == &IncludeDirsRegex;
         const bool isExcludeDirs = &optionRegex.get() == &ExcludeDirsRegex;
         const bool isPathFilter = isIncludeDirs || isExcludeDirs;
+        size_t lineNumber = 0;
         for (auto& token : SplitString(optionString, L'\n'))
         {
+            ++lineNumber;
+            const std::wstring rawToken = token;
             try
             {
                 while (!token.empty() && (token.back() == L'\r' || token.back() == L'\\')) token.pop_back();
@@ -205,11 +248,23 @@ void CFiltering::CompileFilters()
                         ? NormalizePathRegex(token) : token, COptions::FilteringUseRegex));
                 }
             }
-            catch (const std::regex_error&)
+            catch (const FilterSyntaxError& e)
             {
-                DisplayError(Localization::Lookup(IDS_PAGE_FILTERING_INVALID_FILTER) + L" " + token);
+                invalidFilters.push_back(FormatFilterError(
+                    Localization::Lookup(sectionId), lineNumber, rawToken, Localization::Lookup(e.detailKey)));
+            }
+            catch (const std::regex_error& e)
+            {
+                invalidFilters.push_back(FormatFilterError(
+                    Localization::Lookup(sectionId), lineNumber, rawToken, Localization::Lookup(RegexErrorDetail(e.code()))));
             }
         }
+    }
+
+    if (!invalidFilters.empty())
+    {
+        CMessageBoxDlg::Show(Localization::Lookup(IDS_PAGE_FILTERING_INVALID_FILTER),
+            invalidFilters, {}, false, MB_OK | MB_ICONERROR, nullptr, { 640, 380 });
     }
 
     // Calculate the total number of bytes to test as a scan minimum

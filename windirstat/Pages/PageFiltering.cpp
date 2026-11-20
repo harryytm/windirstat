@@ -100,14 +100,35 @@ std::optional<CPropertyPage::ValidationError> CPageFiltering::PrepareSettings()
     const auto patterns = ReadBinds(FilterBindings).value();
 
     bool patternsChanged = false;
+    std::vector<std::wstring> invalidFilters;
+    HWND firstInvalidControl = nullptr;
     for (const auto& pattern : patterns)
     {
         const bool pathFilter = &pattern.setting == &COptions::FilteringExcludeDirs ||
             &pattern.setting == &COptions::FilteringIncludeDirs;
-        if (auto invalid = CFiltering::ValidateFilters(pattern.value, filteringUseRegex, pathFilter))
-            return ValidationError{ ::GetDlgItem(Handle(), pattern.setting.Bind().controlId),
-                Localization::Lookup(IDS_PAGE_FILTERING_INVALID_FILTER) + L" " + *invalid };
+        const auto sectionId =
+            &pattern.setting == &COptions::FilteringExcludeDirs ? IDS_PAGE_FILTERING_EXCLUDE_DIRS :
+            &pattern.setting == &COptions::FilteringExcludeFiles ? IDS_PAGE_FILTERING_EXCLUDE_FILES :
+            &pattern.setting == &COptions::FilteringIncludeDirs ? IDS_PAGE_FILTERING_INCLUDE_DIRS :
+            IDS_PAGE_FILTERING_INCLUDE_FILES;
+        const auto errors = CFiltering::ValidateFilters(pattern.value, filteringUseRegex, pathFilter);
+        if (!errors.empty())
+        {
+            if (firstInvalidControl == nullptr)
+                firstInvalidControl = ::GetDlgItem(Handle(), pattern.setting.Bind().controlId);
+            const std::wstring section = Localization::Lookup(sectionId);
+            for (const auto& error : errors)
+            {
+                invalidFilters.push_back(CFiltering::FormatFilterError(
+                    section, error.line, error.token, error.detail));
+            }
+        }
         patternsChanged |= pattern.Changed();
+    }
+    if (!invalidFilters.empty())
+    {
+        return ValidationError{ firstInvalidControl,
+            Localization::Lookup(IDS_PAGE_FILTERING_INVALID_FILTER), std::move(invalidFilters) };
     }
 
     const bool refreshAll = COptions::FilteringSizeMinimum != filteringSizeMinimum ||

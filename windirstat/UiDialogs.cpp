@@ -238,7 +238,11 @@ bool CPropertySheet::ApplyPages(const UINT command)
         if (const auto error = page->PrepareApply())
         {
             SelectPage(static_cast<int>(index));
-            ShowMessageBox(m_hWnd, error->message, m_caption, MB_OK | MB_ICONWARNING);
+            if (error->items.empty())
+                ShowMessageBox(m_hWnd, error->message, m_caption, MB_OK | MB_ICONWARNING);
+            else
+                CMessageBoxDlg::Show(error->message, error->items, {}, false, MB_OK | MB_ICONERROR,
+                    WindowRef(m_hWnd), { 640, 380 }, m_caption);
             ::SetFocus(error->control);
             return false;
         }

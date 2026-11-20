@@ -16,6 +16,13 @@ class CFiltering final
     static std::wregex CompilePattern(const std::wstring& pattern, bool useRegex, bool pathFilter);
 
 public:
+    struct FilterError
+    {
+        size_t line = 0;
+        std::wstring token;
+        std::wstring detail;
+    };
+
     CFiltering() = delete;
 
     static std::vector<std::wregex> ExcludeDirsRegex;
@@ -28,7 +35,9 @@ public:
     static bool FilterActive;
 
     static void CompileFilters();
-    static std::optional<std::wstring> ValidateFilters(const std::wstring& text, bool useRegex, bool pathFilter);
+    static std::vector<FilterError> ValidateFilters(const std::wstring& text, bool useRegex, bool pathFilter);
+    static std::wstring FormatFilterError(std::wstring_view section, size_t line,
+        std::wstring_view token, std::wstring_view detail = {});
     static bool IsFilterActive() { return FilterActive; }
     static std::wstring_view WithoutTrailingBackslashes(std::wstring_view path);
     static bool MatchesAnyPath(const std::wstring& path, const std::vector<std::wregex>& patterns);

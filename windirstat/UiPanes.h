@@ -612,7 +612,7 @@ public:
 
     bool Create(WindowRef parent);
 
-    struct ValidationError { HWND control; std::wstring message; };
+    struct ValidationError { HWND control; std::wstring message; std::vector<std::wstring> items = {}; };
     virtual std::optional<ValidationError> PrepareApply() { return {}; }
     virtual void BeforeApply() {}
     virtual void CommitApply() { OnOK(); }
