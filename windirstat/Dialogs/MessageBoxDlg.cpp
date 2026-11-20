@@ -58,6 +58,18 @@ WdsMessageBoxResult CMessageBoxDlg::Show(const std::wstring& message, const std:
     return { static_cast<int>(dlg.ShowModal()), dlg.IsCheckboxChecked() };
 }
 
+static std::wstring_view GetTabCell(std::wstring_view text, const size_t col) noexcept
+{
+    for (size_t i = 0; i < col; ++i)
+    {
+        const size_t tab = text.find(L'\t');
+        if (tab == std::wstring_view::npos) return {};
+        text.remove_prefix(tab + 1);
+    }
+    const size_t tab = text.find(L'\t');
+    return tab == std::wstring_view::npos ? text : text.substr(0, tab);
+}
+
 void CMessageBoxDlg::ShiftControls(const std::vector<CWnd*>& controls, const int shiftAmount)
 {
     for (auto* pCtrl : controls)
@@ -146,9 +158,21 @@ bool CMessageBoxDlg::OnInitDialog()
     m_listView.ShowWindow(m_listViewItems.empty() ? SW_HIDE : SW_SHOW);
     if (!m_listViewItems.empty())
     {
-        std::ranges::sort(m_listViewItems);
+        std::ranges::sort(m_listViewItems, [](const std::wstring& a, const std::wstring& b)
+        {
+            return StrCmpLogicalW(a.c_str(), b.c_str()) < 0;
+        });
+        m_listViewColumns = 1;
+        for (const auto& item : m_listViewItems)
+        {
+            m_listViewColumns = std::max(m_listViewColumns,
+                static_cast<size_t>(std::ranges::count(item, L'\t')) + 1);
+        }
         m_listView.SetExtendedStyle(m_listView.GetExtendedStyle() | LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT);
-        m_listView.InsertColumn(0, L"");
+        for (size_t col = 0; col < m_listViewColumns; ++col)
+        {
+            m_listView.InsertColumn(static_cast<int>(col), L"");
+        }
         m_listView.SetItemCountEx(static_cast<int>(m_listViewItems.size()), LVSICF_NOINVALIDATEALL | LVSICF_NOSCROLL);
     }
 
@@ -276,7 +300,41 @@ void CMessageBoxDlg::UpdateListViewColumnWidth()
     }
 
     const CRect rect = m_listView.GetClientRect();
-    m_listView.SetColumnWidth(0, rect.Width());
+    if (m_listViewColumns <= 1)
+    {
+        m_listView.SetColumnWidth(0, rect.Width());
+        return;
+    }
+
+    std::vector<int> maxWidths(m_listViewColumns, 0);
+    {
+        CClientDC dc(&m_listView);
+        GdiObjectSelection selectFont(&dc, m_listView.GetFont());
+        for (const auto& item : m_listViewItems)
+        {
+            for (size_t col = 0; col < m_listViewColumns; ++col)
+            {
+                const std::wstring_view cell = GetTabCell(item, col);
+                if (cell.empty()) continue;
+                SIZE sz{};
+                if (GetTextExtentPoint32W(dc, cell.data(), static_cast<int>(cell.size()), &sz))
+                {
+                    maxWidths[col] = std::max(maxWidths[col], static_cast<int>(sz.cx));
+                }
+            }
+        }
+    }
+
+    const int pad = ScaleForDpi(18);
+    int usedWidth = 0;
+    for (size_t col = 0; col + 1 < m_listViewColumns; ++col)
+    {
+        const int width = maxWidths[col] + pad;
+        m_listView.SetColumnWidth(static_cast<int>(col), width);
+        usedWidth += width;
+    }
+    m_listView.SetColumnWidth(static_cast<int>(m_listViewColumns - 1),
+        std::max<int>(rect.Width() - usedWidth, maxWidths.back() + pad));
 }
 
 void CMessageBoxDlg::OnSize(const UINT nType, const int cx, const int cy)
@@ -313,15 +371,19 @@ void CMessageBoxDlg::OnListViewGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult) cons
 
     const auto* displayInfo = reinterpret_cast<NMLVDISPINFO*>(pNMHDR);
     const int item = displayInfo->item.iItem;
-    if ((displayInfo->item.mask & LVIF_TEXT) == 0 || displayInfo->item.iSubItem != 0 ||
+    const int subItem = displayInfo->item.iSubItem;
+    if ((displayInfo->item.mask & LVIF_TEXT) == 0 || subItem < 0 ||
+        static_cast<size_t>(subItem) >= m_listViewColumns ||
         item < 0 || item >= static_cast<int>(m_listViewItems.size()) ||
         displayInfo->item.pszText == nullptr || displayInfo->item.cchTextMax <= 0)
     {
         return;
     }
 
-    wcsncpy_s(displayInfo->item.pszText, displayInfo->item.cchTextMax,
-        m_listViewItems[item].c_str(), _TRUNCATE);
+    const std::wstring_view cell = GetTabCell(m_listViewItems[item], static_cast<size_t>(subItem));
+    const size_t copyLen = std::min(cell.size(), static_cast<size_t>(displayInfo->item.cchTextMax - 1));
+    if (copyLen > 0) wmemcpy(displayInfo->item.pszText, cell.data(), copyLen);
+    displayInfo->item.pszText[copyLen] = L'\0';
 }
 
 void CMessageBoxDlg::OnListViewItemChanging(NMHDR* pNMHDR, LRESULT* pResult)

@@ -81,6 +81,7 @@ private:
     CListCtrl m_listView;
     std::wstring m_checkboxText;
     std::vector<std::wstring> m_listViewItems;
+    size_t m_listViewColumns = 1;
     bool m_checkboxChecked = false;
 };
 
