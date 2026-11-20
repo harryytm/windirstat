@@ -54,6 +54,137 @@ static constexpr std::wstring_view RegexErrorDetail(const std::regex_constants::
     }
 }
 
+static constexpr std::wstring ProcessDslAlternatives(const std::wstring_view val,
+    const bool stripLeadingDots = false, const bool alwaysGroup = false)
+{
+    if (val.empty()) throw FilterSyntaxError{ IDS_PAGE_FILTERING_ERROR_EMPTY_VALUE };
+
+    constexpr auto escapeLiteral = [](const std::wstring_view input) constexpr
+    {
+        std::wstring out;
+        out.reserve(input.size() * 2);
+        for (const wchar_t c : input)
+        {
+            if (std::wstring_view(LR"(\.^$|()[]{}+*?)").contains(c)) out += L'\\';
+            out += c;
+        }
+        return out;
+    };
+
+    std::wstring result;
+    const bool hasPipe = val.contains(L'|');
+    for (size_t start = 0; start <= val.size(); )
+    {
+        const size_t end = val.find(L'|', start);
+        auto item = (end == std::wstring_view::npos) ? val.substr(start) : val.substr(start, end - start);
+        if (stripLeadingDots) while (item.starts_with(L'.')) item.remove_prefix(1);
+        if (item.empty()) throw FilterSyntaxError{ IDS_PAGE_FILTERING_ERROR_EMPTY_VALUE };
+        if (!result.empty()) result += L'|';
+        result += escapeLiteral(item);
+        if (end == std::wstring_view::npos) break;
+        start = end + 1;
+    }
+    return (hasPipe || alwaysGroup) ? (L"(?:" + result + L")") : result;
+}
+
+static std::optional<std::vector<std::wstring>> TokenizeDslLine(const std::wstring_view line)
+{
+    const auto readToken = [line](size_t& i) -> std::optional<std::wstring>
+    {
+        std::wstring token;
+        bool inQuotes = false;
+        for (; i < line.size(); ++i)
+        {
+            const wchar_t c = line[i];
+            if (!inQuotes && iswspace(c)) break;
+            if (c != L'"') { token += c; continue; }
+            if (inQuotes && i + 1 < line.size() && line[i + 1] == L'"') { token += L'"'; ++i; continue; }
+            inQuotes = !inQuotes;
+        }
+        if (inQuotes) return std::nullopt;
+        return token;
+    };
+
+    std::vector<std::wstring> tokens;
+    for (size_t i = 0; i < line.size(); )
+    {
+        while (i < line.size() && iswspace(line[i])) ++i;
+        if (i >= line.size()) break;
+        auto token = readToken(i);
+        if (!token) return std::nullopt;
+        tokens.push_back(std::move(*token));
+    }
+    return tokens;
+}
+
+static std::optional<std::wstring> TranslateDsl(const std::wstring_view line, const bool pathFilter)
+{
+    if (!line.contains(L"::")) return std::nullopt;
+
+    const auto tokens = TokenizeDslLine(line);
+    if (!tokens) throw FilterSyntaxError{ IDS_PAGE_FILTERING_ERROR_UNCLOSED_QUOTE };
+
+    struct DslPolicy
+    {
+        std::wstring_view tag;
+        bool stripDots;
+        bool alwaysGroup;
+        std::wstring_view fileBefore;
+        std::wstring_view fileAfter;
+        std::wstring_view pathBefore;
+        std::wstring_view pathAfter;
+    };
+
+    static constexpr DslPolicy policies[] = {
+        // tag             stripDots  group  fileBefore                  fileAfter                pathBefore                  pathAfter
+        { L"ext::",        true,      true,  LR"([\s\S]*\.)",            L"$",                    LR"([\s\S]*\.)",            LR"((?:[\\/]|$))"        },
+        { L"contains::",   false,     false, LR"([\s\S]*)",              LR"([\s\S]*)",           LR"([\s\S]*)",              LR"([\s\S]*)"            },
+        { L"prefix::",     false,     false, LR"([\s\S]*(?:^|[\\/]))",   LR"([^\\/]*$)",          LR"([\s\S]*[\\/])",         LR"([^\\/]*(?:[\\/]|$))" },
+        { L"suffix::",     false,     false, LR"([\s\S]*)",              LR"((?:\.[^\\/.]*)?$)",  LR"([\s\S]*)",              LR"((?:[\\/]|$))"        },
+        { L"exact::",      false,     false, L"^",                       L"$",                    LR"([\s\S]*(?:^|[\\/]))",   LR"((?:[\\/]|$))"        },
+    };
+
+    const auto findPolicy = [](const std::wstring_view token) -> const DslPolicy*
+    {
+        const auto it = std::ranges::find_if(policies, [token](const DslPolicy& p)
+        {
+            return token.starts_with(p.tag);
+        });
+        return it != std::end(policies) ? &*it : nullptr;
+    };
+
+    if (std::ranges::none_of(*tokens, [&](const std::wstring_view t) { return findPolicy(t) != nullptr; }))
+    {
+        return std::nullopt;
+    }
+
+    std::wstring basePattern;
+    std::wstring lookaheads;
+    bool hasBase = false;
+
+    for (const auto& token : *tokens)
+    {
+        if (const auto* policy = findPolicy(token))
+        {
+            const std::wstring value = ProcessDslAlternatives(
+                std::wstring_view(token).substr(policy->tag.size()), policy->stripDots, policy->alwaysGroup);
+            lookaheads.append(std::format(L"(?={}{}{})",
+                pathFilter ? policy->pathBefore : policy->fileBefore,
+                value,
+                pathFilter ? policy->pathAfter : policy->fileAfter));
+        }
+        else
+        {
+            const std::wstring globRegex = GlobToRegex(token, false);
+            if (!hasBase) { basePattern = globRegex; hasBase = true; }
+            else lookaheads.append(std::format(L"(?=^{}$)", globRegex));
+        }
+    }
+
+    if (!hasBase) basePattern = L"[\\s\\S]*";
+    return lookaheads + basePattern;
+}
+
 static bool PrepareFilterToken(std::wstring& token, const bool defaultUseRegex, const bool pathFilter)
 {
     static constexpr std::wstring_view regexPrefix = L"regex::";
@@ -64,6 +195,11 @@ static bool PrepareFilterToken(std::wstring& token, const bool defaultUseRegex, 
     {
         token.erase(0, regexPrefix.size());
         if (token.empty()) throw FilterSyntaxError{ IDS_PAGE_FILTERING_ERROR_EMPTY_VALUE };
+    }
+    else if (auto dsl = TranslateDsl(token, pathFilter))
+    {
+        token = std::move(*dsl);
+        return true;
     }
 
     const bool useRegex = explicitRegex || defaultUseRegex;
