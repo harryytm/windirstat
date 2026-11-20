@@ -221,7 +221,7 @@ void CWinDirStatModel::OnFilterExcludeItem()
 
         // Regex filters must read the selected name literally.
         if (COptions::FilteringUseRegex)
-            value = std::regex_replace(value, std::wregex(LR"([.^$|()\[\]{}*+?\\])"), LR"(\$&)");
+            value = L"regex::" + std::regex_replace(value, std::wregex(LR"([.^$|()\[\]{}*+?\\])"), LR"(\$&)");
         else value = EscapeGlobLiteral(value);
         std::wstring& current = isFile ?
             COptions::FilteringExcludeFiles.Obj() : COptions::FilteringExcludeDirs.Obj();

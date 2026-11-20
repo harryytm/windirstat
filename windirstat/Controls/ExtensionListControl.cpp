@@ -386,7 +386,7 @@ void CExtensionListControl::OnExcludeExtension() const
 
     // Store the extension in the active filter syntax.
     const std::wstring glob = L"*" + EscapeGlobLiteral(ext);
-    const std::wstring pattern = COptions::FilteringUseRegex ? GlobToRegex(glob, false) : glob;
+    const std::wstring pattern = COptions::FilteringUseRegex ? L"regex::" + GlobToRegex(glob, false) : glob;
 
     CWinDirStatModel::Get()->StopScanningEngine();
     std::wstring& current = COptions::FilteringExcludeFiles.Obj();
