@@ -125,6 +125,11 @@ void CFileTabbedView::OnUpdate(CWnd* sender, const MODEL_CHANGE change, CItem* i
         ResetOptionalTabVisibility();
     }
 
+    if (change == MODEL_CHANGE_SELECTION_ACTION && !IsActive(FileTab::Tree))
+    {
+        SetActiveTab(FileTab::Tree);
+    }
+
     for (const auto& pane : m_panes)
     {
         if (pane.get() != sender) pane->OnUpdate(sender, change, item);
