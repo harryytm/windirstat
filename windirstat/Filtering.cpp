@@ -54,6 +54,26 @@ static constexpr std::wstring_view RegexErrorDetail(const std::regex_constants::
     }
 }
 
+static bool PrepareFilterToken(std::wstring& token, const bool defaultUseRegex, const bool pathFilter)
+{
+    static constexpr std::wstring_view regexPrefix = L"regex::";
+    while (!token.empty() && token.back() == L'\r') token.pop_back();
+
+    const bool explicitRegex = token.starts_with(regexPrefix);
+    if (explicitRegex)
+    {
+        token.erase(0, regexPrefix.size());
+        if (token.empty()) throw FilterSyntaxError{ IDS_PAGE_FILTERING_ERROR_EMPTY_VALUE };
+    }
+
+    const bool useRegex = explicitRegex || defaultUseRegex;
+    if (!useRegex && pathFilter)
+    {
+        while (!token.empty() && token.back() == L'\\') token.pop_back();
+    }
+    return useRegex;
+}
+
 static bool IsRemotePattern(const std::wstring_view pattern)
 {
     return StorageSource::IsPath(pattern) || pattern.starts_with(L'^') && StorageSource::IsPath(pattern.substr(1));
@@ -194,9 +214,12 @@ std::vector<CFiltering::FilterError> CFiltering::ValidateFilters(
     {
         ++lineNumber;
         const std::wstring rawToken = token;
-        while (!token.empty() && (token.back() == L'\r' || token.back() == L'\\')) token.pop_back();
-        if (token.empty()) continue;
-        try { CompilePattern(token, useRegex, pathFilter); }
+        try
+        {
+            const bool tokenUseRegex = PrepareFilterToken(token, useRegex, pathFilter);
+            if (token.empty()) continue;
+            CompilePattern(token, tokenUseRegex, pathFilter);
+        }
         catch (const FilterSyntaxError& e) { errors.push_back({ lineNumber, rawToken, Localization::Lookup(e.detailKey) }); }
         catch (const std::regex_error& e) { errors.push_back({ lineNumber, rawToken, Localization::Lookup(RegexErrorDetail(e.code())) }); }
     }
@@ -229,23 +252,23 @@ void CFiltering::CompileFilters()
             const std::wstring rawToken = token;
             try
             {
-                while (!token.empty() && (token.back() == L'\r' || token.back() == L'\\')) token.pop_back();
+                const bool useRegex = PrepareFilterToken(token, COptions::FilteringUseRegex, isPathFilter);
                 if (token.empty()) continue;
 
-                optionRegex.get().push_back(CompilePattern(token, COptions::FilteringUseRegex, isPathFilter));
+                optionRegex.get().push_back(CompilePattern(token, useRegex, isPathFilter));
 
                 if (isIncludeDirs)
                 {
                     // Remote separators and end or lookahead assertions can depend on the appended filename.
-                    if (COptions::FilteringUseRegex)
+                    if (useRegex)
                     {
                         std::wstring_view expression(token);
                         if (HasUnescapedTrailingDollar(expression)) expression.remove_suffix(1);
                         IncludeDirsMatchDescendants &= !IsRemotePattern(expression) && !expression.contains(L'$') &&
                             !expression.contains(L"(?=") && !expression.contains(L"(?!");
                     }
-                    IncludeDirsAnchors.emplace_back(ExtractIncludeAnchor(COptions::FilteringUseRegex
-                        ? NormalizePathRegex(token) : token, COptions::FilteringUseRegex));
+                    IncludeDirsAnchors.emplace_back(ExtractIncludeAnchor(useRegex
+                        ? NormalizePathRegex(token) : token, useRegex));
                 }
             }
             catch (const FilterSyntaxError& e)
