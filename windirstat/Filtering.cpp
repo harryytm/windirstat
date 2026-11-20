@@ -388,7 +388,7 @@ void CFiltering::CompileFilters()
             const std::wstring rawToken = token;
             try
             {
-                const bool useRegex = PrepareFilterToken(token, COptions::FilteringUseRegex, isPathFilter);
+                const bool useRegex = PrepareFilterToken(token, false, isPathFilter);
                 if (token.empty()) continue;
 
                 optionRegex.get().push_back(CompilePattern(token, useRegex, isPathFilter));

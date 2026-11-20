@@ -111,7 +111,7 @@ std::optional<CPropertyPage::ValidationError> CPageFiltering::PrepareSettings()
             &pattern.setting == &COptions::FilteringExcludeFiles ? IDS_PAGE_FILTERING_EXCLUDE_FILES :
             &pattern.setting == &COptions::FilteringIncludeDirs ? IDS_PAGE_FILTERING_INCLUDE_DIRS :
             IDS_PAGE_FILTERING_INCLUDE_FILES;
-        const auto errors = CFiltering::ValidateFilters(pattern.value, filteringUseRegex, pathFilter);
+        const auto errors = CFiltering::ValidateFilters(pattern.value, false, pathFilter);
         if (!errors.empty())
         {
             if (firstInvalidControl == nullptr)
