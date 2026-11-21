@@ -68,6 +68,7 @@ public:
 protected:
     void OnTimer(UINT_PTR nIDEvent);
     void OnCancel() override;
+    void OnToggleBackground();
 
 private:
     void StartWorkerThread();
@@ -77,7 +78,9 @@ private:
 
     CStatic m_messageCtrl;
     CWdsProgressCtrl m_progressCtrl;
+    CButton m_backgroundButton;
     CButton m_cancelButton;
+    bool m_savedBackgroundMode = false;
 
     std::atomic<bool> m_cancelRequested = false;
     std::atomic<ULONGLONG> m_current = 0;
@@ -97,6 +100,7 @@ inline std::span<const RouteEntry> CProgressDlg::Routes()
     static constexpr std::array entries
     {
         Route::Window<&OnTimer>(WM_TIMER),
+        Route::Control<&OnToggleBackground>(BN_CLICKED, IDC_PROGRESS_BACKGROUND),
         Route::Control<&OnCancel>(BN_CLICKED, IDCANCEL),
     };
     return entries;

@@ -18,6 +18,11 @@
 static NTSTATUS(NTAPI* NtSetInformationProcess)(HANDLE ProcessHandle, ULONG ProcessInformationClass,
     PVOID ProcessInformation, ULONG ProcessInformationLength) = reinterpret_cast<decltype(NtSetInformationProcess)>(
         reinterpret_cast<LPVOID>(GetProcAddress(GetModuleHandle(L"ntdll.dll"), "NtSetInformationProcess")));
+static BOOL(WINAPI* SetProcessInformationPtr)(HANDLE hProcess, ULONG ProcessInformationClass,
+    LPVOID ProcessInformation, DWORD ProcessInformationSize) = reinterpret_cast<decltype(SetProcessInformationPtr)>(
+        reinterpret_cast<LPVOID>(GetProcAddress(GetModuleHandle(L"kernel32.dll"), "SetProcessInformation")));
+
+static std::atomic<bool> s_backgroundPriorityMode = false;
 
 static void CloseAlgProvider(const BCRYPT_ALG_HANDLE h) noexcept { BCryptCloseAlgorithmProvider(h, 0); }
 static void FreeXxHashState(XXH3_state_t* state) noexcept { XXH3_freeState(state); }
@@ -861,25 +866,76 @@ std::wstring ComputeFileHashes(const CItem* item, CProgressDlg* pProgressDlg)
 // Process priority and VHD optimization
 void SetProcessPriority(const int level) noexcept
 {
-    constexpr std::array cpuPriorities = {
-        IDLE_PRIORITY_CLASS,
-        NORMAL_PRIORITY_CLASS,
-        HIGH_PRIORITY_CLASS
+    struct PriorityProfile
+    {
+        DWORD cpu;
+        ULONG io;
+        ULONG page;
+        bool ecoQos;
     };
+    constexpr std::array<PriorityProfile, 6> profiles = {{
+        { IDLE_PRIORITY_CLASS,         0, 1, true  }, // VERY_LOW (Background / Eco)
+        { IDLE_PRIORITY_CLASS,         1, 2, false }, // LOW
+        { BELOW_NORMAL_PRIORITY_CLASS, 1, 4, false }, // BELOW_NORMAL
+        { NORMAL_PRIORITY_CLASS,       2, 5, false }, // NORMAL
+        { ABOVE_NORMAL_PRIORITY_CLASS, 2, 5, false }, // ABOVE_NORMAL
+        { HIGH_PRIORITY_CLASS,         3, 5, false }, // HIGH
+    }};
     constexpr ULONG ProcessIoPriority = 33;
-    const auto priority = static_cast<size_t>(std::clamp<int>(level, LOW, HIGH));
+    constexpr ULONG ProcessPagePriority = 39;
+    constexpr ULONG ProcessPowerThrottlingClass = 4;
+    struct PowerThrottlingState
+    {
+        ULONG Version;
+        ULONG ControlMask;
+        ULONG StateMask;
+    };
+    constexpr ULONG PowerThrottlingVersion = 1;
+    constexpr ULONG PowerThrottlingExecutionSpeed = 0x1;
 
-    if (!SetPriorityClass(GetCurrentProcess(), cpuPriorities[priority]))
+    const auto& profile = profiles[static_cast<size_t>(std::clamp<int>(level, VERY_LOW, HIGH))];
+    const HANDLE process = GetCurrentProcess();
+
+    if (!SetPriorityClass(process, profile.cpu))
     {
         VTRACE(L"SetPriorityClass() Failed");
     }
 
-    ULONG ioPriority = static_cast<ULONG>(priority + 1); // Low, Normal, High
-    if (NtSetInformationProcess(GetCurrentProcess(),
-        ProcessIoPriority, &ioPriority, sizeof(ioPriority)) != 0)
+    if (NtSetInformationProcess != nullptr)
     {
-        VTRACE(L"NtSetInformationProcess() Failed");
+        ULONG ioPriority = profile.io;
+        if (NtSetInformationProcess(process, ProcessIoPriority, &ioPriority, sizeof(ioPriority)) != 0)
+        {
+            VTRACE(L"NtSetInformationProcess(ProcessIoPriority) Failed");
+        }
+
+        ULONG pagePriority = profile.page;
+        if (NtSetInformationProcess(process, ProcessPagePriority, &pagePriority, sizeof(pagePriority)) != 0)
+        {
+            VTRACE(L"NtSetInformationProcess(ProcessPagePriority) Failed");
+        }
     }
+
+    if (SetProcessInformationPtr != nullptr)
+    {
+        PowerThrottlingState throttling{
+            PowerThrottlingVersion,
+            PowerThrottlingExecutionSpeed,
+            profile.ecoQos ? PowerThrottlingExecutionSpeed : 0u
+        };
+        SetProcessInformationPtr(process, ProcessPowerThrottlingClass, &throttling, sizeof(throttling));
+    }
+}
+
+bool IsBackgroundPriorityMode() noexcept
+{
+    return s_backgroundPriorityMode.load(std::memory_order_relaxed);
+}
+
+void SetBackgroundPriorityMode(const bool enable) noexcept
+{
+    s_backgroundPriorityMode.store(enable, std::memory_order_relaxed);
+    SetProcessPriority(enable ? VERY_LOW : COptions::ProcessPriority.Obj());
 }
 
 bool OptimizeVhd(const std::wstring& vhdPath) noexcept

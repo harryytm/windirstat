@@ -26,14 +26,26 @@ bool CProgressDlg::OnInitDialog()
 
     m_messageCtrl.SubclassDlgItem(IDC_PROGRESS_MESSAGE, this);
     m_progressCtrl.SubclassDlgItem(IDC_PROGRESS_BAR, this);
+    m_backgroundButton.SubclassDlgItem(IDC_PROGRESS_BACKGROUND, this);
     m_cancelButton.SubclassDlgItem(IDCANCEL, this);
 
     // Set window title and message
     SetText(wds::strWinDirStat);
     m_messageCtrl.SetText(m_message);
 
-    // Configure cancel button
-    if (HasFlag(Flags::NoCancel)) m_cancelButton.ShowWindow(SW_HIDE);
+    // Configure background mode & cancel buttons
+    m_savedBackgroundMode = IsBackgroundPriorityMode();
+    m_backgroundButton.SetText(Localization::Lookup(m_savedBackgroundMode ? IDS_FOREGROUND : IDS_BACKGROUND));
+    if (HasFlag(Flags::NoCancel))
+    {
+        m_cancelButton.ShowWindow(SW_HIDE);
+        const CRect client = GetClientRect();
+        CRect btnRect = GetChildWindowRect(m_backgroundButton.Handle());
+        const int width = btnRect.Width();
+        btnRect.left = (client.Width() - width) / 2;
+        btnRect.right = btnRect.left + width;
+        m_backgroundButton.MoveWindow(btnRect);
+    }
 
     m_lastUpdate = std::chrono::steady_clock::now();
     m_lastCurrent = 0;
@@ -127,6 +139,13 @@ void CProgressDlg::OnTimer(const UINT_PTR nIDEvent)
     CallDefaultHandler();
 }
 
+void CProgressDlg::OnToggleBackground()
+{
+    const bool enable = !IsBackgroundPriorityMode();
+    SetBackgroundPriorityMode(enable);
+    m_backgroundButton.SetText(Localization::Lookup(enable ? IDS_FOREGROUND : IDS_BACKGROUND));
+}
+
 void CProgressDlg::OnCancel()
 {
     // Request cancellation
@@ -158,6 +177,11 @@ INT_PTR CProgressDlg::ShowModal()
     {
         m_workerThread.join();
         m_workerThread = {};
+    }
+
+    if (IsBackgroundPriorityMode() != m_savedBackgroundMode)
+    {
+        SetBackgroundPriorityMode(m_savedBackgroundMode);
     }
 
     return result;

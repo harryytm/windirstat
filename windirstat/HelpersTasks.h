@@ -114,6 +114,8 @@ std::wstring ComputeFileHashes(const CItem* item, CProgressDlg* pProgressDlg);
 
 // Process priority and VHD optimization
 void SetProcessPriority(int level) noexcept;
+bool IsBackgroundPriorityMode() noexcept;
+void SetBackgroundPriorityMode(bool enable) noexcept;
 bool OptimizeVhd(const std::wstring& vhdPath) noexcept;
 
 // Drive mappings

@@ -295,6 +295,8 @@ protected:
     void OnViewSearchResults() const { GetFileTabbedView()->SetActiveTab(FileTab::Search); }
     void OnViewToolBarSize(UINT commandId);
     void OnUpdateViewToolBarSize(CCmdUI* pCmdUI) const;
+    void OnScanBackground() const;
+    void OnUpdateScanBackground(CCmdUI* pCmdUI) const;
     void OnViewFontSize(UINT commandId);
     void OnUpdateViewFontSize(CCmdUI* pCmdUI) const;
     void OnAdvancedShadowCopy(UINT nID);
@@ -388,6 +390,8 @@ inline std::span<const RouteEntry> CMainFrame::Routes()
     static constexpr std::array entries
     {
         Route::Command<&OnConfigure>(ID_CONFIGURE),
+        Route::Command<&OnScanBackground>(ID_SCAN_BACKGROUND),
+        Route::Update<&OnUpdateScanBackground>(ID_SCAN_BACKGROUND),
         Route::Command<&OnViewShowFileTypes>(ID_VIEW_SHOWFILETYPES),
         Route::Command<&OnViewGroupUnregisteredTypes>(ID_VIEW_GROUP_TYPES),
         Route::Command<&OnViewZoomedFileTypes>(ID_VIEW_ZOOMED_FILETYPES),
@@ -438,6 +442,7 @@ inline std::span<const RouteEntry> CMainFrame::Routes()
         Route::Command<&OnViewDuplicateFiles>(ID_VIEW_DUPLICATE_FILES),
         Route::Command<&OnViewSearchResults>(ID_VIEW_SEARCH_RESULTS),
         Route::Command<&OnViewToolBarSize>(ID_VIEW_TOOLBAR_SIZE_100, ID_VIEW_TOOLBAR_SIZE_USE_WINDOWS),
+        Route::Update<&OnUpdateViewToolBarSize>(ID_VIEW_TOOLBAR_SIZE_100, ID_VIEW_TOOLBAR_SIZE_USE_WINDOWS),
         Route::Update<&OnUpdateViewToolBarSize>(ID_VIEW_TOOLBAR_SIZE_100, ID_VIEW_TOOLBAR_SIZE_USE_WINDOWS),
         Route::Command<&OnViewFontSize>(ID_VIEW_FONT_SIZE_100, ID_VIEW_FONT_SIZE_USE_WINDOWS),
         Route::Update<&OnUpdateViewFontSize>(ID_VIEW_FONT_SIZE_100, ID_VIEW_FONT_SIZE_USE_WINDOWS),

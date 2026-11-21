@@ -54,9 +54,10 @@ std::optional<CPropertyPage::ValidationError> CPageAdvanced::PrepareSettings()
     auto history = COptions::SelectDrivesFolder.Obj();
     history.resize(std::min(static_cast<size_t>(folderHistoryCount.value), history.size()));
     Stage(COptions::SelectDrivesFolder, std::move(history));
-    StageEffect([priority = priority.value, refreshAll, refreshReparsepoints, refreshTop = largeFileCount.Changed()]
+    StageEffect([priority = priority.value, priorityChanged = priority.Changed(), refreshAll, refreshReparsepoints, refreshTop = largeFileCount.Changed()]
     {
-        SetProcessPriority(priority);
+        if (priorityChanged) SetBackgroundPriorityMode(false);
+        else if (!IsBackgroundPriorityMode()) SetProcessPriority(priority);
 
         if (refreshAll)
         {

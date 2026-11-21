@@ -33,9 +33,12 @@ enum DARKMODE : std::uint8_t
 
 enum PROCESSPRIORITY : std::uint8_t
 {
-    LOW    = 0,
-    NORMAL = 1,
-    HIGH   = 2
+    VERY_LOW     = 0,
+    LOW          = 1,
+    BELOW_NORMAL = 2,
+    NORMAL       = 3,
+    ABOVE_NORMAL = 4,
+    HIGH         = 5
 };
 
 enum class GraphPane : std::uint8_t
@@ -309,7 +312,7 @@ public:
     inline static Setting<int> FontSizePercent{ OptionsGeneral, L"FontSizePercent", 0, 0, 200 };
     inline static Setting<int> LanguageId{ OptionsGeneral, L"LanguageId", 0 };
     inline static Setting<int> ProcessPriority{ OptionsGeneral, L"ProcessPriority",
-        NORMAL, LOW, HIGH, SelectionBind(IDC_PROCESS_PRIORITY) };
+        NORMAL, VERY_LOW, HIGH, SelectionBind(IDC_PROCESS_PRIORITY) };
     inline static Setting<int> FileHashAlgorithm{ OptionsGeneral, L"FileHashAlgorithm",
         HASH_XXHASH, HASH_MD5, HASH_XXHASH, SelectionBind(IDC_HASH_ALGORITHM) };
     inline static Setting<bool> SampleLargeFiles{ OptionsGeneral,

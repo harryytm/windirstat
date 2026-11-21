@@ -649,6 +649,18 @@ static void PaintWatcherAutoScroll(Gdiplus::Graphics& g, const bool enabled)
     }
 }
 
+static void PaintBackgroundMode(Gdiplus::Graphics& g)
+{
+    Gdiplus::Pen pen(Gdiplus::Color(255, 46, 160, 67), 7.0f);
+    pen.SetStartCap(Gdiplus::LineCapRound);
+    pen.SetEndCap(Gdiplus::LineCapRound);
+    pen.SetLineJoin(Gdiplus::LineJoinRound);
+    const Gdiplus::Point topChevron[] = { {14, 14}, {32, 30}, {50, 14} };
+    const Gdiplus::Point botChevron[] = { {14, 34}, {32, 50}, {50, 34} };
+    g.DrawLines(&pen, topChevron, 3);
+    g.DrawLines(&pen, botChevron, 3);
+}
+
 void CMainFrame::RebuildToolBar(const bool rebuildButtons)
 {
     constexpr int baseImageSize = 20;
@@ -685,6 +697,7 @@ void CMainFrame::RebuildToolBar(const bool rebuildButtons)
         { ID_SCAN_RESUME,             IDS_RESUME,                  Icons::Char(L'▶', RGB( 50, 205,  50))},
         { ID_SCAN_SUSPEND,            IDS_SUSPEND,                 Icons::PaintPause},
         { ID_SCAN_STOP,               IDS_STOP,                    Icons::Char(L'■', RGB(220,  20,  60))},
+        { ID_SCAN_BACKGROUND,         IDS_BACKGROUND_MODE,         PaintBackgroundMode},
         { ID_SEPARATOR,               {},{}},
         { ID_REFRESH_ALL,             IDS_REFRESH_ALL,             Icons::Char(L'↻', RGB(  0, 156, 221))},
         { ID_REFRESH_SELECTED,        IDS_REFRESH_SELECTED,        Icons::PaintRefreshSelected},
@@ -891,6 +904,17 @@ void CMainFrame::OnUpdateWatcherClear(CCmdUI* pCmdUI)
 {
     const auto* watcher = CFileWatcherControl::Get();
     pCmdUI->Enable(watcher != nullptr && watcher->HasResults());
+}
+
+void CMainFrame::OnScanBackground() const
+{
+    SetBackgroundPriorityMode(!IsBackgroundPriorityMode());
+}
+
+void CMainFrame::OnUpdateScanBackground(CCmdUI* pCmdUI) const
+{
+    pCmdUI->Enable(true);
+    pCmdUI->SetCheck(IsBackgroundPriorityMode());
 }
 
 static constexpr auto sizePercents = std::to_array<int>({ 100, 125, 150, 175, 200, 0 });
