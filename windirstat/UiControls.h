@@ -485,13 +485,6 @@ private:
         UINT delay = 0;
         UINT_PTR timerId = 0;
         bool allowEmpty = false;
-        std::wstring textBuffer;
-
-        SubclassData(const ULONGLONG minVal, const ULONGLONG maxVal, const size_t maxLenVal, const UINT delayVal, const UINT_PTR timerIdVal, const bool allowEmptyVal)
-            : min(minVal), max(maxVal), maxLen(maxLenVal), delay(delayVal), timerId(timerIdVal), allowEmpty(allowEmptyVal)
-        {
-            textBuffer.reserve(24);
-        }
     };
 
     static inline constexpr auto PowersOf10 = []() constexpr
@@ -520,7 +513,7 @@ private:
 
     static inline constexpr std::wstring_view MaxU64String{ MaxU64Buffer.data(), MaxU64Buffer.size() };
 
-    static inline LRESULT CALLBACK SubclassProc(HWND hWnd, UINT uMsg,
+    static LRESULT CALLBACK SubclassProc(HWND hWnd, UINT uMsg,
         WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 };
 

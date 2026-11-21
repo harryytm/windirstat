@@ -1005,19 +1005,24 @@ void NumericInputLimiter::Attach(const WindowRef wnd, const ULONGLONG min, const
         return;
     }
 
-    SubclassData* const data = new NumericInputLimiter::SubclassData{ min, max, countDigits(max), effectiveDelay, 0, allowEmpty }; // <-- Change
+    auto* const data = new SubclassData{ min, max, countDigits(max), effectiveDelay, 0, allowEmpty };
     if (!SetWindowSubclass(wnd.m_hWnd, &NumericInputLimiter::SubclassProc, NumericInputLimiter::SubclassId, reinterpret_cast<DWORD_PTR>(data)))
     {
         delete data;
     }
 }
 
-inline LRESULT NumericInputLimiter::SubclassProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+LRESULT NumericInputLimiter::SubclassProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
 {
     auto* const data = reinterpret_cast<SubclassData*>(dwRefData);
     if (!data) return DefSubclassProc(hWnd, uMsg, wParam, lParam);
 
     const WindowRef wnd(hWnd);
+
+    auto stopTimer = [&]() noexcept
+        {
+            if (const auto id = std::exchange(data->timerId, 0)) KillTimer(hWnd, id);
+        };
 
     auto triggerClamp = [&](const ULONGLONG targetVal)
         {
@@ -1028,13 +1033,8 @@ inline LRESULT NumericInputLimiter::SubclassProc(HWND hWnd, UINT uMsg, WPARAM wP
 
     auto validateAndEnforce = [&]()
         {
-            if (const auto id = std::exchange(data->timerId, 0)) KillTimer(hWnd, id);
-
-            const int textLen = GetWindowTextLengthW(hWnd);
-            data->textBuffer.resize(static_cast<size_t>(textLen));
-
-            if (textLen > 0) GetWindowTextW(hWnd, data->textBuffer.data(), textLen + 1);
-            const std::wstring& string = data->textBuffer;
+            stopTimer();
+            const std::wstring string = wnd.GetText();
             if (string.empty() && data->allowEmpty) return;
 
             if (!string.empty())
@@ -1055,7 +1055,7 @@ inline LRESULT NumericInputLimiter::SubclassProc(HWND hWnd, UINT uMsg, WPARAM wP
                     if ((value * multiplier) + (multiplier - 1) >= data->min)
                     {
                         data->timerId = reinterpret_cast<UINT_PTR>(data);
-                        SetTimer(hWnd, data->timerId, data->delay, nullptr);
+                        wnd.SetTimer(data->timerId, data->delay);
                         return;
                     }
                 }
@@ -1065,7 +1065,7 @@ inline LRESULT NumericInputLimiter::SubclassProc(HWND hWnd, UINT uMsg, WPARAM wP
 
     if (uMsg == WM_NCDESTROY)
     {
-        if (const auto id = std::exchange(data->timerId, 0)) KillTimer(hWnd, id);
+        stopTimer();
         RemoveWindowSubclass(hWnd, &NumericInputLimiter::SubclassProc, uIdSubclass);
         delete data;
         return DefSubclassProc(hWnd, uMsg, wParam, lParam);
@@ -1073,7 +1073,7 @@ inline LRESULT NumericInputLimiter::SubclassProc(HWND hWnd, UINT uMsg, WPARAM wP
 
     if (uMsg == WM_TIMER && wParam == data->timerId)
     {
-        KillTimer(hWnd, std::exchange(data->timerId, 0));
+        stopTimer();
         const std::wstring string = wnd.GetText();
         if (!string.empty() && std::wcstoull(string.c_str(), nullptr, 10) < data->min)
             triggerClamp(data->min);
@@ -1082,7 +1082,7 @@ inline LRESULT NumericInputLimiter::SubclassProc(HWND hWnd, UINT uMsg, WPARAM wP
 
     if (uMsg == WM_KILLFOCUS)
     {
-        if (const auto id = std::exchange(data->timerId, 0)) KillTimer(hWnd, id);
+        stopTimer();
         const std::wstring string = wnd.GetText();
         if (string.empty() ? !data->allowEmpty : std::wcstoull(string.c_str(), nullptr, 10) < data->min)
             triggerClamp(data->min);
