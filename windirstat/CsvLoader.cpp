@@ -361,11 +361,11 @@ static CItem* BuildAndAttachItem(const std::wstring& namePath, const std::wstrin
 // Legacy results compatibility functor
 struct LegacyResultsCompat
 {
-    enum class Format : std::uint8_t { Unknown, Current, LegacyV2_0, LegacyV2_5, LegacyV2_6 };
+    enum class Format : std::uint8_t { Unknown, Current, LegacyV2_0, LegacyV2_5, Draft };
     Format format = Format::Unknown;
     wchar_t buffer[16]{};
 
-    // Obsolete bit positions used exclusively for legacy deserialization
+    // Obsolete bit positions used exclusively for legacy/draft deserialization
     enum LegacyBits : std::uint32_t
     {
         // v2.0.1 – v2.2.2 (16-bit ITEMTYPE)
@@ -379,20 +379,20 @@ struct LegacyResultsCompat
         V2_5_ITF_HARDLINK     = 1u << 26,
         V2_5_ITF_ROOTITEM     = 1u << 27,
         V2_5_ITF_DONE         = 1u << 28,
+        V2_5_ITF_SHIFT_MASK   = V2_5_ITF_HARDLINK | V2_5_ITF_ROOTITEM | V2_5_ITF_DONE,
         V2_5_ROOT_SIG         = V2_5_ITF_DONE | V2_5_ITF_ROOTITEM,
 
-        // v2.6.0 – v2.9.3 (32-bit ITEMTYPE)
-        LEGACY_IT_MASK        = 0x000007FF,
-        LEGACY_ITF_WSL        = 1u << 13,
-        LEGACY_ITF_SCANERROR  = 1u << 14,
-        LEGACY_ITF_REMOTE     = 1u << 15,
-        LEGACY_ITHASH_MASK    = 0x000F0000,
-        LEGACY_ITRP_MASK      = 0x00F00000,
-        LEGACY_ITF_BASE_MASK  = 0x1F000000,
-        LEGACY_ITF_ROOTITEM   = 1u << 28,
-        LEGACY_ITF_DONE       = 1u << 29,
-        LEGACY_ITF_UPPER_MASK = 0xC0000000,
-        V2_6_ROOT_SIG         = LEGACY_ITF_DONE | LEGACY_ITF_ROOTITEM,
+        // Draft rearranged 32-bit ITEMTYPE (574db0df / 479fdee9)
+        DRAFT_IT_MASK         = 0x000007FF,
+        DRAFT_ITHASH_MASK     = 0x00007800,
+        DRAFT_ITRP_MASK       = 0x00078000,
+        DRAFT_ITF_WSL         = 1u << 21,
+        DRAFT_ITF_SCANERROR   = 1u << 22,
+        DRAFT_ITF_REMOTE      = 1u << 23,
+        DRAFT_ITF_BASE_MASK   = 0x1F000000,
+        DRAFT_ITF_UPPER_MASK  = 0x60000000,
+        DRAFT_ITF_DONE        = 1u << 31,
+        DRAFT_ROOT_SIG        = DRAFT_ITF_DONE | ITF_ROOTITEM,
     };
 
     using MatchFn = std::uint32_t(*)(std::uint32_t);
@@ -404,22 +404,19 @@ struct LegacyResultsCompat
     };
 
     static constexpr MatchFn conditionsV2_5[] = {
-        [](std::uint32_t v) -> std::uint32_t { return (v & LEGACY_IT_MASK); },
-        [](std::uint32_t v) -> std::uint32_t { return (v & (LEGACY_ITHASH_MASK | LEGACY_ITRP_MASK)) >> 5; },
-        [](std::uint32_t v) -> std::uint32_t { return (v & V2_5_ITF_BASE_MASK); },
-        [](std::uint32_t v) -> std::uint32_t { return (v & (V2_5_ITF_HARDLINK | V2_5_ITF_ROOTITEM)) << 1; },
-        [](std::uint32_t v) -> std::uint32_t { return (v & V2_5_ITF_DONE) ? ITF_DONE : 0; },
+        [](std::uint32_t v) -> std::uint32_t { return v & (std::to_underlying(IT_MASK | ITHASH_MASK | ITRP_MASK) | V2_5_ITF_BASE_MASK); },
+        [](std::uint32_t v) -> std::uint32_t { return (v & V2_5_ITF_SHIFT_MASK) << 1; },
     };
 
-    static constexpr MatchFn conditionsV2_6[] = {
-        [](std::uint32_t v) -> std::uint32_t { return (v & LEGACY_IT_MASK); },
-        [](std::uint32_t v) -> std::uint32_t { return (v & (LEGACY_ITHASH_MASK | LEGACY_ITRP_MASK)) >> 5; },
-        [](std::uint32_t v) -> std::uint32_t { return (v & LEGACY_ITF_BASE_MASK); },
-        [](std::uint32_t v) -> std::uint32_t { return (v & LEGACY_ITF_UPPER_MASK) >> 1; },
-        [](std::uint32_t v) -> std::uint32_t { return (v & LEGACY_ITF_DONE) ? ITF_DONE : 0; },
-        [](std::uint32_t v) -> std::uint32_t { return (v & LEGACY_ITF_WSL) ? ITF_WSL : 0; },
-        [](std::uint32_t v) -> std::uint32_t { return (v & LEGACY_ITF_SCANERROR) ? ITF_SCANERROR : 0; },
-        [](std::uint32_t v) -> std::uint32_t { return (v & LEGACY_ITF_REMOTE) ? ITF_REMOTE : 0; },
+    static constexpr MatchFn conditionsDraft[] = {
+        [](std::uint32_t v) -> std::uint32_t { return (v & DRAFT_IT_MASK); },
+        [](std::uint32_t v) -> std::uint32_t { return (v & (DRAFT_ITHASH_MASK | DRAFT_ITRP_MASK)) << 5; },
+        [](std::uint32_t v) -> std::uint32_t { return (v & DRAFT_ITF_BASE_MASK); },
+        [](std::uint32_t v) -> std::uint32_t { return (v & DRAFT_ITF_UPPER_MASK) << 1; },
+        [](std::uint32_t v) -> std::uint32_t { return (v & DRAFT_ITF_DONE) ? ITF_DONE : 0; },
+        [](std::uint32_t v) -> std::uint32_t { return (v & DRAFT_ITF_WSL) ? ITF_WSL : 0; },
+        [](std::uint32_t v) -> std::uint32_t { return (v & DRAFT_ITF_SCANERROR) ? ITF_SCANERROR : 0; },
+        [](std::uint32_t v) -> std::uint32_t { return (v & DRAFT_ITF_REMOTE) ? ITF_REMOTE : 0; },
     };
 
     std::wstring_view operator()(const std::wstring_view attrStr)
@@ -428,11 +425,11 @@ struct LegacyResultsCompat
 
         const auto rawValue = static_cast<std::uint32_t>(wcstoull(attrStr.data(), nullptr, 16));
 
-        // Detect legacy results format on the first row and warn the user
+        // Detect legacy/draft results format on the first row and warn the user
         if (format == Format::Unknown)
         {
-            if ((rawValue & V2_6_ROOT_SIG) == V2_6_ROOT_SIG) format = Format::LegacyV2_6;
-            else if ((rawValue & ITF_DONE) != 0) format = Format::Current;
+            if ((rawValue & (ITF_DONE | ITF_ROOTITEM)) == (ITF_DONE | ITF_ROOTITEM)) format = Format::Current;
+            else if ((rawValue & DRAFT_ROOT_SIG) == DRAFT_ROOT_SIG) format = Format::Draft;
             else if ((rawValue & V2_5_ROOT_SIG) == V2_5_ROOT_SIG) format = Format::LegacyV2_5;
             else if ((rawValue >> 16) == 0 && (rawValue & V2_0_ROOT_SIG) == V2_0_ROOT_SIG) format = Format::LegacyV2_0;
             else format = Format::Current;
@@ -442,7 +439,7 @@ struct LegacyResultsCompat
         }
 
         const std::span<const MatchFn> activeConditions =
-            format == Format::LegacyV2_6 ? std::span<const MatchFn>(conditionsV2_6) :
+            format == Format::Draft      ? std::span<const MatchFn>(conditionsDraft) :
             format == Format::LegacyV2_5 ? std::span<const MatchFn>(conditionsV2_5) :
                                            std::span<const MatchFn>(conditionsV2_0);
 
