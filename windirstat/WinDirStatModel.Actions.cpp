@@ -824,7 +824,7 @@ void CWinDirStatModel::OnComputeHash()
     CItem* const item = GetAllSelected().front();
     const ULONGLONG logicalSize = item->GetSizeLogical();
     const ULONGLONG totalBlocks = logicalSize / wds::Mi + (logicalSize % wds::Mi != 0);
-    CProgressDlg(totalBlocks, CProgressDlg::Flags::PercentageOnly, GetMainWindow(), [&](CProgressDlg* pdlg)
+    CProgressDlg(totalBlocks, CProgressDlg::Flags::PercentageOnly | CProgressDlg::Flags::ShowRate, GetMainWindow(), [&](CProgressDlg* pdlg)
     {
         hashResult = ComputeFileHashes(item, pdlg);
     }).ShowModal();

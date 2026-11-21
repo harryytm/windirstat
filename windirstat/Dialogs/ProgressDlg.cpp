@@ -35,6 +35,9 @@ bool CProgressDlg::OnInitDialog()
     // Configure cancel button
     if (HasFlag(Flags::NoCancel)) m_cancelButton.ShowWindow(SW_HIDE);
 
+    m_lastUpdate = std::chrono::steady_clock::now();
+    m_lastCurrent = 0;
+
     // Start timer for progress updates or marquee repaints.
     SetTimer(TIMER_ID, TIMER_INTERVAL);
 
@@ -86,14 +89,28 @@ void CProgressDlg::OnTimer(const UINT_PTR nIDEvent)
         const ULONGLONG current = m_current.load();
         const double percent = (static_cast<double>(current) * 100) / m_total;
 
+        if (HasFlag(Flags::ShowRate))
+        {
+            const auto now = std::chrono::steady_clock::now();
+            const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_lastUpdate).count();
+            if (ms >= 1000)
+            {
+                const ULONGLONG delta = current >= m_lastCurrent ? current - m_lastCurrent : 0;
+                const double perSecond = (static_cast<double>(delta) * 1000.0) / static_cast<double>(ms);
+                m_speedSuffix = std::format(L" ({}/s)", FormatDouble(perSecond));
+                m_lastUpdate = now;
+                m_lastCurrent = current;
+            }
+        }
+
         // Update progress bar position
         m_progressCtrl.SetPos(static_cast<int>(std::clamp(percent, 0.0, 100.0)));
 
         // Update message with progress
         const std::wstring progressText = HasFlag(Flags::PercentageOnly) ?
-            std::format(L"{}: {}%", m_message, FormatDouble(percent)) :
-            std::format(L"{}: {}% ({} / {})",
-                m_message, FormatDouble(percent), FormatCount(current), FormatCount(m_total));
+            std::format(L"{}: {}%{}", m_message, FormatDouble(percent), m_speedSuffix) :
+            std::format(L"{}: {}% ({} / {}){}",
+                m_message, FormatDouble(percent), FormatCount(current), FormatCount(m_total), m_speedSuffix);
         if (m_messageCtrl.GetText() != progressText)
         {
             m_messageCtrl.SetRedraw(false);

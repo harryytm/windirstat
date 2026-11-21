@@ -27,7 +27,13 @@ public:
 class CProgressDlg final : public MessageTarget<CProgressDlg, CDialog>
 {
 public:
-    enum class Flags : std::uint8_t { None = 0, NoCancel = 1, PercentageOnly = 2 };
+    enum class Flags : std::uint8_t
+    {
+        None           = 0,
+        NoCancel       = 1 << 0,
+        PercentageOnly = 1 << 1,
+        ShowRate       = 1 << 2,
+    };
     friend constexpr Flags operator|(const Flags lhs, const Flags rhs) noexcept
     {
         return static_cast<Flags>(std::to_underlying(lhs) | std::to_underlying(rhs));
@@ -75,6 +81,9 @@ private:
     std::atomic<ULONGLONG> m_current = 0;
     const ULONGLONG m_total = 0;
     const Flags m_flags = Flags::None;
+    ULONGLONG m_lastCurrent = 0;
+    std::wstring m_speedSuffix;
+    std::chrono::steady_clock::time_point m_lastUpdate{};
 
     std::jthread m_workerThread;
     static constexpr UINT_PTR TIMER_ID = 1;
