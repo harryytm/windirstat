@@ -704,6 +704,21 @@ void CDrivesList::OnDoubleClick(NMHDR* /*pNMHDR*/, LRESULT* pResult)
     (void) GetParent().SendMessage(WM_WDS_SELECT_DRIVES_OK);
 }
 
+void CDrivesList::OnLButtonDown(UINT /*nFlags*/, const CPoint point)
+{
+    if (GetParent().IsChecked(IDC_STICKY_SELECTION_CHECKBOX))
+    {
+        if (const int i = HitTest(point); i >= 0)
+        {
+            const bool selected = IsItemSelected(i);
+            SetItemState(i, selected ? 0 : (LVIS_SELECTED | LVIS_FOCUSED), LVIS_SELECTED | LVIS_FOCUSED);
+            SetFocus();
+            return;
+        }
+    }
+    CallDefaultHandler();
+}
+
 void CDrivesList::OnLvnDeleteItem(NMHDR* pNMHDR, LRESULT* pResult) const
 {
     const auto pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
@@ -737,6 +752,7 @@ bool CSelectDrivesDlg::OnInitDialog()
     // Restore local scan preferences.
     SetChecked(IDC_SCAN_DUPLICATES, COptions::ScanForDuplicates);
     SetChecked(IDC_FAST_SCAN_CHECKBOX, COptions::UseFastScanEngine);
+    SetChecked(IDC_STICKY_SELECTION_CHECKBOX, COptions::UseStickySelection);
     SetActiveRadio(IDC_RADIO_TARGET_DRIVES_ALL + COptions::SelectDrivesRadio);
     m_selectedDrives = COptions::SelectDrivesDrives;
 
@@ -745,6 +761,7 @@ bool CSelectDrivesDlg::OnInitDialog()
     m_layout.AddControl(IDOK, 1, 1, 0, 0);
     m_layout.AddControl(IDCANCEL, 1, 1, 0, 0);
     m_layout.AddControl(IDC_TARGET_DRIVES_LIST, 0, 0, 1, 1);
+    m_layout.AddControl(IDC_STICKY_SELECTION_CHECKBOX, 1, 0, 0, 0);
     m_layout.AddControl(IDC_RADIO_TARGET_DRIVES_ALL, 0, 0, 1, 0);
     m_layout.AddControl(IDC_RADIO_TARGET_DRIVES_SUBSET, 0, 0, 1, 0);
     m_layout.AddControl(IDC_RADIO_TARGET_FOLDER, 0, 1, 0, 0);
@@ -947,6 +964,7 @@ bool CSelectDrivesDlg::SaveSelection()
     COptions::SelectDrivesDrives = m_selectedDrives;
     COptions::ScanForDuplicates = IsChecked(IDC_SCAN_DUPLICATES);
     COptions::UseFastScanEngine = IsChecked(IDC_FAST_SCAN_CHECKBOX);
+    COptions::UseStickySelection = IsChecked(IDC_STICKY_SELECTION_CHECKBOX);
     return true;
 }
 

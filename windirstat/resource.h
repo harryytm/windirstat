@@ -228,6 +228,7 @@
 #define IDC_REMOTE_CHANGE               1201
 #define IDC_S3_TOKEN_TOGGLE             1202
 #define IDC_REMOTE_TARGET               1203
+#define IDC_STICKY_SELECTION_CHECKBOX   1205
 #define ID_APP_ABOUT                    32768
 #define ID_APP_EXIT                     32769
 #define ID_CLEANUP_CREATE_HARDLINK      32770
@@ -449,7 +450,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        126
 #define _APS_NEXT_COMMAND_VALUE         32973
-#define _APS_NEXT_CONTROL_VALUE         1205
+#define _APS_NEXT_CONTROL_VALUE         1206
 #define _APS_NEXT_SYMED_VALUE           126
 #endif
 #endif

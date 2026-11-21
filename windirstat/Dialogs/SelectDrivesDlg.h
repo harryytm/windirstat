@@ -96,6 +96,7 @@ static std::span<const RouteEntry> Routes();
 protected:
     void OnLvnDeleteItem(NMHDR* pNMHDR, LRESULT* pResult) const;
     void OnDoubleClick(NMHDR* pNMHDR, LRESULT* pResult);
+    void OnLButtonDown(UINT nFlags, CPoint point);
 
 private:
     bool m_sortInProgress = false;
@@ -203,6 +204,7 @@ inline std::span<const RouteEntry> CDrivesList::Routes()
     {
         Route::ReflectNotify<&OnLvnDeleteItem>(LVN_DELETEITEM),
         Route::ReflectNotify<&OnDoubleClick>(NM_DBLCLK),
+        Route::Window<&OnLButtonDown>(WM_LBUTTONDOWN),
     };
     return entries;
 }
@@ -219,6 +221,7 @@ inline std::span<const RouteEntry> CSelectDrivesDlg::Routes()
         Route::Control<&OnBnClickedRadioTargetDrivesSubset>(BN_CLICKED, IDC_RADIO_TARGET_DRIVES_SUBSET),
         Route::Control<&OnBnClickedRadioTargetFolder>(BN_CLICKED, IDC_RADIO_TARGET_FOLDER),
         Route::Control<&OnBnClickedUpdateButtons>(BN_CLICKED, IDC_SCAN_DUPLICATES),
+        Route::Control<&OnBnClickedUpdateButtons>(BN_CLICKED, IDC_STICKY_SELECTION_CHECKBOX),
         Route::Control<&OnBnDoubleclickedRadio>(BN_DOUBLECLICKED, IDC_RADIO_TARGET_DRIVES_ALL),
         Route::Control<&OnBnDoubleclickedRadio>(BN_DOUBLECLICKED, IDC_RADIO_TARGET_DRIVES_SUBSET),
         Route::Control<&OnBnDoubleclickedRadio>(BN_DOUBLECLICKED, IDC_RADIO_TARGET_FOLDER),
