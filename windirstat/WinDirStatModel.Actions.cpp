@@ -247,7 +247,7 @@ void CWinDirStatModel::OnCleanupSparsifyFile()
         totalProgress += (item->GetSizeLogical() + wds::Mi - 1) / wds::Mi;
     }
 
-    CProgressDlg(totalProgress, CProgressDlg::Flags::PercentageOnly, GetMainWindow(), [&](CProgressDlg* pdlg)
+    CProgressDlg(totalProgress, CProgressDlg::Flags::PercentageOnly | CProgressDlg::Flags::ShowMiBRate, GetMainWindow(), [&](CProgressDlg* pdlg)
     {
         for (const auto* item : itemsSelected)
         {
@@ -282,7 +282,7 @@ void CWinDirStatModel::OnSaveReport(const UINT commandId) const
     if (!path) return;
     const bool showProgress = commandId == ID_SAVE_RESULTS;
     const ULONGLONG totalItems = showProgress ? GetRootItem()->GetItemsCount() + 1 : 0;
-    const auto flags = showProgress ? CProgressDlg::Flags::None : CProgressDlg::Flags::NoCancel;
+    const auto flags = showProgress ? CProgressDlg::Flags::ShowRate : CProgressDlg::Flags::NoCancel;
     CProgressDlg(totalItems, flags, GetMainWindow(), [&](CProgressDlg* pdlg)
     {
         switch (commandId)
@@ -303,7 +303,7 @@ void CWinDirStatModel::OnLoadResults()
     std::error_code ec;
     const auto fileSize = std::filesystem::file_size(*path, ec);
     CItem* newroot = nullptr;
-    CProgressDlg(ec ? 0 : fileSize, CProgressDlg::Flags::NoCancel | CProgressDlg::Flags::PercentageOnly, GetMainWindow(), [&](CProgressDlg* pdlg)
+    CProgressDlg(ec ? 0 : fileSize, CProgressDlg::Flags::NoCancel | CProgressDlg::Flags::PercentageOnly | CProgressDlg::Flags::ShowByteRate, GetMainWindow(), [&](CProgressDlg* pdlg)
     {
         newroot = LoadResults(*path, pdlg);
     }).ShowModal();
@@ -824,7 +824,7 @@ void CWinDirStatModel::OnComputeHash()
     CItem* const item = GetAllSelected().front();
     const ULONGLONG logicalSize = item->GetSizeLogical();
     const ULONGLONG totalBlocks = logicalSize / wds::Mi + (logicalSize % wds::Mi != 0);
-    CProgressDlg(totalBlocks, CProgressDlg::Flags::PercentageOnly | CProgressDlg::Flags::ShowRate, GetMainWindow(), [&](CProgressDlg* pdlg)
+    CProgressDlg(totalBlocks, CProgressDlg::Flags::PercentageOnly | CProgressDlg::Flags::ShowMiBRate, GetMainWindow(), [&](CProgressDlg* pdlg)
     {
         hashResult = ComputeFileHashes(item, pdlg);
     }).ShowModal();

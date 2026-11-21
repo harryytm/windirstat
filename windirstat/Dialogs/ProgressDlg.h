@@ -33,6 +33,8 @@ public:
         NoCancel       = 1 << 0,
         PercentageOnly = 1 << 1,
         ShowRate       = 1 << 2,
+        ShowByteRate   = 1 << 3,
+        ShowMiBRate    = 1 << 4,
     };
     friend constexpr Flags operator|(const Flags lhs, const Flags rhs) noexcept
     {

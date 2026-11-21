@@ -89,7 +89,7 @@ void CProgressDlg::OnTimer(const UINT_PTR nIDEvent)
         const ULONGLONG current = m_current.load();
         const double percent = (static_cast<double>(current) * 100) / m_total;
 
-        if (HasFlag(Flags::ShowRate))
+        if (HasFlag(Flags::ShowRate) || HasFlag(Flags::ShowByteRate) || HasFlag(Flags::ShowMiBRate))
         {
             const auto now = std::chrono::steady_clock::now();
             const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_lastUpdate).count();
@@ -97,7 +97,12 @@ void CProgressDlg::OnTimer(const UINT_PTR nIDEvent)
             {
                 const ULONGLONG delta = current >= m_lastCurrent ? current - m_lastCurrent : 0;
                 const double perSecond = (static_cast<double>(delta) * 1000.0) / static_cast<double>(ms);
-                m_speedSuffix = std::format(L" ({}/s)", FormatDouble(perSecond));
+                if (HasFlag(Flags::ShowMiBRate))
+                    m_speedSuffix = std::format(L" ({}/s)", FormatBytes(static_cast<ULONGLONG>(perSecond * wds::Mi)));
+                else if (HasFlag(Flags::ShowByteRate))
+                    m_speedSuffix = std::format(L" ({}/s)", FormatBytes(static_cast<ULONGLONG>(perSecond)));
+                else
+                    m_speedSuffix = std::format(L" ({}/s)", FormatDouble(perSecond));
                 m_lastUpdate = now;
                 m_lastCurrent = current;
             }
