@@ -417,6 +417,7 @@ void CGraphView::ClearHover()
 {
     const bool hadHover = m_hoverItem != nullptr;
     m_hoverItem = nullptr;
+    UpdateToolTip(nullptr);
     if (hadHover && Handle() != nullptr) Invalidate(false);
     if (UpdateHoverDetails(nullptr, true) && CMainFrame::Get() != nullptr)
         CMainFrame::Get()->UpdatePaneText();
@@ -459,7 +460,11 @@ void CGraphView::OnMouseMove(UINT /*nFlags*/, const CPoint point)
 
     const CItem* item = ResolveItemAtPoint(point);
     const bool itemChanged = item != m_hoverItem;
-    if (itemChanged) m_hoverItem = item;
+    if (itemChanged)
+    {
+        m_hoverItem = item;
+        UpdateToolTip(item);
+    }
     const bool detailsChanged = UpdateHoverDetails(item, itemChanged);
     if (itemChanged || detailsChanged) Invalidate(false);
     if (detailsChanged) CMainFrame::Get()->UpdatePaneText();
@@ -470,7 +475,7 @@ int CGraphView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
     if (CWinDirStatPane::OnCreate(lpCreateStruct) == -1) return -1;
     if (m_toolTip.Create(this))
     {
-        m_toolTip.AddTool(this, L"");
+        m_toolTip.AddTool(this, HoverToolTipId, CRect(), LPSTR_TEXTCALLBACKW);
         m_toolTip.SetMaxTipWidth(ScaleForDpi(1000));
         m_toolTip.SendNativeMessage(TTM_SETDELAYTIME, TTDT_INITIAL, 1000);
         m_toolTip.Activate();
@@ -478,31 +483,31 @@ int CGraphView::OnCreate(const LPCREATESTRUCT lpCreateStruct)
     return 0;
 }
 
-bool CGraphView::PreprocessMessage(MSG* pMsg)
+void CGraphView::UpdateToolTip(const CItem* item)
 {
-    if (pMsg != nullptr && IsWindow(m_toolTip.Handle()))
-    {
-        m_toolTip.RelayEvent(pMsg);
-    }
-    return CWinDirStatPane::PreprocessMessage(pMsg);
+    if (!IsWindow(m_toolTip.Handle())) return;
+
+    m_toolTip.Pop();
+    m_toolTipText.clear();
+    m_toolTip.SetToolRect(this, HoverToolTipId, CRect());
+    if (item == nullptr) return;
+
+    m_toolTip.SetToolRect(this, HoverToolTipId, GetClientRect());
+    MSG message = CurrentMessage();
+    m_toolTip.RelayEvent(&message);
+}
+
+void CGraphView::OnTtnGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult)
+{
+    auto* info = reinterpret_cast<NMTTDISPINFOW*>(pNMHDR);
+    m_toolTipText = m_hoverItem != nullptr ? m_hoverItem->GetToolTipText() : std::wstring{};
+    info->lpszText = m_toolTipText.empty() ? nullptr : m_toolTipText.data();
+    *pResult = 0;
 }
 
 bool CGraphView::UpdateHoverDetails(const CItem* item, const bool itemChanged)
 {
     if (!itemChanged) return false;
-
-    if (IsWindow(m_toolTip.Handle()))
-    {
-        if (item == nullptr)
-        {
-            m_toolTip.UpdateTipText(this, wds::strEmpty);
-            m_toolTip.Pop();
-        }
-        else
-        {
-            m_toolTip.UpdateTipText(this, item->GetToolTipText());
-        }
-    }
 
     const std::wstring path = item == nullptr ? std::wstring{} : item->GetPath();
     const ULONGLONG size = item == nullptr ? 0 : !item->HasSizePhysical() ? item->GetSizeLogical() : item->TmiGetSize();

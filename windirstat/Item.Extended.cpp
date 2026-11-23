@@ -1208,7 +1208,7 @@ std::wstring CItem::GetToolTipText() const
     const bool isFullPath = IsTypeOrFlag(IT_MYCOMPUTER, IT_DRIVE, IT_DIRECTORY, IT_FILE);
 
     // Tooltip header with item name or folder path
-    std::wstring output = ((isDirFile) ? GetFolderPath() : std::wstring(GetNameView(isDrive))) + L"\n\n";
+    std::wstring output = (isDirFile) ? GetFolderPath() : std::wstring(GetNameView(isDrive));
 
     std::vector<std::pair<std::wstring, std::wstring>> activeRows;
     activeRows.reserve(10); // Reserve space for the most common number of rows to avoid reallocations
@@ -1230,9 +1230,9 @@ std::wstring CItem::GetToolTipText() const
     for (const auto& [condition, labelId, col] : rows)
     {
         if (!condition) continue;
-        activeRows.emplace_back(Localization::Lookup(labelId),
-            col == COL_NAME ? std::wstring(GetNameView()) :
-            col == COL_OWNER ? GetOwner(true) : GetText(col));
+        std::wstring value = col == COL_NAME ? std::wstring(GetNameView()) :
+            col == COL_OWNER ? GetOwner(true) : GetText(col);
+        if (!value.empty()) activeRows.emplace_back(Localization::Lookup(labelId), std::move(value));
     }
 
     // Calculate the maximum visual width of the labels to align the values in the tooltip
@@ -1247,22 +1247,27 @@ std::wstring CItem::GetToolTipText() const
         return visualWidth;
     };
 
-    // Calculate the maximum visual width of the labels to align the values in the tooltip
-    int maxVisualWidth = 0;
-    for (const auto& [label, value] : activeRows)
+    if (!activeRows.empty())
     {
-        maxVisualWidth = std::max(maxVisualWidth, calculateVisualWidth(label));
-    }
+        output.append(L"\n\n");
 
-    // Format the tooltip text with aligned labels and values
-    for (const auto& [label, value] : activeRows)
-    {
-        const int paddingNeeded = maxVisualWidth - calculateVisualWidth(label);
-        output.append(std::format(L"{}{}\t{}\n", label, std::wstring(paddingNeeded, L'\u2007'), value));
-    }
+        // Calculate the maximum visual width of the labels to align the values in the tooltip
+        int maxVisualWidth = 0;
+        for (const auto& [label, value] : activeRows)
+        {
+            maxVisualWidth = std::max(maxVisualWidth, calculateVisualWidth(label));
+        }
 
-    // Remove the trailing newline character if present
-    if (!output.empty() && output.back() == L'\n') output.pop_back();
+        // Format the tooltip text with aligned labels and values
+        for (const auto& [label, value] : activeRows)
+        {
+            const int paddingNeeded = maxVisualWidth - calculateVisualWidth(label);
+            output.append(std::format(L"{}{}\t{}\n", label, std::wstring(paddingNeeded, L'\u2007'), value));
+        }
+
+        // Remove the trailing newline character if present
+        if (output.back() == L'\n') output.pop_back();
+    }
 
     return output;
 }

@@ -67,6 +67,7 @@ protected:
 
     CItem* ResolveItemAtPoint(CPoint point, bool isScreenCoords = false);
     void ClearHover();
+    void UpdateToolTip(const CItem* item);
     static bool IsExtensionHighlighted(const CItem* item);
     static const CItem* GetDisplayItem(const CItem* item);
     static void RenderHighlightRectangle(CDC* pDC, CRect rect, bool hover = false);
@@ -89,14 +90,15 @@ protected:
     CBitmap m_bitmap;
     CSize m_dimmedSize{ 0, 0 };
     CBitmap m_dimmed;
+    static constexpr UINT HoverToolTipId = 1;
     CToolTipCtrl m_toolTip;
+    std::wstring m_toolTipText;
 
 public:
     static std::span<const RouteEntry> Routes();
 
 protected:
     int OnCreate(LPCREATESTRUCT lpCreateStruct);
-    bool PreprocessMessage(MSG* pMsg) override;
     void OnSize(UINT nType, int cx, int cy);
     void OnLButtonDblClk(UINT nFlags, CPoint point);
     void OnLButtonDown(UINT nFlags, CPoint point);
@@ -106,11 +108,12 @@ protected:
     void OnMouseMove(UINT nFlags, CPoint point);
     void OnMouseLeave();
     bool OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+    void OnTtnGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult);
     void OnFontSizeChanged(int, int) override
     {
         if (IsWindow(m_toolTip.Handle()))
         {
-            m_toolTip.Pop();
+            UpdateToolTip(nullptr);
             m_toolTip.SetMaxTipWidth(ScaleForDpi(1000));
         }
         TrimRenderCache();
@@ -132,6 +135,7 @@ inline std::span<const RouteEntry> CGraphView::Routes()
         Route::Window<&OnMouseMove>(WM_MOUSEMOVE),
         Route::Window<&OnMouseLeave>(WM_MOUSELEAVE),
         Route::Window<&OnMouseWheel>(WM_MOUSEWHEEL),
+        Route::Notify<&OnTtnGetDispInfo>(TTN_GETDISPINFOW, HoverToolTipId),
     };
     return entries;
 }
