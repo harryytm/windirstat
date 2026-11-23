@@ -1207,29 +1207,48 @@ std::wstring CItem::GetToolTipText() const
     const bool isPath     = IsTypeOrFlag(IT_MYCOMPUTER, IT_DRIVE, IT_DIRECTORY);
     const bool isFullPath = IsTypeOrFlag(IT_MYCOMPUTER, IT_DRIVE, IT_DIRECTORY, IT_FILE);
 
-    // Tooltip header with item name or folder path
-    std::wstring output = (isDirFile) ? GetFolderPath() : std::wstring(GetNameView(isDrive));
+    enum TooltipRow : int
+    {
+        ROW_NAME,
+        ROW_ITEMS,
+        ROW_FILES,
+        ROW_FOLDERS,
+        ROW_PERCENTAGE,
+        ROW_SIZE_PHYSICAL,
+        ROW_SIZE_LOGICAL,
+        ROW_ATTRIBUTES,
+        ROW_LAST_CHANGE,
+        ROW_OWNER
+    };
+
+    const auto& visibility = COptions::GraphViewTooltipVisibility.Obj();
+
+    // Tooltip header with full path (or parent folder path when Name row is shown) or item name
+    const bool showNameRow = isFile && COptions::IsColumnVisible(visibility, ROW_NAME);
+    std::wstring output = isDirFile
+        ? (showNameRow ? GetFolderPath() : GetPath())
+        : std::wstring(GetNameView(isDrive));
 
     std::vector<std::pair<std::wstring, std::wstring>> activeRows;
     activeRows.reserve(10); // Reserve space for the most common number of rows to avoid reallocations
 
-    const struct { bool condition; std::wstring_view labelId; int col; } rows[] =
+    const struct { int row; bool condition; std::wstring_view labelId; int col; } rows[] =
     {
-        { isFile,     IDS_COL_NAME,          COL_NAME          },
-        { isPath,     IDS_COL_ITEMS,         COL_ITEMS         },
-        { isPath,     IDS_COL_FILES,         COL_FILES         },
-        { isPath,     IDS_COL_FOLDERS,       COL_FOLDERS       },
-        { true,       IDS_COL_PERCENTAGE,    COL_PERCENTAGE    },
-        { true,       IDS_COL_SIZE_PHYSICAL, COL_SIZE_PHYSICAL },
-        { isFullPath, IDS_COL_SIZE_LOGICAL,  COL_SIZE_LOGICAL  },
-        { isFullPath, IDS_COL_ATTRIBUTES,    COL_ATTRIBUTES    },
-        { isFullPath, IDS_COL_LAST_CHANGE,   COL_LAST_CHANGE   },
-        { isDirFile,  IDS_COL_OWNER,         COL_OWNER         },
+        { ROW_NAME,          isFile,     IDS_COL_NAME,          COL_NAME          },
+        { ROW_ITEMS,         isPath,     IDS_COL_ITEMS,         COL_ITEMS         },
+        { ROW_FILES,         isPath,     IDS_COL_FILES,         COL_FILES         },
+        { ROW_FOLDERS,       isPath,     IDS_COL_FOLDERS,       COL_FOLDERS       },
+        { ROW_PERCENTAGE,    true,       IDS_COL_PERCENTAGE,    COL_PERCENTAGE    },
+        { ROW_SIZE_PHYSICAL, true,       IDS_COL_SIZE_PHYSICAL, COL_SIZE_PHYSICAL },
+        { ROW_SIZE_LOGICAL,  isFullPath, IDS_COL_SIZE_LOGICAL,  COL_SIZE_LOGICAL  },
+        { ROW_ATTRIBUTES,    isFullPath, IDS_COL_ATTRIBUTES,    COL_ATTRIBUTES    },
+        { ROW_LAST_CHANGE,   isFullPath, IDS_COL_LAST_CHANGE,   COL_LAST_CHANGE   },
+        { ROW_OWNER,         isDirFile,  IDS_COL_OWNER,         COL_OWNER         },
     };
 
-    for (const auto& [condition, labelId, col] : rows)
+    for (const auto& [row, condition, labelId, col] : rows)
     {
-        if (!condition) continue;
+        if (!condition || !COptions::IsColumnVisible(visibility, row)) continue;
         std::wstring value = col == COL_NAME ? std::wstring(GetNameView()) :
             col == COL_OWNER ? GetOwner(true) : GetText(col);
         if (!value.empty()) activeRows.emplace_back(Localization::Lookup(labelId), std::move(value));

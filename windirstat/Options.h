@@ -185,6 +185,7 @@ public:
         L"ListFullRowSelection", true, CheckboxBind(IDC_FULL_ROW_SELECTION) };
     inline static Setting<bool> GraphViewEnableTooltip{ OptionsGeneral, L"GraphViewEnableTooltip", true };
     inline static Setting<int> GraphViewTooltipDelay{ OptionsGeneral, L"GraphViewTooltipDelay", 0, 0, 10000 };
+    inline static Setting<std::vector<int>> GraphViewTooltipVisibility{ OptionsGeneral, L"GraphViewTooltipVisibility" };
     inline static Setting<bool> ListGrid{ OptionsGeneral, L"ListGrid", false, CheckboxBind(IDC_SHOW_GRID) };
     inline static Setting<bool> ListStripes{ OptionsGeneral, L"ListStripes", false, CheckboxBind(IDC_SHOW_STRIPES) };
     inline static Setting<bool> SuspendVisualizationRedrawOnResize{ OptionsGeneral, L"SuspendVisualizationRedrawOnResize", false };
