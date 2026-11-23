@@ -150,6 +150,10 @@ void COptions::PostProcessPersistedSettings()
     {
         visibility = { 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0 };
     }
+    if (auto& visibility = GraphViewTooltipVisibility.Obj(); visibility.empty())
+    {
+        visibility = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 };
+    }
 
     // Adjust windows for sanity
     SanitizeRect(MainWindowPlacement.Obj().rcNormalPosition);
