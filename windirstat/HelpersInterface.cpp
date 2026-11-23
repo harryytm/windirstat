@@ -97,6 +97,7 @@ std::wstring FormatBytes(const ULONGLONG n) noexcept
 std::wstring FormatSizeSuffixes(const ULONGLONG n) noexcept
 {
     using namespace wds;
+    enum : size_t { Bytes, KiB, MiB, GiB, TiB, KB = KiB, MB, GB, TB };
     constexpr auto GetThreshold = [](ULONGLONG unit) constexpr -> ULONGLONG {
         return (unit * (M - 5) + (K - 1)) / K;
     };
@@ -105,14 +106,20 @@ std::wstring FormatSizeSuffixes(const ULONGLONG n) noexcept
         ULONGLONG bytes;
         ULONGLONG threshold;
         size_t unit;
-    } units[] = {
-        {Ti, GetThreshold(Gi), 4},
-        {Gi, GetThreshold(Mi), 3},
-        {Mi, GetThreshold(Ki), 2},
-        {Ki, Ki,               1},
+    } unitsBin[] = {
+        {Ti, GetThreshold(Gi), TiB},
+        {Gi, GetThreshold(Mi), GiB},
+        {Mi, GetThreshold(Ki), MiB},
+        {Ki, Ki,               KiB},
+    }, unitsDec[] = {
+        {T, GetThreshold(G), TB},
+        {G, GetThreshold(M), GB},
+        {M, GetThreshold(K), MB},
+        {K, K,               KB},
     };
 
-    for (const auto& [bytes, threshold, unit] : units) [[msvc::flatten]]
+    for (const auto& [bytes, threshold, unit] :
+        (COptions::UseBinSizeSuffixes ? unitsBin : unitsDec)) [[msvc::flatten]]
     {
         if (n < threshold) continue;
 
@@ -425,9 +432,11 @@ DWORD ParseAttributes(const std::wstring_view& attributes) noexcept
 // Size specifiers
 const std::array<std::wstring, 5>& GetSizeUnitLabels() noexcept
 {
-    static const std::array labels{ Localization::Lookup(IDS_SPEC_BYTES), Localization::Lookup(IDS_SPEC_KiB),
+    static const std::array labelsBin{ Localization::Lookup(IDS_SPEC_BYTES), Localization::Lookup(IDS_SPEC_KiB),
         Localization::Lookup(IDS_SPEC_MiB), Localization::Lookup(IDS_SPEC_GiB), Localization::Lookup(IDS_SPEC_TiB) };
-    return labels;
+    static const std::array labelsDec{ Localization::Lookup(IDS_SPEC_BYTES), Localization::Lookup(IDS_SPEC_KB),
+        Localization::Lookup(IDS_SPEC_MB), Localization::Lookup(IDS_SPEC_GB), Localization::Lookup(IDS_SPEC_TB) };
+    return COptions::UseBinSizeSuffixes ? labelsBin : labelsDec;
 }
 
 // System information
