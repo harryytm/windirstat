@@ -1209,29 +1209,32 @@ std::wstring CItem::GetToolTipText() const
     const bool isFullPath = IsTypeOrFlag(IT_MYCOMPUTER, IT_DRIVE, IT_DIRECTORY, IT_FILE);
 
     // Tooltip header with item name or folder path
-    std::wstring output = [&] {
-        return (isDirFile) ? GetFolderPath() : std::wstring(GetNameView(isDrive));
-    }() + L"\n\n";
+    std::wstring output = ((isDirFile) ? GetFolderPath() : std::wstring(GetNameView(isDrive))) + L"\n\n";
 
     std::vector<std::pair<std::wstring, std::wstring>> activeRows;
     activeRows.reserve(10); // Reserve space for the most common number of rows to avoid reallocations
 
-    // Helper lambda to conditionally add rows to the tooltip
-    auto addRow = [&](const bool condition, const std::wstring_view labelId, auto lazyValue) {
-        if (condition) activeRows.emplace_back(Localization::Lookup(labelId), lazyValue());
+    const struct { bool condition; std::wstring_view labelId; int col; } rows[] =
+    {
+        { isFile,     IDS_COL_NAME,          COL_NAME          },
+        { isPath,     IDS_COL_ITEMS,         COL_ITEMS         },
+        { isPath,     IDS_COL_FILES,         COL_FILES         },
+        { isPath,     IDS_COL_FOLDERS,       COL_FOLDERS       },
+        { true,       IDS_COL_PERCENTAGE,    COL_PERCENTAGE    },
+        { true,       IDS_COL_SIZE_PHYSICAL, COL_SIZE_PHYSICAL },
+        { isFullPath, IDS_COL_SIZE_LOGICAL,  COL_SIZE_LOGICAL  },
+        { isFullPath, IDS_COL_ATTRIBUTES,    COL_ATTRIBUTES    },
+        { isFullPath, IDS_COL_LAST_CHANGE,   COL_LAST_CHANGE   },
+        { isDirFile,  IDS_COL_OWNER,         COL_OWNER         },
     };
 
-    //     Condition   Label                     Value
-    addRow(isFile,     L"IDS_COL_NAME",          [&] { return std::wstring(GetNameView());           });
-    addRow(isPath,     L"IDS_COL_ITEMS",         [&] { return FormatCount(GetItemsCount());          });
-    addRow(isPath,     L"IDS_COL_FILES",         [&] { return FormatCount(GetFilesCount());          });
-    addRow(isPath,     L"IDS_COL_FOLDERS",       [&] { return FormatCount(GetFoldersCount());        });
-    addRow(true,       L"IDS_COL_PERCENTAGE",    [&] { return GetText(COL_PERCENTAGE);               });
-    addRow(true,       L"IDS_COL_SIZE_PHYSICAL", [&] { return FormatSizeSuffixes(GetSizePhysical()); });
-    addRow(isFullPath, L"IDS_COL_SIZE_LOGICAL",  [&] { return FormatSizeSuffixes(GetSizeLogical());  });
-    addRow(isFullPath, L"IDS_COL_ATTRIBUTES",    [&] { return FormatAttributes(GetAttributes());     });
-    addRow(isFullPath, L"IDS_COL_LAST_CHANGE",   [&] { return FormatFileTime(GetLastChange(), true); });
-    addRow(isDirFile,  L"IDS_COL_OWNER",         [&] { return GetOwner(true);                        });
+    for (const auto& [condition, labelId, col] : rows)
+    {
+        if (!condition) continue;
+        activeRows.emplace_back(Localization::Lookup(labelId),
+            col == COL_NAME ? std::wstring(GetNameView()) :
+            col == COL_OWNER ? GetOwner(true) : GetText(col));
+    }
 
     // Calculate the maximum visual width of the labels to align the values in the tooltip
     static constexpr auto calculateVisualWidth = [](const std::wstring_view text) -> int {
