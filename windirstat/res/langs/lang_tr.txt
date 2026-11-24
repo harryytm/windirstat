@@ -190,6 +190,7 @@ IDS_MENU_TREEMAP_SQUARIFIED=S&quarified
 IDS_MENU_TREEMAP=Ağaç &Haritası
 IDS_MENU_VIEW=&Görünüm
 IDS_MENU_WATCHER=Dosya izleyiciyi başlat
+IDS_MENU_ZOOMED_FILETYPES=Yakınlaştırılan Klasördeki Dosya Türlerini Göster
 IDS_MENU_ZOOMIN=Yakınlaştır
 IDS_MENU_ZOOMOUT=Uzaklaştır
 IDS_MENU_ZOOMRESET=Yakınlaştırmayı &Sıfırla

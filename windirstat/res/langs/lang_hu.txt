@@ -190,6 +190,7 @@ IDS_MENU_TREEMAP_SQUARIFIED=S&quarified
 IDS_MENU_TREEMAP=&Térképfa
 IDS_MENU_VIEW=&Nézet
 IDS_MENU_WATCHER=Fájlfelügyelő indítása
+IDS_MENU_ZOOMED_FILETYPES=Nagyított mappa fájltípusainak mutatása
 IDS_MENU_ZOOMIN=&Nagyít
 IDS_MENU_ZOOMOUT=&Kicsinyít
 IDS_MENU_ZOOMRESET=N&agyítás alaphelyzetbe

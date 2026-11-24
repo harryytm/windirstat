@@ -221,6 +221,7 @@ public:
         L"ShowMicrosoftProgress", false, CheckboxBind(IDC_SHOW_MICROSOFT_PROGRESS) };
     inline static Setting<bool> ShowFileTypes{ OptionsGeneral, L"ShowFileTypes", true };
     inline static Setting<bool> GroupUnregisteredTypes{ OptionsGeneral, L"GroupUnregisteredTypes", false };
+    inline static Setting<bool> ShowZoomedFileTypes{ OptionsGeneral, L"ShowZoomedFileTypes", false };
     inline static Setting<bool> ShowFreeSpace{ OptionsGeneral, L"ShowFreeSpace", false };
     inline static Setting<bool> ShowStatusBar{ OptionsGeneral, L"ShowStatusBar", true };
     inline static Setting<bool> ShowTimeSpent{ OptionsFileTree, L"ShowTimeSpent", true };

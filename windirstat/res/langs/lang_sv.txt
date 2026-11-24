@@ -190,6 +190,7 @@ IDS_MENU_TREEMAP_SQUARIFIED=S&quarified
 IDS_MENU_TREEMAP=&Trädkarta
 IDS_MENU_VIEW=&Visa
 IDS_MENU_WATCHER=Starta filövervakning
+IDS_MENU_ZOOMED_FILETYPES=Visa filtyper i in&zoomad mapp
 IDS_MENU_ZOOMIN=Zooma &in
 IDS_MENU_ZOOMOUT=Zooma &ut
 IDS_MENU_ZOOMRESET=&Återställ zoom

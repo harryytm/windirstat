@@ -190,6 +190,7 @@ IDS_MENU_TREEMAP_SQUARIFIED=S&quarified
 IDS_MENU_TREEMAP=&Trekart
 IDS_MENU_VIEW=&Vis
 IDS_MENU_WATCHER=Start filovervåking
+IDS_MENU_ZOOMED_FILETYPES=Vis filtyper i &zoomet mappe
 IDS_MENU_ZOOMIN=Zoom &inn
 IDS_MENU_ZOOMOUT=&Zoom ut
 IDS_MENU_ZOOMRESET=&Nullstill zoom

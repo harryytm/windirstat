@@ -190,6 +190,7 @@ IDS_MENU_TREEMAP_SQUARIFIED=स्क्वैरिफ़ाइड (&Q)
 IDS_MENU_TREEMAP=ट्रीमैप (&T)
 IDS_MENU_VIEW=दृश्य (&V)
 IDS_MENU_WATCHER=फ़ाइल निगरानी शुरू करें
+IDS_MENU_ZOOMED_FILETYPES=ज़ूम किए गए फ़ोल्डर के फ़ाइल प्रकार दिखाएँ (&Z)
 IDS_MENU_ZOOMIN=ज़ूम इन करें (&I)
 IDS_MENU_ZOOMOUT=ज़ूम आउट करें (&O)
 IDS_MENU_ZOOMRESET=ज़ूम रीसेट करें (&R)

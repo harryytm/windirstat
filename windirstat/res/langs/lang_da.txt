@@ -190,6 +190,7 @@ IDS_MENU_TREEMAP_SQUARIFIED=S&quarified
 IDS_MENU_TREEMAP=&Træstruktur
 IDS_MENU_VIEW=&Vis
 IDS_MENU_WATCHER=Start filovervågning
+IDS_MENU_ZOOMED_FILETYPES=Vis filtyper i zoomet mappe
 IDS_MENU_ZOOMIN=Zoom ind
 IDS_MENU_ZOOMOUT=Zoom ud
 IDS_MENU_ZOOMRESET=&Nulstil zoom

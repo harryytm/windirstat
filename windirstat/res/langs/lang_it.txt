@@ -190,6 +190,7 @@ IDS_MENU_TREEMAP_SQUARIFIED=S&quadrato
 IDS_MENU_TREEMAP=Mappa s&truttura
 IDS_MENU_VIEW=&Visualizza
 IDS_MENU_WATCHER=Avvia monitor file
+IDS_MENU_ZOOMED_FILETYPES=Visualizza tipi di file nella cartella con &zoom
 IDS_MENU_ZOOMIN=Z&oom +
 IDS_MENU_ZOOMOUT=Zoo&m -
 IDS_MENU_ZOOMRESET=Ripristina &zoom

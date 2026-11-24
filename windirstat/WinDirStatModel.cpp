@@ -50,6 +50,7 @@ void CWinDirStatModel::ClearScanState()
 
     // Reset extension data
     GetExtensionData()->clear();
+    CExtensionData{}.swap(m_scopedExtensionData);
     m_registeredExtensions.clear();
 
     // Clean up visual artifacts - controllers manage their own root items
@@ -260,6 +261,62 @@ ULONGLONG CWinDirStatModel::GetRootSize() const
     assert(m_rootItem != nullptr);
     assert(IsRootDone());
     return m_rootItem->GetSizeLogical();
+}
+
+CItem* CWinDirStatModel::GetExtensionScopeRoot() const
+{
+    return (COptions::ShowZoomedFileTypes && IsZoomed() && m_zoomItem != nullptr)
+        ? m_zoomItem : m_rootItem;
+}
+
+const CExtensionData* CWinDirStatModel::GetDisplayedExtensionData()
+{
+    const CItem* scope = GetExtensionScopeRoot();
+    if (scope == nullptr || scope == m_rootItem)
+    {
+        m_scopedExtensionData.clear();
+        return &m_extensionData;
+    }
+
+    // Accumulate non-atomically on the UI thread, then copy palette colors once per extension.
+    std::unordered_map<std::wstring, std::pair<ULONGLONG, ULONGLONG>, string_hash, std::equal_to<>> totals;
+    totals.reserve(std::min<size_t>(m_extensionData.size(), 256));
+    std::wstring extBuf;
+    CItem::ForEachExtensionFile(scope, [&totals, &extBuf](const CItem* item)
+    {
+        const auto name = item->GetNameView();
+        const auto pos = name.rfind(L'.');
+        std::wstring_view extView;
+        if (pos != std::wstring_view::npos)
+        {
+            const auto raw = name.substr(pos);
+            extBuf.resize(raw.size());
+            bool ascii = true;
+            for (size_t i = 0; i < raw.size(); ++i)
+            {
+                const wchar_t c = raw[i];
+                ascii &= c < 0x80;
+                extBuf[i] = (c >= L'A' && c <= L'Z') ? static_cast<wchar_t>(c + (L'a' - L'A')) : c;
+            }
+            if (!ascii) _wcslwr_s(extBuf.data(), extBuf.size() + 1);
+            extView = extBuf;
+        }
+        auto it = totals.find(extView);
+        if (it == totals.end()) it = totals.emplace(std::wstring(extView), std::pair<ULONGLONG, ULONGLONG>{}).first;
+        ++it->second.first;
+        it->second.second += item->GetSizeLogical();
+    });
+
+    m_scopedExtensionData.clear();
+    m_scopedExtensionData.reserve(totals.size());
+    for (const auto& [ext, countAndBytes] : totals)
+    {
+        auto& record = m_scopedExtensionData[ext];
+        record.files.store(countAndBytes.first, std::memory_order_relaxed);
+        record.bytes.store(countAndBytes.second, std::memory_order_relaxed);
+        if (const auto it = m_extensionData.find(ext); it != m_extensionData.end()) record.color = it->second.color;
+    }
+    return &m_scopedExtensionData;
 }
 
 // Starts a refresh of all mount points in our tree.
