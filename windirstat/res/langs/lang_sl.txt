@@ -190,6 +190,7 @@ IDS_MENU_TREEMAP_SQUARIFIED=S&quarified
 IDS_MENU_TREEMAP=&Drevesna karta
 IDS_MENU_VIEW=&Pogled
 IDS_MENU_WATCHER=Zaženi nadzor datotek
+IDS_MENU_ZOOMED_FILETYPES=Pokaži vrste datotek v povečani mapi
 IDS_MENU_ZOOMIN=Po&večaj (+)
 IDS_MENU_ZOOMOUT=P&omanjšaj (-)
 IDS_MENU_ZOOMRESET=&Ponastavi povečavo

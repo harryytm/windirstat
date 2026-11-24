@@ -434,6 +434,7 @@ void CGraphView::OnContextMenu(WindowRef /*pWnd*/, const CPoint point)
         ID_TREEMAP_SHOW_EXTENSIONS,
         ID_TREEMAP_LOGICAL_SIZE,
         ID_TREEMAP_PHYSICAL_SIZE,
+        ID_VIEW_ZOOMED_FILETYPES,
         ID_VIEW_GRAPH_PRESET_CLASSIC,
         ID_VIEW_GRAPH_PRESET_CALM,
         ID_VIEW_GRAPH_PRESET_FLAT,

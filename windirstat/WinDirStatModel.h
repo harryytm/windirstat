@@ -91,8 +91,11 @@ public:
     COLORREF GetZoomColor() const { return RGB(0, 0, 255); }
 
     CExtensionData* GetExtensionData() { return &m_extensionData; }
+    const CExtensionData* GetDisplayedExtensionData();
+    void ClearScopedExtensionData() { m_scopedExtensionData.clear(); }
     SExtensionRecord* GetExtensionDataRecord(const std::wstring& ext);
     bool IsExtensionRegistered(const std::wstring& ext) const { return m_registeredExtensions.contains(ext); }
+    CItem* GetExtensionScopeRoot() const;
     ULONGLONG GetRootSize() const;
 
     void RefreshReparsePointItems() const;
@@ -171,7 +174,8 @@ private:
     std::unordered_set<std::wstring> m_registeredExtensions; // Snapshot of HKEY_CLASSES_ROOT extensions, rebuilt per scan
 
     std::mutex m_extensionMutex;
-    CExtensionData m_extensionData;    // Base for the extension view and cushion colors
+    CExtensionData m_extensionData;       // Base for the extension view and cushion colors
+    CExtensionData m_scopedExtensionData; // Zoom-scoped extension totals for the extension view
 
     std::vector<CItem*> m_reselectChildStack; // Stack for the "Re-select Child"-Feature
 

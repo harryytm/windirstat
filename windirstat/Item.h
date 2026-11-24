@@ -189,6 +189,28 @@ public:
     void ExtensionDataAdd();
     void ExtensionDataRemove();
     void ExtensionDataProcessChildren(bool remove = false);
+    // Only descend into filesystem containers, skipping pseudo-containers like <Hardlinks>.
+    template <typename Self, typename Fn>
+    static void ForEachExtensionFile(Self* root, Fn&& onFile)
+    {
+        if (root == nullptr) return;
+        if (root->IsTypeOrFlag(IT_FILE)) { onFile(root); return; }
+        if (!root->IsTypeOrFlag(IT_MYCOMPUTER, IT_DIRECTORY, IT_DRIVE)) return;
+
+        std::vector<Self*> dirStack;
+        dirStack.reserve(256);
+        dirStack.push_back(root);
+        while (!dirStack.empty()) [[msvc::forceinline_calls]]
+        {
+            Self* const dir = dirStack.back();
+            dirStack.pop_back();
+            for (auto* child : dir->GetChildren())
+            {
+                if (child->IsTypeOrFlag(IT_FILE)) onFile(child);
+                else if (child->IsTypeOrFlag(IT_MYCOMPUTER, IT_DIRECTORY, IT_DRIVE)) dirStack.push_back(child);
+            }
+        }
+    }
 
     // Attributes & Properties
     FILETIME GetLastChange() const noexcept

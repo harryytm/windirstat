@@ -273,6 +273,7 @@ protected:
     void OnUpdateViewAbsolutePercentages(CCmdUI* pCmdUI);
     void OnUpdateViewShowFileTypes(CCmdUI* pCmdUI) const;
     void OnUpdateViewGroupUnregisteredTypes(CCmdUI* pCmdUI) const;
+    void OnUpdateViewZoomedFileTypes(CCmdUI* pCmdUI) const;
     void OnUpdateViewShowWatcher(CCmdUI* pCmdUI) const;
     void OnViewShowVisualization();
     void OnViewTreeMapStyle(UINT commandId);
@@ -285,6 +286,7 @@ protected:
     void OnViewAbsolutePercentages() const;
     void OnViewShowFileTypes();
     void OnViewGroupUnregisteredTypes() const;
+    void OnViewZoomedFileTypes() const;
     void OnViewTreeMapOverlay(UINT commandId) const;
     void OnUpdateViewTreeMapOverlay(CCmdUI* pCmdUI) const;
     void OnViewAllFiles() const { GetFileTabbedView()->SetActiveTab(FileTab::Tree); }
@@ -388,6 +390,7 @@ inline std::span<const RouteEntry> CMainFrame::Routes()
         Route::Command<&OnConfigure>(ID_CONFIGURE),
         Route::Command<&OnViewShowFileTypes>(ID_VIEW_SHOWFILETYPES),
         Route::Command<&OnViewGroupUnregisteredTypes>(ID_VIEW_GROUP_TYPES),
+        Route::Command<&OnViewZoomedFileTypes>(ID_VIEW_ZOOMED_FILETYPES),
         Route::Command<&OnViewShowVisualization>(ID_VIEW_SHOWVISUALIZATION),
         Route::Command<&OnViewTreeMapStyle>(ID_VIEW_TREEMAP_ROWS, ID_VIEW_TREEMAP_MOORE),
         Route::Command<&OnViewGraphPreset>(ID_VIEW_GRAPH_PRESET_CLASSIC, ID_VIEW_GRAPH_PRESET_CUSTOM),
@@ -408,6 +411,7 @@ inline std::span<const RouteEntry> CMainFrame::Routes()
         Route::Update<&OnUpdateViewGraphPane>(ID_VIEW_SUNBURST),
         Route::Update<&OnUpdateViewShowFileTypes>(ID_VIEW_SHOWFILETYPES),
         Route::Update<&OnUpdateViewGroupUnregisteredTypes>(ID_VIEW_GROUP_TYPES),
+        Route::Update<&OnUpdateViewZoomedFileTypes>(ID_VIEW_ZOOMED_FILETYPES),
         Route::Update<&OnUpdateViewTreeMapSize>(ID_TREEMAP_LOGICAL_SIZE, ID_TREEMAP_PHYSICAL_SIZE),
         Route::Update<&OnUpdateViewAbsolutePercentages>(ID_VIEW_ABSOLUTE_PERCENTAGES),
         Route::Command<&OnViewTreeMapOverlay>(ID_TREEMAP_SHOW_EXTENSIONS, ID_TREEMAP_SHOW_FOLDER_FRAMES),

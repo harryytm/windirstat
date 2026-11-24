@@ -190,6 +190,7 @@ IDS_MENU_TREEMAP_SQUARIFIED=S&quarified
 IDS_MENU_TREEMAP=Stromová &mapa
 IDS_MENU_VIEW=&Zobrazit
 IDS_MENU_WATCHER=Spustit sledování souborů
+IDS_MENU_ZOOMED_FILETYPES=Zobrazit typy souborů v přiblížené složce
 IDS_MENU_ZOOMIN=Př&iblížit
 IDS_MENU_ZOOMOUT=&Oddálit
 IDS_MENU_ZOOMRESET=&Resetovat lupu

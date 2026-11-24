@@ -190,6 +190,7 @@ IDS_MENU_TREEMAP_SQUARIFIED=S&quarified
 IDS_MENU_TREEMAP=&Карта каталогів
 IDS_MENU_VIEW=&Вигляд
 IDS_MENU_WATCHER=Запустити спостереження за файлами
+IDS_MENU_ZOOMED_FILETYPES=Показувати типи файлів у збільшеній теці
 IDS_MENU_ZOOMIN=Збільшити
 IDS_MENU_ZOOMOUT=Зменшити
 IDS_MENU_ZOOMRESET=Скинути &масштаб

@@ -454,6 +454,13 @@ void CMainFrame::OnUpdateViewGroupUnregisteredTypes(CCmdUI* pCmdUI) const
     pCmdUI->SetCheck(COptions::GroupUnregisteredTypes);
 }
 
+void CMainFrame::OnUpdateViewZoomedFileTypes(CCmdUI* pCmdUI) const
+{
+    const CWinDirStatModel* model = CWinDirStatModel::Get();
+    pCmdUI->Enable(GetExtensionView()->IsShowTypes() && model->IsScanSettled());
+    pCmdUI->SetCheck(COptions::ShowZoomedFileTypes);
+}
+
 void CMainFrame::OnUpdateViewShowWatcher(CCmdUI* pCmdUI) const
 {
     pCmdUI->SetCheck(GetFileTabbedView()->IsTabVisible(FileTab::Watcher));
@@ -604,6 +611,13 @@ void CMainFrame::OnViewGroupUnregisteredTypes() const
     CWinDirStatModel::Get()->RebuildExtensionData();
     GetExtensionView()->OnUpdate(nullptr, MODEL_CHANGE_NONE, nullptr);
     CWinDirStatModel::Get()->NotifyPanes(MODEL_CHANGE_TREEMAP_STYLE);
+}
+
+void CMainFrame::OnViewZoomedFileTypes() const
+{
+    if (!CWinDirStatModel::Get()->IsScanSettled()) return;
+    COptions::ShowZoomedFileTypes = !COptions::ShowZoomedFileTypes;
+    if (CWinDirStatModel::Get()->IsZoomed()) GetExtensionView()->OnUpdate(nullptr, MODEL_CHANGE_NONE, nullptr);
 }
 
 void CMainFrame::OnViewTreeMapOverlay(const UINT commandId) const

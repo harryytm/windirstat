@@ -614,24 +614,10 @@ void CItem::ExtensionDataRemove()
 
 void CItem::ExtensionDataProcessChildren(const bool remove)
 {
-    std::vector childStack({ this });
-    while (!childStack.empty()) [[msvc::forceinline_calls]]
+    ForEachExtensionFile(this, [remove](CItem* item)
     {
-        CItem* const item = childStack.back();
-        childStack.pop_back();
-
-        if (item->IsTypeOrFlag(IT_MYCOMPUTER, IT_DIRECTORY, IT_DRIVE))
-        {
-            for (const auto& child : item->GetChildren())
-            {
-                childStack.push_back(child);
-            }
-        }
-        else if (item->IsTypeOrFlag(IT_FILE))
-        {
-            remove ? item->ExtensionDataRemove() : item->ExtensionDataAdd();
-        }
-    }
+        remove ? item->ExtensionDataRemove() : item->ExtensionDataAdd();
+    });
 }
 
 // --- Attributes & Properties ---

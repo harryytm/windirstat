@@ -15,6 +15,55 @@
     }
 }
 
+function Test-ZoomedFileTypes {
+    param($Context, $Case)
+    $root = $Context.Fixture
+    New-TestFile (Join-Path $root 'alpha\only-alpha.wdsalpha') 2048 | Out-Null
+    New-TestFile (Join-Path $root 'beta\only-beta.wdsbeta') 4096 | Out-Null
+    $app = Start-TestApp @($root)
+    $tree = Get-AppList $app -AllFiles
+
+    $state = Get-AppCommandState $app 'ID_VIEW_ZOOMED_FILETYPES'
+    Assert-True ($state.Enabled -and -not $state.Checked) `
+        'Zoom-scoped file type filtering starts enabled and unchecked after scan settles'
+    Assert-True ((Find-AppRow $app.ExtensionList '.wdsalpha' -Optional) -ge 0 -and
+        (Find-AppRow $app.ExtensionList '.wdsbeta' -Optional) -ge 0) `
+        'Unzoomed extension list shows extensions from all subfolders'
+
+    Select-AppRows $app $tree @('alpha')
+    Invoke-AppCommand $app 'ID_TREEMAP_ZOOMIN'
+    Wait-Until { (Get-AppCommandState $app 'ID_TREEMAP_ZOOMOUT').Enabled } `
+        'Zooming into alpha activates zoom state' | Out-Null
+    Assert-True ((Find-AppRow $app.ExtensionList '.wdsalpha' -Optional) -ge 0 -and
+        (Find-AppRow $app.ExtensionList '.wdsbeta' -Optional) -ge 0) `
+        'Zooming without filtering keeps extensions from outside the zoomed folder'
+
+    Invoke-AppCommand $app 'ID_VIEW_ZOOMED_FILETYPES'
+    Wait-Until { (Find-AppRow $app.ExtensionList '.wdsbeta' -Optional) -lt 0 } `
+        'Enabling zoom filtering removes extensions outside the zoomed folder' | Out-Null
+    Assert-True (Get-AppCommandState $app 'ID_VIEW_ZOOMED_FILETYPES').Checked `
+        'Zoom filtering menu state reflects the enabled toggle'
+    Assert-True ((Find-AppRow $app.ExtensionList '.wdsalpha' -Optional) -ge 0) `
+        'Extensions inside the zoomed folder remain listed'
+
+    Invoke-AppCommand $app 'ID_TREEMAP_ZOOMOUT'
+    Wait-Until { (Find-AppRow $app.ExtensionList '.wdsbeta' -Optional) -ge 0 } `
+        'Zooming back out restores extensions from the full root' | Out-Null
+
+    Invoke-AppCommand $app 'ID_VIEW_SHOWFILETYPES'
+    Assert-True (-not (Get-AppCommandState $app 'ID_VIEW_ZOOMED_FILETYPES').Enabled) `
+        'Zoom filtering disables when the File Types pane is hidden'
+    Invoke-AppCommand $app 'ID_VIEW_SHOWFILETYPES'
+    Assert-True (Get-AppCommandState $app 'ID_VIEW_ZOOMED_FILETYPES').Enabled `
+        'Zoom filtering re-enables when the File Types pane is shown'
+
+    $runner = $app.Runner
+    Stop-TestApp $app
+    $app = Start-TestApp @($root) -Runner $runner
+    Assert-True (Get-AppCommandState $app 'ID_VIEW_ZOOMED_FILETYPES').Checked `
+        'Zoom filtering preference persists across restarts'
+}
+
 function Test-ScopedRefresh {
     param($Context, $Case)
     $root = New-TestTree
@@ -1360,6 +1409,8 @@ foreach ($operation in @(
 }
 Register-Scenario interaction.exclude-extension Interaction 'Extension exclusion respects wildcard and regex settings' `
     Test-ExcludeExtension -Tags Desktop,Persistence -Requires Windows,Desktop
+Register-Scenario interaction.filter-filetypes-by-zoom Interaction 'File Types list scopes to the zoomed folder when enabled' `
+    Test-ZoomedFileTypes -Tags Desktop,Persistence -Requires Windows,Desktop
 Register-Scenario interaction.dedup-groups Interaction `
     'Hardlink deduplication retains independent sources within multiple hash groups' `
     Test-DeduplicateGroups -Tags Desktop,Filesystem -Requires Windows,Desktop,Ntfs

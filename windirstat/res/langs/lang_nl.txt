@@ -190,6 +190,7 @@ IDS_MENU_TREEMAP_SQUARIFIED=S&quarified
 IDS_MENU_TREEMAP=&Treemap
 IDS_MENU_VIEW=Beeld(&V)
 IDS_MENU_WATCHER=Bestandsbewaking starten
+IDS_MENU_ZOOMED_FILETYPES=Bestandstypen in inge&zoomde map weergeven
 IDS_MENU_ZOOMIN=&Inzoomen
 IDS_MENU_ZOOMOUT=&Uitzoomen
 IDS_MENU_ZOOMRESET=Zoom &herstellen

@@ -186,7 +186,7 @@ function Set-TestSettings {
             ShowElevationPrompt = 0; AutoElevate = 0; ShowFreeSpace = 0; ShowUnknown = 0; ProcessHardlinks = 0; ScanWslDisks = 0
             ShowDeletePermanentlyWarning = 0; ShowCreateHardlinkPrompt = 0; ShowRemoveMotwPrompt = 0
             ShowRemoveEmptyFoldersPrompt = 0; ShowSetDatesPrompt = 0; FontSizePercent = 100; ToolBarSizePercent = 100
-            ShowFileTypes = 1; ShowVisualization = 1; GroupUnregisteredTypes = 0
+            ShowFileTypes = 1; ShowVisualization = 1; GroupUnregisteredTypes = 0; ShowZoomedFileTypes = 0
             WindowLayout = 0; UseSizeSuffixes = 0; UseWindowsLocaleSetting = 0
         }
         FileTreeView = [ordered]@{ ColumnVisibility = '1,1,1,1,1,1,1,1,1,1,0' }

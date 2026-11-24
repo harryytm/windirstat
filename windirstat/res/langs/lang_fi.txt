@@ -190,6 +190,7 @@ IDS_MENU_TREEMAP_SQUARIFIED=S&quarified
 IDS_MENU_TREEMAP=&Kuvaaja
 IDS_MENU_VIEW=&Näytä
 IDS_MENU_WATCHER=Käynnistä tiedostovalvonta
+IDS_MENU_ZOOMED_FILETYPES=Näytä tiedostotyypit suurennetusta kansiosta
 IDS_MENU_ZOOMIN=Suur&enna
 IDS_MENU_ZOOMOUT=&Pienennä
 IDS_MENU_ZOOMRESET=&Nollaa suurennus

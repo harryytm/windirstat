@@ -337,11 +337,13 @@ void CExtensionListControl::OnItemContextMenu(CPoint point)
     // Searching and excluding need a concrete extension; disable them on the aggregate row
     const UINT aggregateFlags = IsSelectedAggregate() ? MF_GRAYED : 0;
 
+    const UINT settledFlags = CWinDirStatModel::Get()->IsScanSettled() ? MF_ENABLED : MF_GRAYED;
     CMenu menu = CMenu::CreatePopup();
     menu.Append(MF_STRING | aggregateFlags, ID_EXTLIST_SEARCH_EXTENSION, std::format(
         L"{} - {}", Localization::Lookup(IDS_COL_EXTENSION), Localization::Lookup(IDS_SEARCH_TITLE)).c_str());
-    menu.Append(MF_STRING | (CWinDirStatModel::Get()->IsScanSettled() ? MF_ENABLED : MF_GRAYED) |
-        (COptions::GroupUnregisteredTypes ? MF_CHECKED : 0),
+    menu.Append(MF_STRING | settledFlags | (COptions::ShowZoomedFileTypes ? MF_CHECKED : 0),
+        ID_VIEW_ZOOMED_FILETYPES, Localization::Lookup(IDS_MENU_ZOOMED_FILETYPES).c_str());
+    menu.Append(MF_STRING | settledFlags | (COptions::GroupUnregisteredTypes ? MF_CHECKED : 0),
         ID_VIEW_GROUP_TYPES, Localization::Lookup(IDS_MENU_GROUP_TYPES).c_str());
     menu.Append(MF_STRING | aggregateFlags, ID_FILTER_EXCLUDE_ITEM, Localization::Lookup(IDS_MENU_EXCLUDE_ITEM));
     menu.SetDefaultItem(ID_EXTLIST_SEARCH_EXTENSION);
@@ -360,8 +362,7 @@ void CExtensionListControl::OnItemContextMenu(CPoint point)
     menu.SetItemInfo(ID_EXTLIST_SEARCH_EXTENSION, &mii, CMenu::ItemLookup::Command);
     if (const UINT id = menu.ShowPopup(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, point, this))
     {
-        (id == ID_VIEW_GROUP_TYPES) ? GetMainWindow()->RouteCommand(ID_VIEW_GROUP_TYPES, CommandCode, nullptr)
-            : RouteCommand(id, CommandCode, nullptr);
+        if (!RouteCommand(id, CommandCode, nullptr)) GetMainWindow()->RouteCommand(id, CommandCode, nullptr);
     }
 }
 
@@ -371,7 +372,7 @@ void CExtensionListControl::OnSearchExtension() const
 
     const auto searchTerm = GetSelectedExtension().empty() ? std::wstring(LR"(^[^\.]+$)") :
         (GlobToRegex(EscapeGlobLiteral(GetSelectedExtension()), false) + L"$");
-    CFileSearchControl::Get()->ProcessSearch(CWinDirStatModel::Get()->GetRootItem(),
+    CFileSearchControl::Get()->ProcessSearch(CWinDirStatModel::Get()->GetExtensionScopeRoot(),
         SearchCriteria{ .term = searchTerm, .regex = true, .includeFolders = false });
 
     CMainFrame::Get()->GetFileTabbedView()->SetActiveTab(FileTab::Search);

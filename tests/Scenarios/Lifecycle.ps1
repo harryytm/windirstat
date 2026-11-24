@@ -248,6 +248,11 @@ function Test-ExtensionGroupingDuringScan {
     [void] [TestDesktop]::Message($app.Window, 0x0111, (Get-ResourceId 'ID_VIEW_GROUP_TYPES'))
     Assert-Equal (Get-AppCommandState $app 'ID_VIEW_GROUP_TYPES').Checked $grouping.Checked `
         'Direct command dispatch cannot rebuild extension data while workers are active'
+    $zoomFilter = Get-AppCommandState $app 'ID_VIEW_ZOOMED_FILETYPES'
+    Assert-True (-not $zoomFilter.Enabled) 'Zoom-scoped extension filtering is unavailable until the scan settles'
+    [void] [TestDesktop]::Message($app.Window, 0x0111, (Get-ResourceId 'ID_VIEW_ZOOMED_FILETYPES'))
+    Assert-Equal (Get-AppCommandState $app 'ID_VIEW_ZOOMED_FILETYPES').Checked $zoomFilter.Checked `
+        'Direct command dispatch cannot toggle zoom-scoped extension filtering while workers are active'
     Invoke-AppCommand $app 'ID_SCAN_RESUME'
     Wait-AppIdle $app
     Wait-Until { (Get-AppCommandState $app 'ID_VIEW_GROUP_TYPES').Enabled } `

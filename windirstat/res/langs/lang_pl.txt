@@ -190,6 +190,7 @@ IDS_MENU_TREEMAP_SQUARIFIED=S&quarified
 IDS_MENU_TREEMAP=&Mapa drzewa
 IDS_MENU_VIEW=&Widok
 IDS_MENU_WATCHER=Uruchom monitor plików
+IDS_MENU_ZOOMED_FILETYPES=Pokaż typy plików w powiększonym folderze
 IDS_MENU_ZOOMIN=Po&większ
 IDS_MENU_ZOOMOUT=P&omniejsz
 IDS_MENU_ZOOMRESET=&Resetuj powiększenie

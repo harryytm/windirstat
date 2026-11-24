@@ -190,6 +190,7 @@ IDS_MENU_TREEMAP_SQUARIFIED=مربعي (S&quarified)
 IDS_MENU_TREEMAP=خريطة &شجرية (Treemap)
 IDS_MENU_VIEW=ع&رض
 IDS_MENU_WATCHER=تشغيل مراقب الملفات
+IDS_MENU_ZOOMED_FILETYPES=إظهار أنواع الملفات في المجلد المكبّر
 IDS_MENU_ZOOMIN=تك&بير
 IDS_MENU_ZOOMOUT=تص&غير
 IDS_MENU_ZOOMRESET=إ&عادة تعيين التكبير/التصغير

@@ -190,6 +190,7 @@ IDS_MENU_TREEMAP_SQUARIFIED=S&quarified
 IDS_MENU_TREEMAP=&Treemap
 IDS_MENU_VIEW=Afficha&ge
 IDS_MENU_WATCHER=Démarrer le surveillant de fichiers
+IDS_MENU_ZOOMED_FILETYPES=Afficher les types de fichiers du dossier &zoomé
 IDS_MENU_ZOOMIN=Agrand&ir
 IDS_MENU_ZOOMOUT=Dimin&uer
 IDS_MENU_ZOOMRESET=Réinitialiser le &zoom
