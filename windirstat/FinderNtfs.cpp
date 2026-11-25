@@ -238,6 +238,324 @@ bool FinderNtfsContext::LoadRoot(CItem* driveitem, BlockingQueue<CItem*>* queue)
     return true;
 }
 
+static bool FetchRetrievalPointers(const HANDLE handle, std::vector<BYTE>& buffer, BlockingQueue<CItem*>* queue)
+{
+    STARTING_VCN_INPUT_BUFFER input = {};
+    ULONG bytesReturned = 0;
+    bool fetched = false;
+    while ((fetched = DeviceIoControl(handle, FSCTL_GET_RETRIEVAL_POINTERS, &input, sizeof(input),
+        buffer.data(), static_cast<DWORD>(buffer.size()), &bytesReturned, nullptr)) == 0 &&
+        GetLastError() == ERROR_MORE_DATA)
+    {
+        queue->WaitIfSuspended();
+        buffer.resize(buffer.size() * 2);
+    }
+    return fetched;
+}
+
+static bool ReadVolumeChunk(const HANDLE volumeHandle, const HANDLE event, void* buffer,
+    const ULONG toRead, const LARGE_INTEGER fileOffset, ULONG& bytesRead,
+    BlockingQueue<CItem*>* queue, const std::atomic<bool>* abortFlag = nullptr) noexcept
+{
+    bytesRead = 0;
+    OVERLAPPED overlapped{ .Offset = fileOffset.LowPart, .OffsetHigh = static_cast<DWORD>(fileOffset.HighPart), .hEvent = event };
+    if (ReadFile(volumeHandle, buffer, toRead, &bytesRead, &overlapped) == 0)
+    {
+        if (GetLastError() != ERROR_IO_PENDING) return false;
+        DWORD waitResult;
+        while ((waitResult = WaitForSingleObject(event, 50)) == WAIT_TIMEOUT)
+        {
+            if ((abortFlag != nullptr && abortFlag->load()) || queue->IsPauseOrCancelRequested()) break;
+        }
+        if (waitResult != WAIT_OBJECT_0) CancelIoEx(volumeHandle, &overlapped);
+        if (!GetOverlappedResult(volumeHandle, &overlapped, &bytesRead, true)) return false;
+    }
+    return bytesRead > 0;
+}
+
+class NtfsMftPlan final
+{
+    std::unique_ptr<BYTE, decltype(&_aligned_free)> m_bits{ nullptr, &_aligned_free };
+    size_t m_byteCount = 0;
+    ULONG m_clusterSize = 0;
+    ULONG m_recordSize = 0;
+    ULONGLONG m_minHoleBytes = 0;
+    int m_chunkMiB = 0;
+
+    bool HasBitmap() const noexcept { return m_bits && m_byteCount > 0; }
+
+    void ResolveTuning(const HANDLE volumeHandle) noexcept
+    {
+        int holeKiB = COptions::FastScanMftSparseHoleKiB;
+        int chunkMiB = COptions::FastScanMftChunkMiB;
+        if (holeKiB < 0 || chunkMiB < 0)
+        {
+            int autoHoleKiB = 256, autoChunkMiB = 0;
+            STORAGE_PROPERTY_QUERY query{ .PropertyId = StorageDeviceSeekPenaltyProperty, .QueryType = PropertyStandardQuery };
+            DEVICE_SEEK_PENALTY_DESCRIPTOR seekPenalty{};
+            ULONG bytesReturned = 0;
+            if (DeviceIoControl(volumeHandle, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query),
+                &seekPenalty, sizeof(seekPenalty), &bytesReturned, nullptr) && bytesReturned >= sizeof(seekPenalty))
+            {
+                if (seekPenalty.IncursSeekPenalty)
+                {
+                    autoHoleKiB = 1024;
+                    autoChunkMiB = 0;
+                }
+                else
+                {
+                    query.PropertyId = StorageDeviceProperty;
+                    alignas(STORAGE_DEVICE_DESCRIPTOR) std::array<BYTE, 256> descBuf{};
+                    const bool isNvme = DeviceIoControl(volumeHandle, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query),
+                        descBuf.data(), static_cast<DWORD>(descBuf.size()), &bytesReturned, nullptr) &&
+                        bytesReturned >= sizeof(STORAGE_DEVICE_DESCRIPTOR) &&
+                        ByteOffset<STORAGE_DEVICE_DESCRIPTOR>(descBuf.data(), 0)->BusType == BusTypeNvme;
+                    autoHoleKiB = isNvme ? 128 : 256;
+                    autoChunkMiB = isNvme ? 32 : 64;
+                }
+            }
+            if (holeKiB < 0) holeKiB = autoHoleKiB;
+            if (chunkMiB < 0) chunkMiB = autoChunkMiB;
+        }
+        m_minHoleBytes = static_cast<ULONGLONG>(std::max(0, holeKiB)) * wds::Ki;
+        m_chunkMiB = std::max(0, chunkMiB);
+    }
+
+    void LoadBitmap(const std::wstring& volumePath, const HANDLE volumeHandle, BlockingQueue<CItem*>* queue)
+    {
+        if (!COptions::UseFastScanMftSparseLoad) return;
+        const SmartPointer handle(CloseHandle, CreateFileW((volumePath + L"\\$MFT::$BITMAP").c_str(),
+            FILE_READ_ATTRIBUTES | SYNCHRONIZE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE,
+            nullptr, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_NO_BUFFERING, nullptr));
+        std::vector<BYTE> runsBuf(512);
+        if (handle == INVALID_HANDLE_VALUE || !FetchRetrievalPointers(handle, runsBuf, queue)) return;
+
+        const auto* retrieval = ByteOffset<RETRIEVAL_POINTERS_BUFFER>(runsBuf.data(), 0);
+        const std::span extents(retrieval->Extents, retrieval->ExtentCount);
+        const ULONGLONG totalBytes = extents.empty() ? 0 :
+            static_cast<ULONGLONG>(extents.back().NextVcn.QuadPart) * m_clusterSize;
+        if (totalBytes == 0 || totalBytes > 64ull * wds::Mi) return;
+
+        const SmartPointer event(CloseHandle, CreateEvent(nullptr, false, false, nullptr));
+        std::unique_ptr<BYTE, decltype(&_aligned_free)> bits(
+            static_cast<BYTE*>(_aligned_malloc(static_cast<size_t>(totalBytes), 4ull * wds::Ki)), &_aligned_free);
+        if (!bits || event == nullptr) return;
+
+        auto vcnStart = retrieval->StartingVcn.QuadPart;
+        for (const auto& extent : extents)
+        {
+            const auto vcnNext = extent.NextVcn.QuadPart;
+            const ULONGLONG runBytes = static_cast<ULONGLONG>(vcnNext - vcnStart) * m_clusterSize;
+            ULONGLONG destOffset = static_cast<ULONGLONG>(vcnStart) * m_clusterSize;
+            if (destOffset + runBytes > totalBytes) return;
+            if (extent.Lcn.QuadPart < 0)
+            {
+                std::memset(bits.get() + destOffset, 0, static_cast<size_t>(runBytes));
+            }
+            else
+            {
+                LARGE_INTEGER fileOffset{ .QuadPart = extent.Lcn.QuadPart * static_cast<LONGLONG>(m_clusterSize) };
+                for (ULONGLONG remaining = runBytes; remaining > 0;)
+                {
+                    if (queue->IsPauseOrCancelRequested()) return;
+                    ULONG bytesRead = 0;
+                    const ULONG toRead = static_cast<ULONG>(std::min<ULONGLONG>(remaining, 4ull * wds::Mi));
+                    if (!ReadVolumeChunk(volumeHandle, event, bits.get() + destOffset, toRead, fileOffset, bytesRead, queue) ||
+                        bytesRead > remaining) return;
+                    destOffset += bytesRead;
+                    fileOffset.QuadPart += bytesRead;
+                    remaining -= bytesRead;
+                }
+            }
+            vcnStart = vcnNext;
+        }
+        m_bits = std::move(bits);
+        m_byteCount = static_cast<size_t>(totalBytes);
+    }
+
+    template <bool StopOnAny>
+    ULONGLONG ScanLiveBits(const ULONGLONG firstRecord, const ULONGLONG endRecord) const noexcept
+    {
+        const ULONGLONG mappedEnd = std::clamp<ULONGLONG>(
+            static_cast<ULONGLONG>(m_byteCount) << 3, firstRecord, endRecord);
+        ULONGLONG live = endRecord - mappedEnd;
+        if constexpr (StopOnAny) { if (live != 0) return 1; }
+
+        const BYTE* const bits = m_bits.get();
+        ULONGLONG rec = firstRecord;
+        while (rec < mappedEnd && (rec & 7) != 0)
+        {
+            if ((bits[static_cast<size_t>(rec >> 3)] & (1u << (rec & 7))) != 0)
+            {
+                if constexpr (StopOnAny) return 1;
+                ++live;
+            }
+            ++rec;
+        }
+        size_t bytePos = static_cast<size_t>(rec >> 3);
+        const size_t fullEnd = static_cast<size_t>(mappedEnd >> 3);
+        while (bytePos + sizeof(uint64_t) <= fullEnd)
+        {
+            uint64_t word = 0;
+            std::memcpy(&word, bits + bytePos, sizeof(word));
+            if constexpr (StopOnAny) { if (word != 0) return 1; }
+            else live += std::popcount(word);
+            bytePos += sizeof(uint64_t);
+        }
+        while (bytePos < fullEnd)
+        {
+            const BYTE b = bits[bytePos++];
+            if constexpr (StopOnAny) { if (b != 0) return 1; }
+            else live += std::popcount(b);
+        }
+        for (rec = static_cast<ULONGLONG>(fullEnd) << 3; rec < mappedEnd; ++rec)
+        {
+            if ((bits[static_cast<size_t>(rec >> 3)] & (1u << (rec & 7))) != 0)
+            {
+                if constexpr (StopOnAny) return 1;
+                ++live;
+            }
+        }
+        return live;
+    }
+
+public:
+    struct ReadWindow { ULONGLONG skipBytes = 0; ULONGLONG readBytes = 0; };
+
+    static NtfsMftPlan Create(const std::wstring& volumePath, const HANDLE volumeHandle,
+        const NTFS_VOLUME_DATA_BUFFER& volumeInfo, BlockingQueue<CItem*>* queue)
+    {
+        NtfsMftPlan plan;
+        plan.m_clusterSize = volumeInfo.BytesPerCluster;
+        plan.m_recordSize = volumeInfo.BytesPerFileRecordSegment;
+        plan.ResolveTuning(volumeHandle);
+        plan.LoadBitmap(volumePath, volumeHandle, queue);
+        return plan;
+    }
+
+    bool IsLive(const ULONGLONG recordIndex) const noexcept
+    {
+        const size_t byteIndex = static_cast<size_t>(recordIndex >> 3);
+        return byteIndex >= m_byteCount || (m_bits.get()[byteIndex] & (1u << (recordIndex & 7))) != 0;
+    }
+
+    bool IsByteRangeEmpty(const ULONGLONG mftByteOffset, const ULONGLONG byteCount) const noexcept
+    {
+        if (!HasBitmap() || m_recordSize == 0 || byteCount == 0) return false;
+        const ULONGLONG first = mftByteOffset / m_recordSize, end = (mftByteOffset + byteCount) / m_recordSize;
+        return end > first && ScanLiveBits<true>(first, end) == 0;
+    }
+
+    ULONGLONG CountLive(const ULONGLONG mftByteOffset, const ULONGLONG byteCount) const noexcept
+    {
+        if (m_recordSize == 0 || byteCount == 0) return 0;
+        const ULONGLONG first = mftByteOffset / m_recordSize, end = (mftByteOffset + byteCount) / m_recordSize;
+        return end > first ? (HasBitmap() ? ScanLiveBits<false>(first, end) : end - first) : 0;
+    }
+
+    void PrepareRuns(std::vector<std::tuple<ULONGLONG, LONGLONG, ULONGLONG, ULONGLONG>>& dataRuns) const
+    {
+        if (m_clusterSize == 0) return;
+        const bool pruneEmpty = HasBitmap() && m_minHoleBytes > 0;
+        const ULONGLONG recordAlign = std::max<ULONGLONG>(1, m_recordSize / m_clusterSize);
+        ULONGLONG chunkClusters = std::numeric_limits<ULONGLONG>::max();
+        if (m_chunkMiB > 0)
+        {
+            chunkClusters = std::max<ULONGLONG>(recordAlign,
+                ((static_cast<ULONGLONG>(m_chunkMiB) * wds::Mi) / m_clusterSize / recordAlign) * recordAlign);
+            ULONGLONG totalClusters = 0;
+            for (const auto& run : dataRuns)
+            {
+                if (std::get<1>(run) >= 0) totalClusters += std::get<2>(run);
+            }
+            const ULONGLONG maxSplits = std::numeric_limits<USHORT>::max() / 2;
+            if (totalClusters / chunkClusters + dataRuns.size() > maxSplits)
+            {
+                chunkClusters = ((totalClusters / maxSplits + recordAlign) / recordAlign) * recordAlign;
+            }
+        }
+
+        size_t estimatedRuns = 0;
+        bool changed = false;
+        for (const auto& [vcnStart, lcnStart, clusterCount, bytesRead] : dataRuns)
+        {
+            if (lcnStart < 0) { changed = true; continue; }
+            const ULONGLONG pieces = m_chunkMiB > 0 ? (clusterCount + chunkClusters - 1) / chunkClusters : 1;
+            if (pieces > 1) changed = true;
+            estimatedRuns += static_cast<size_t>(pieces);
+        }
+        if (!changed && !pruneEmpty) return;
+
+        std::vector<std::tuple<ULONGLONG, LONGLONG, ULONGLONG, ULONGLONG>> split;
+        split.reserve(estimatedRuns);
+        for (const auto& [vcnStart, lcnStart, clusterCount, bytesRead] : dataRuns)
+        {
+            if (lcnStart < 0) continue;
+            ULONGLONG vcn = vcnStart;
+            LONGLONG lcn = lcnStart;
+            for (ULONGLONG remaining = clusterCount; remaining > 0;)
+            {
+                const ULONGLONG take = std::min(chunkClusters, remaining);
+                if (!pruneEmpty || !IsByteRangeEmpty(vcn * m_clusterSize, take * m_clusterSize))
+                {
+                    split.emplace_back(vcn, lcn, take, 0ull);
+                }
+                vcn += take;
+                lcn += static_cast<LONGLONG>(take);
+                remaining -= take;
+            }
+        }
+        if (split.size() <= std::numeric_limits<USHORT>::max()) dataRuns = std::move(split);
+    }
+
+    ReadWindow NextReadWindow(const ULONGLONG mftByteOffset, const ULONGLONG remainingBytes,
+        const size_t maxReadBytes) const noexcept
+    {
+        const ULONGLONG defaultRead = std::min<ULONGLONG>(remainingBytes, maxReadBytes);
+        if (!HasBitmap() || m_minHoleBytes == 0 || m_clusterSize == 0) return { 0, defaultRead };
+
+        const ULONGLONG minHoleBytes = std::max<ULONGLONG>(m_minHoleBytes, m_clusterSize);
+        const ULONGLONG blockBytes = std::max<ULONGLONG>(m_clusterSize,
+            (std::min<ULONGLONG>(minHoleBytes / 4, 64ull * wds::Ki) / m_clusterSize) * m_clusterSize);
+
+        ULONGLONG skipBytes = 0;
+        while (skipBytes < remainingBytes)
+        {
+            const ULONGLONG step = std::min<ULONGLONG>(blockBytes, remainingBytes - skipBytes);
+            if (!IsByteRangeEmpty(mftByteOffset + skipBytes, step)) break;
+            skipBytes += step;
+        }
+        if (skipBytes == remainingBytes) return { skipBytes, 0 };
+        if (skipBytes < minHoleBytes) skipBytes = 0;
+
+        const ULONGLONG readStart = mftByteOffset + skipBytes;
+        const ULONGLONG maxLen = std::min<ULONGLONG>(remainingBytes - skipBytes, maxReadBytes);
+        ULONGLONG readBytes = 0;
+        ULONGLONG trailingZero = 0;
+        while (readBytes < maxLen)
+        {
+            const ULONGLONG step = std::min<ULONGLONG>(blockBytes, maxLen - readBytes);
+            if (IsByteRangeEmpty(readStart + readBytes, step))
+            {
+                trailingZero += step;
+                if (trailingZero >= minHoleBytes)
+                {
+                    readBytes -= (trailingZero - step);
+                    break;
+                }
+            }
+            else
+            {
+                trailingZero = 0;
+            }
+            readBytes += step;
+        }
+        if (readBytes == remainingBytes - skipBytes && trailingZero > 0) readBytes -= trailingZero;
+        if (readBytes == 0) readBytes = std::min<ULONGLONG>(blockBytes, maxLen);
+        return { skipBytes, readBytes };
+    }
+};
+
 bool FinderNtfsContext::LoadVolume(const CItem* driveitem, BlockingQueue<CItem*>* queue)
 {
     queue->WaitIfSuspended();
@@ -261,18 +579,7 @@ bool FinderNtfsContext::LoadVolume(const CItem* driveitem, BlockingQueue<CItem*>
     if (fileHandle == INVALID_HANDLE_VALUE) return false;
 
     std::vector<BYTE> dataRunsBuffer(sizeof(RETRIEVAL_POINTERS_BUFFER) + 32 * sizeof(LARGE_INTEGER));
-    STARTING_VCN_INPUT_BUFFER input = {};
-    bool pointersFetched = false;
-    while ((pointersFetched = DeviceIoControl(fileHandle, FSCTL_GET_RETRIEVAL_POINTERS, &input, sizeof(input), dataRunsBuffer.data(),
-        static_cast<DWORD>(dataRunsBuffer.size()), &bytesReturned, nullptr)) == 0 && GetLastError() == ERROR_MORE_DATA)
-    {
-        queue->WaitIfSuspended();
-        dataRunsBuffer.resize(dataRunsBuffer.size() * 2);
-    }
-    if (!pointersFetched)
-    {
-        return false;
-    }
+    if (!FetchRetrievalPointers(fileHandle, dataRunsBuffer, queue)) return false;
 
     // Extract data run origins and cluster counts
     RETRIEVAL_POINTERS_BUFFER* retrievalBuffer = ByteOffset<RETRIEVAL_POINTERS_BUFFER>(dataRunsBuffer.data(), 0);
@@ -290,6 +597,8 @@ bool FinderNtfsContext::LoadVolume(const CItem* driveitem, BlockingQueue<CItem*>
         );
         vcnStart = vcnNext;
     }
+    const NtfsMftPlan mftPlan = NtfsMftPlan::Create(m_volumePath, volumeHandle, volumeInfo, queue);
+    mftPlan.PrepareRuns(dataRuns);
 
     // Index base records directly by MFT record number across the full MFT capacity
     const size_t totalRecords = static_cast<size_t>(
@@ -310,11 +619,21 @@ bool FinderNtfsContext::LoadVolume(const CItem* driveitem, BlockingQueue<CItem*>
     std::atomic<bool> readFailed = false;
     const auto readRun = [&](const size_t runIndex)
     {
+        auto& [runVcnStart, clusterStart, clusterCount, bytesReadFromRun] = dataRuns[runIndex];
+        const ULONGLONG runTotalBytes = clusterCount * volumeInfo.BytesPerCluster;
+        ULONGLONG bytesToRead = runTotalBytes - bytesReadFromRun;
+        if (clusterStart < 0 || bytesToRead == 0)
+        {
+            bytesReadFromRun = runTotalBytes;
+            return;
+        }
+
         // Page alignment satisfies FILE_FLAG_NO_BUFFERING for any sector size; pool threads do not retain it
         constexpr size_t bufferSize = 4ull * wds::Mi;
         constexpr size_t bufferAlignment = 4ull * wds::Ki;
+        const size_t allocSize = static_cast<size_t>(std::min<ULONGLONG>(bufferSize, bytesToRead));
         const std::unique_ptr<UCHAR, decltype(&_aligned_free)> buffer(
-            static_cast<UCHAR*>(_aligned_malloc(bufferSize, bufferAlignment)), &_aligned_free);
+            static_cast<UCHAR*>(_aligned_malloc(allocSize, bufferAlignment)), &_aligned_free);
         const SmartPointer event(CloseHandle, CreateEvent(nullptr, false, false, nullptr));
         if (!buffer || event == nullptr)
         {
@@ -322,16 +641,16 @@ bool FinderNtfsContext::LoadVolume(const CItem* driveitem, BlockingQueue<CItem*>
             return;
         }
 
-        auto& [runVcnStart, clusterStart, clusterCount, bytesReadFromRun] = dataRuns[runIndex];
+        const ULONGLONG mftRunOffset = runVcnStart * volumeInfo.BytesPerCluster;
         auto& partition = partitions[runIndex];
-        partition.nameArena.reserve(static_cast<size_t>(
-            clusterCount * volumeInfo.BytesPerCluster / volumeInfo.BytesPerFileRecordSegment * 16));
+        if (bytesReadFromRun == 0)
+        {
+            partition.nameArena.reserve(static_cast<size_t>(mftPlan.CountLive(mftRunOffset, runTotalBytes) * 16));
+        }
 
         // Enumerate over the data run in buffer-sized chunks
-        ULONGLONG bytesToRead = clusterCount * volumeInfo.BytesPerCluster - bytesReadFromRun;
         LARGE_INTEGER fileOffset{ .QuadPart = static_cast<LONGLONG>(
             clusterStart * volumeInfo.BytesPerCluster + bytesReadFromRun) };
-        const ULONGLONG mftRunOffset = runVcnStart * volumeInfo.BytesPerCluster;
         ULONG bytesRead = 0;
         for (; bytesToRead > 0;
             bytesReadFromRun += bytesRead, bytesToRead -= bytesRead, fileOffset.QuadPart += bytesRead)
@@ -343,42 +662,32 @@ bool FinderNtfsContext::LoadVolume(const CItem* driveitem, BlockingQueue<CItem*>
 
             // Set file pointer for synchronous read
             bytesRead = 0;
-            const ULONG bytesThisRead = static_cast<ULONG>(std::min<ULONGLONG>(bytesToRead, bufferSize));
-            OVERLAPPED overlapped = { .Offset = fileOffset.LowPart, .OffsetHigh = static_cast<DWORD>(fileOffset.HighPart), .hEvent = event };
-            if (ReadFile(volumeHandle, buffer.get(), bytesThisRead, &bytesRead, &overlapped) == 0)
+            const auto window = mftPlan.NextReadWindow(mftRunOffset + bytesReadFromRun, bytesToRead, bufferSize);
+            if (window.skipBytes > 0)
             {
-                if (GetLastError() != ERROR_IO_PENDING)
-                {
-                    readFailed = true;
-                    return;
-                }
-
-                DWORD waitResult;
-                while ((waitResult = WaitForSingleObject(event, 50)) == WAIT_TIMEOUT)
-                {
-                    if (readFailed || queue->IsPauseOrCancelRequested()) break;
-                }
-                if (waitResult != WAIT_OBJECT_0) CancelIoEx(volumeHandle, &overlapped);
-                if (!GetOverlappedResult(volumeHandle, &overlapped, &bytesRead, true))
-                {
-                    if (!queue->IsPauseOrCancelRequested()) readFailed = true;
-                    return;
-                }
+                bytesReadFromRun += window.skipBytes;
+                bytesToRead -= window.skipBytes;
+                fileOffset.QuadPart += static_cast<LONGLONG>(window.skipBytes);
+                if (window.readBytes == 0) continue;
             }
-            if (bytesRead == 0)
+            if (!ReadVolumeChunk(volumeHandle, event, buffer.get(), static_cast<ULONG>(window.readBytes),
+                fileOffset, bytesRead, queue, &readFailed))
             {
-                readFailed = true;
+                if (!queue->IsPauseOrCancelRequested()) readFailed = true;
                 return;
             }
 
             for (ULONG offset = 0; offset + volumeInfo.BytesPerFileRecordSegment <= bytesRead; offset += volumeInfo.BytesPerFileRecordSegment)
             {
+                const auto currentRecord = (mftRunOffset + bytesReadFromRun + offset) / volumeInfo.BytesPerFileRecordSegment;
+                if (!mftPlan.IsLive(currentRecord)) continue;
+
                 // Process MFT record inline
                 const auto fileRecord = ByteOffset<FILE_RECORD>(buffer.get(), offset);
 
                 // Bounds check for fixup array access
                 constexpr auto MFT_RECORD_SECTOR_SIZE = 512u;
-                if (!fileRecord->IsValid() ||
+                if (!fileRecord->IsValid() || !fileRecord->IsInUse() ||
                     fileRecord->UsaCount != volumeInfo.BytesPerFileRecordSegment / MFT_RECORD_SECTOR_SIZE + 1 ||
                     fileRecord->UsaOffset < sizeof(FILE_RECORD) || fileRecord->UsaOffset % sizeof(USHORT) != 0 ||
                     fileRecord->UsaOffset + sizeof(USHORT) * fileRecord->UsaCount >
@@ -404,9 +713,6 @@ bool FinderNtfsContext::LoadVolume(const CItem* driveitem, BlockingQueue<CItem*>
                 // Skip if corrupt record detected
                 if (skipRecord) [[unlikely]] continue;
 
-                // Only process records that have valid headers and are in use
-                if (!fileRecord->IsValid() || !fileRecord->IsInUse()) continue;
-                const auto currentRecord = (mftRunOffset + bytesReadFromRun + offset) / volumeInfo.BytesPerFileRecordSegment;
                 const bool isExtensionRecord = fileRecord->BaseFileRecordNumber > 0;
                 const auto baseRecordIndex = isExtensionRecord ? fileRecord->BaseFileRecordNumber : currentRecord;
                 const ULONGLONG baseRecordSequence = isExtensionRecord ?
@@ -537,11 +843,13 @@ bool FinderNtfsContext::LoadVolume(const CItem* driveitem, BlockingQueue<CItem*>
         return std::get<3>(run) < std::get<2>(run) * volumeInfo.BytesPerCluster;
     }));
 
-    // Adopt the first run's child map outright, since an unfragmented MFT has no other runs to combine.
+    // Adopt the largest partition's child map outright to avoid rehashing it during merges.
     m_nameArenas.resize(partitions.size());
     if (!partitions.empty())
     {
-        m_parentToChildMap.swap(partitions.front().children);
+        const auto largest = std::ranges::max_element(partitions, {},
+            [](const RecordPartition& p) { return p.children.size(); });
+        m_parentToChildMap.swap(largest->children);
     }
 
     // Merge extension records into the flat MFT record table and combine child maps.

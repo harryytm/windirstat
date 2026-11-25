@@ -260,6 +260,9 @@ public:
     inline static Setting<bool> UseDrawTextCache{ OptionsGeneral, L"UseDrawTextCache", true };
     inline static Setting<bool> UseFastScanEngine{ OptionsGeneral, L"UseFastScanEngine", true };
     inline static Setting<bool> UseFastScanForFolders{ OptionsGeneral, L"UseFastScanForFolders", false };
+    inline static Setting<bool> UseFastScanMftSparseLoad{ OptionsGeneral, L"UseFastScanMftSparseLoad", true };
+    inline static Setting<int> FastScanMftChunkMiB{ OptionsGeneral, L"FastScanMftChunkMiB", -1, -1, 1024 };
+    inline static Setting<int> FastScanMftSparseHoleKiB{ OptionsGeneral, L"FastScanMftSparseHoleKiB", -1, -1, 4096 };
     inline static Setting<bool> UseWindowsLocaleSetting{ OptionsGeneral,
         L"UseWindowsLocaleSetting", true, CheckboxBind(IDC_USE_WINDOWS_LOCALE) };
     inline static Setting<bool> ShowTimeSeconds{ OptionsGeneral,
