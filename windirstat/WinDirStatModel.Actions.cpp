@@ -1317,11 +1317,12 @@ void CWinDirStatModel::StartScanningEngine(std::vector<CItem*> items)
 
         // Share a bounded worker pool for folder roots while keeping volume metadata separate.
         const CItem* volumeRoot = item->GetVolumeRoot();
-        const std::wstring ntfsKey = FinderNtfsContext::GetQueueKey(item);
-        const bool basicFolder = ntfsKey.empty() && volumeRoot->IsTypeOrFlag(IT_DIRECTORY) &&
+        std::wstring queueKey = FinderNtfsContext::GetQueueKey(item);
+        const bool basicFolder = queueKey.empty() && volumeRoot->IsTypeOrFlag(IT_DIRECTORY) &&
             volumeRoot->SupportsFilesystemApis() && !volumeRoot->IsTypeOrFlag(ITF_WSL);
         if (basicFolder) folderContexts.try_emplace(volumeRoot, volumeRoot->GetPath());
-        m_queues[basicFolder ? std::wstring() : (ntfsKey.empty() ? volumeRoot->GetPath() : ntfsKey)].Push(item);
+        else if (queueKey.empty()) queueKey = volumeRoot->GetPath();
+        m_queues[queueKey].Push(item);
     }
 
     // Discover WSL disks and start the workers off the UI thread.
@@ -1375,7 +1376,7 @@ void CWinDirStatModel::StartScanningEngine(std::vector<CItem*> items)
         std::unordered_map<std::wstring, FinderWslContext> queueContextWsl;
         for (auto& queue : m_queues)
         {
-            queueContextNtfs.try_emplace(queue.first);
+            queueContextNtfs.try_emplace(queue.first, queue.first);
             queueContextBasic.try_emplace(queue.first, queue.first);
             queueContextWsl.try_emplace(queue.first);
 

@@ -1356,14 +1356,10 @@ void CItem::ScanItems(BlockingQueue<CItem*> * queue, FinderNtfsContext& contextN
             continue;
         }
 
-        // Try to load NTFS MFT
-        if (FinderNtfsContext::CanLoad(item))
-        {
-            contextNtfs.LoadRoot(item, queue);
-        }
-
         if (item->IsTypeOrFlag(IT_DRIVE, IT_DIRECTORY))
         {
+            // Try to load NTFS MFT
+            if (item->IsScanRoot()) contextNtfs.LoadRoot(item, queue);
             // WSL folders come from a tree the helper lists inside the distribution; one shown in place of its
             // virtual disk has no share to fall back on, since the share also lists other filesystems
             const bool wslHelper = item->IsTypeOrFlag(ITF_WSL) && (COptions::UseFastScanEngine ||

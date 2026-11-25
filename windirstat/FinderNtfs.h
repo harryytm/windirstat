@@ -44,11 +44,11 @@ class FinderNtfsContext final
     std::vector<std::vector<wchar_t>> m_nameArenas;
     std::unordered_map<ULONGLONG, std::vector<FileRecordName>> m_parentToChildMap;
 
-    std::mutex m_loadMutex;
+    std::wstring m_volumePath;
+    std::once_flag m_loadOnce;
     std::atomic<bool> m_isLoaded = false;
-    bool m_loadAttempted = false;
 
-    static bool ResolveTarget(const std::wstring& pathLong, std::wstring& volumePath, ULONGLONG& rootIndex);
+    bool LoadVolume(const CItem* driveitem, BlockingQueue<CItem*>* queue);
 
     std::wstring_view GetName(const FileRecordName& rec) const noexcept
     {
@@ -57,8 +57,7 @@ class FinderNtfsContext final
 
 public:
 
-    FinderNtfsContext() = default;
-    static bool CanLoad(const CItem* item);
+    explicit FinderNtfsContext(std::wstring volumePath = {}) : m_volumePath(std::move(volumePath)) {}
     static std::wstring GetQueueKey(const CItem* item);
     bool LoadRoot(CItem* driveitem, BlockingQueue<CItem*>* queue);
     bool IsLoaded() const noexcept { return m_isLoaded.load(std::memory_order_acquire); }

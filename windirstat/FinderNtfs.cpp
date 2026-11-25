@@ -148,81 +148,102 @@ using STANDARD_INFORMATION = struct STANDARD_INFORMATION
     ULONG FileAttributes;
 };
 
-bool FinderNtfsContext::CanLoad(const CItem* item)
+static constexpr std::wstring_view s_volumeGuidPrefix = L"\\\\?\\Volume{";
+
+static bool CanLoadNtfs(const CItem* item)
 {
-    return COptions::UseFastScanEngine && item != nullptr &&
-        item->SupportsFilesystemApis() && !item->IsTypeOrFlag(ITF_BASIC, ITF_WSL) &&
-        (item->IsTypeOrFlag(IT_DRIVE) || (item->IsTypeOrFlag(IT_DIRECTORY) && item->IsScanRoot()));
+    return COptions::UseFastScanEngine && item != nullptr && item->IsScanRoot() &&
+        item->IsTypeOrFlag(IT_DRIVE, IT_DIRECTORY) && item->SupportsFilesystemApis() &&
+        !item->IsTypeOrFlag(ITF_BASIC, ITF_WSL) && !item->HasUncPath();
 }
 
-bool FinderNtfsContext::ResolveTarget(const std::wstring& pathLong, std::wstring& volumePath, ULONGLONG& rootIndex)
+static std::optional<ULONGLONG> ResolveNtfsIndex(const std::wstring& pathLong, std::wstring* volumePath = nullptr)
 {
     const SmartPointer handle(CloseHandle, CreateFileW(pathLong.c_str(), FILE_READ_ATTRIBUTES,
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING,
         FILE_FLAG_BACKUP_SEMANTICS, nullptr));
-    if (handle == INVALID_HANDLE_VALUE) return false;
-
     BY_HANDLE_FILE_INFORMATION fileInfo = {};
-    if (!GetFileInformationByHandle(handle, &fileInfo)) return false;
+    if (handle == INVALID_HANDLE_VALUE || !GetFileInformationByHandle(handle, &fileInfo)) return std::nullopt;
 
-    const DWORD required = GetFinalPathNameByHandleW(handle, nullptr, 0, VOLUME_NAME_GUID);
-    if (required == 0) return false;
+    if (volumePath != nullptr)
+    {
+        wchar_t stackBuf[MAX_PATH];
+        DWORD written = GetFinalPathNameByHandleW(handle, stackBuf, static_cast<DWORD>(std::size(stackBuf)), VOLUME_NAME_GUID);
+        std::wstring heapBuf;
+        std::wstring_view finalPath;
+        if (written == 0) return std::nullopt;
+        if (written < std::size(stackBuf))
+        {
+            finalPath = { stackBuf, written };
+        }
+        else
+        {
+            heapBuf.resize(written);
+            written = GetFinalPathNameByHandleW(handle, heapBuf.data(), written, VOLUME_NAME_GUID);
+            if (written == 0 || written >= heapBuf.size()) return std::nullopt;
+            finalPath = { heapBuf.data(), written };
+        }
 
-    std::wstring finalPath(required, L'\0');
-    const DWORD written = GetFinalPathNameByHandleW(handle, finalPath.data(), required, VOLUME_NAME_GUID);
-    if (written == 0 || written >= required) return false;
-    finalPath.resize(written);
+        const size_t closeBrace = finalPath.starts_with(s_volumeGuidPrefix) ?
+            finalPath.find(L'}', s_volumeGuidPrefix.size()) : std::wstring::npos;
+        if (closeBrace == std::wstring::npos) return std::nullopt;
+        *volumePath = finalPath.substr(0, closeBrace + 1);
+    }
 
-    static constexpr std::wstring_view volumeGuidPrefix = L"\\\\?\\Volume{";
-    if (!finalPath.starts_with(volumeGuidPrefix)) return false;
-    const size_t closeBrace = finalPath.find(L'}', volumeGuidPrefix.size());
-    if (closeBrace == std::wstring::npos) return false;
-
-    volumePath = finalPath.substr(0, closeBrace + 1);
-    rootIndex = ((static_cast<ULONGLONG>(fileInfo.nFileIndexHigh) << 32) | fileInfo.nFileIndexLow) & NtfsRecordMask;
-    return true;
+    return ((static_cast<ULONGLONG>(fileInfo.nFileIndexHigh) << 32) | fileInfo.nFileIndexLow) &
+        FinderNtfsContext::NtfsRecordMask;
 }
 
 std::wstring FinderNtfsContext::GetQueueKey(const CItem* item)
 {
-    if (!CanLoad(item)) return {};
+    if (!CanLoadNtfs(item)) return {};
     std::wstring volumePath;
-    ULONGLONG rootIndex = 0;
-    return ResolveTarget(item->GetPathLong(), volumePath, rootIndex) ? volumePath : std::wstring();
+    const auto index = ResolveNtfsIndex(item->GetPathLong(), &volumePath);
+    if (!index || (*index != NtfsNodeRoot && !COptions::UseFastScanForFolders)) return {};
+    return volumePath;
 }
 
 bool FinderNtfsContext::LoadRoot(CItem* driveitem, BlockingQueue<CItem*>* queue)
 {
+    if (!CanLoadNtfs(driveitem) || !m_volumePath.starts_with(s_volumeGuidPrefix)) return false;
     queue->WaitIfSuspended();
 
-    std::wstring volumePath;
-    ULONGLONG rootIndex = NtfsNodeRoot;
-    if (!ResolveTarget(driveitem->GetPathLong(), volumePath, rootIndex))
+    const auto rootIndex = ResolveNtfsIndex(driveitem->GetPathLong());
+    if (!rootIndex || (*rootIndex != NtfsNodeRoot && !COptions::UseFastScanForFolders))
     {
-        if (m_isLoaded.load(std::memory_order_acquire)) driveitem->SetFlag(ITF_BASIC);
+        if (IsLoaded()) driveitem->SetFlag(ITF_BASIC);
         return false;
     }
 
-    std::scoped_lock lock(m_loadMutex);
-    queue->WaitIfSuspended();
-
-    if (m_loadAttempted)
+    std::call_once(m_loadOnce, [&]
     {
-        if (!m_isLoaded.load(std::memory_order_acquire)) return false;
-        if (rootIndex >= m_baseFileRecords.size() || !m_baseFileRecords[static_cast<size_t>(rootIndex)].IsPresent)
+        const bool loaded = LoadVolume(driveitem, queue);
+        if (!loaded)
         {
-            driveitem->SetFlag(ITF_BASIC);
-            return false;
+            m_baseFileRecords = {};
+            m_nameArenas = {};
+            m_parentToChildMap = {};
         }
-        driveitem->SetIndex(rootIndex);
-        return true;
+        m_isLoaded.store(loaded, std::memory_order_release);
+    });
+
+    if (!IsLoaded()) return false;
+    if (*rootIndex >= m_baseFileRecords.size() || !m_baseFileRecords[static_cast<size_t>(*rootIndex)].IsPresent)
+    {
+        driveitem->SetFlag(ITF_BASIC);
+        return false;
     }
 
-    m_loadAttempted = true;
-    m_isLoaded.store(false, std::memory_order_release);
+    driveitem->SetIndex(*rootIndex);
+    return true;
+}
+
+bool FinderNtfsContext::LoadVolume(const CItem* driveitem, BlockingQueue<CItem*>* queue)
+{
+    queue->WaitIfSuspended();
 
     // Open volume handle with FILE_FLAG_OVERLAPPED for asynchronous I/O
-    const SmartPointer volumeHandle(CloseHandle, CreateFile(volumePath.c_str(), FILE_READ_DATA | FILE_READ_ATTRIBUTES | SYNCHRONIZE,
+    const SmartPointer volumeHandle(CloseHandle, CreateFile(m_volumePath.c_str(), FILE_READ_DATA | FILE_READ_ATTRIBUTES | SYNCHRONIZE,
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING,
         FILE_FLAG_NO_BUFFERING | FILE_FLAG_OVERLAPPED, nullptr));
     if (volumeHandle == INVALID_HANDLE_VALUE) return false;
@@ -234,7 +255,7 @@ bool FinderNtfsContext::LoadRoot(CItem* driveitem, BlockingQueue<CItem*>* queue)
         volumeInfo.BytesPerFileRecordSegment == 0) return false;
 
     // Get MFT retrieval pointers
-    const SmartPointer fileHandle(CloseHandle, CreateFile((volumePath + L"\\$MFT::$DATA").c_str(), FILE_READ_ATTRIBUTES | SYNCHRONIZE,
+    const SmartPointer fileHandle(CloseHandle, CreateFile((m_volumePath + L"\\$MFT::$DATA").c_str(), FILE_READ_ATTRIBUTES | SYNCHRONIZE,
         FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING,
         FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_NO_BUFFERING, nullptr));
     if (fileHandle == INVALID_HANDLE_VALUE) return false;
@@ -557,22 +578,7 @@ bool FinderNtfsContext::LoadRoot(CItem* driveitem, BlockingQueue<CItem*>* queue)
     }
 
     // Verify volume root node exists
-    if (!m_parentToChildMap.contains(NtfsNodeRoot))
-    {
-        return false;
-    }
-
-    m_isLoaded.store(true, std::memory_order_release);
-
-    // Verify target item exists in MFT (an empty folder has no children in m_parentToChildMap)
-    if (rootIndex >= m_baseFileRecords.size() || !m_baseFileRecords[static_cast<size_t>(rootIndex)].IsPresent)
-    {
-        driveitem->SetFlag(ITF_BASIC);
-        return false;
-    }
-
-    driveitem->SetIndex(rootIndex);
-    return true;
+    return m_parentToChildMap.contains(NtfsNodeRoot);
 }
 
 bool FinderNtfs::FindNext()

@@ -259,6 +259,7 @@ public:
     inline static Setting<bool> UseBinSizeSuffixes{ OptionsGeneral, L"UseBinSizeSuffixes", true };
     inline static Setting<bool> UseDrawTextCache{ OptionsGeneral, L"UseDrawTextCache", true };
     inline static Setting<bool> UseFastScanEngine{ OptionsGeneral, L"UseFastScanEngine", true };
+    inline static Setting<bool> UseFastScanForFolders{ OptionsGeneral, L"UseFastScanForFolders", false };
     inline static Setting<bool> UseWindowsLocaleSetting{ OptionsGeneral,
         L"UseWindowsLocaleSetting", true, CheckboxBind(IDC_USE_WINDOWS_LOCALE) };
     inline static Setting<bool> ShowTimeSeconds{ OptionsGeneral,
