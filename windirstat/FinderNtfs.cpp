@@ -148,15 +148,78 @@ using STANDARD_INFORMATION = struct STANDARD_INFORMATION
     ULONG FileAttributes;
 };
 
+bool FinderNtfsContext::CanLoad(const CItem* item)
+{
+    return COptions::UseFastScanEngine && item != nullptr &&
+        item->SupportsFilesystemApis() && !item->IsTypeOrFlag(ITF_BASIC, ITF_WSL) &&
+        (item->IsTypeOrFlag(IT_DRIVE) || (item->IsTypeOrFlag(IT_DIRECTORY) && item->IsScanRoot()));
+}
+
+bool FinderNtfsContext::ResolveTarget(const std::wstring& pathLong, std::wstring& volumePath, ULONGLONG& rootIndex)
+{
+    const SmartPointer handle(CloseHandle, CreateFileW(pathLong.c_str(), FILE_READ_ATTRIBUTES,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS, nullptr));
+    if (handle == INVALID_HANDLE_VALUE) return false;
+
+    BY_HANDLE_FILE_INFORMATION fileInfo = {};
+    if (!GetFileInformationByHandle(handle, &fileInfo)) return false;
+
+    const DWORD required = GetFinalPathNameByHandleW(handle, nullptr, 0, VOLUME_NAME_GUID);
+    if (required == 0) return false;
+
+    std::wstring finalPath(required, L'\0');
+    const DWORD written = GetFinalPathNameByHandleW(handle, finalPath.data(), required, VOLUME_NAME_GUID);
+    if (written == 0 || written >= required) return false;
+    finalPath.resize(written);
+
+    static constexpr std::wstring_view volumeGuidPrefix = L"\\\\?\\Volume{";
+    if (!finalPath.starts_with(volumeGuidPrefix)) return false;
+    const size_t closeBrace = finalPath.find(L'}', volumeGuidPrefix.size());
+    if (closeBrace == std::wstring::npos) return false;
+
+    volumePath = finalPath.substr(0, closeBrace + 1);
+    rootIndex = ((static_cast<ULONGLONG>(fileInfo.nFileIndexHigh) << 32) | fileInfo.nFileIndexLow) & NtfsRecordMask;
+    return true;
+}
+
+std::wstring FinderNtfsContext::GetQueueKey(const CItem* item)
+{
+    if (!CanLoad(item)) return {};
+    std::wstring volumePath;
+    ULONGLONG rootIndex = 0;
+    return ResolveTarget(item->GetPathLong(), volumePath, rootIndex) ? volumePath : std::wstring();
+}
+
 bool FinderNtfsContext::LoadRoot(CItem* driveitem, BlockingQueue<CItem*>* queue)
 {
-    m_isLoaded = false;
     queue->WaitIfSuspended();
 
-    // Trim off excess characters
-    std::wstring volumePath = driveitem->GetPathLong();
-    while (!volumePath.empty() && volumePath.back() == L'\\') volumePath.pop_back();
-    if (!volumePath.empty() && volumePath[0] != L'\\' && volumePath[0] != L'/') volumePath.insert(0, L"\\\\.\\");
+    std::wstring volumePath;
+    ULONGLONG rootIndex = NtfsNodeRoot;
+    if (!ResolveTarget(driveitem->GetPathLong(), volumePath, rootIndex))
+    {
+        if (m_isLoaded.load(std::memory_order_acquire)) driveitem->SetFlag(ITF_BASIC);
+        return false;
+    }
+
+    std::scoped_lock lock(m_loadMutex);
+    queue->WaitIfSuspended();
+
+    if (m_loadAttempted)
+    {
+        if (!m_isLoaded.load(std::memory_order_acquire)) return false;
+        if (rootIndex >= m_baseFileRecords.size() || !m_baseFileRecords[static_cast<size_t>(rootIndex)].IsPresent)
+        {
+            driveitem->SetFlag(ITF_BASIC);
+            return false;
+        }
+        driveitem->SetIndex(rootIndex);
+        return true;
+    }
+
+    m_loadAttempted = true;
+    m_isLoaded.store(false, std::memory_order_release);
 
     // Open volume handle with FILE_FLAG_OVERLAPPED for asynchronous I/O
     const SmartPointer volumeHandle(CloseHandle, CreateFile(volumePath.c_str(), FILE_READ_DATA | FILE_READ_ATTRIBUTES | SYNCHRONIZE,
@@ -493,14 +556,22 @@ bool FinderNtfsContext::LoadRoot(CItem* driveitem, BlockingQueue<CItem*>* queue)
         partition = {};
     }
 
-    // Verify root node exists
+    // Verify volume root node exists
     if (!m_parentToChildMap.contains(NtfsNodeRoot))
     {
         return false;
     }
 
-    driveitem->SetIndex(NtfsNodeRoot);
-    m_isLoaded = true;
+    m_isLoaded.store(true, std::memory_order_release);
+
+    // Verify target item exists in MFT (an empty folder has no children in m_parentToChildMap)
+    if (rootIndex >= m_baseFileRecords.size() || !m_baseFileRecords[static_cast<size_t>(rootIndex)].IsPresent)
+    {
+        driveitem->SetFlag(ITF_BASIC);
+        return false;
+    }
+
+    driveitem->SetIndex(rootIndex);
     return true;
 }
 

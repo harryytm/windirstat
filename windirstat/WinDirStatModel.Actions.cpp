@@ -1317,11 +1317,11 @@ void CWinDirStatModel::StartScanningEngine(std::vector<CItem*> items)
 
         // Share a bounded worker pool for folder roots while keeping volume metadata separate.
         const CItem* volumeRoot = item->GetVolumeRoot();
-        const std::wstring volumePath = volumeRoot->GetPath();
-        const bool basicFolder = volumeRoot->IsTypeOrFlag(IT_DIRECTORY) && volumeRoot->SupportsFilesystemApis() &&
-            !volumeRoot->IsTypeOrFlag(ITF_WSL);
-        if (basicFolder) folderContexts.try_emplace(volumeRoot, volumePath);
-        m_queues[basicFolder ? std::wstring() : volumePath].Push(item);
+        const std::wstring ntfsKey = FinderNtfsContext::GetQueueKey(item);
+        const bool basicFolder = ntfsKey.empty() && volumeRoot->IsTypeOrFlag(IT_DIRECTORY) &&
+            volumeRoot->SupportsFilesystemApis() && !volumeRoot->IsTypeOrFlag(ITF_WSL);
+        if (basicFolder) folderContexts.try_emplace(volumeRoot, volumeRoot->GetPath());
+        m_queues[basicFolder ? std::wstring() : (ntfsKey.empty() ? volumeRoot->GetPath() : ntfsKey)].Push(item);
     }
 
     // Discover WSL disks and start the workers off the UI thread.

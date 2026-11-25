@@ -44,7 +44,11 @@ class FinderNtfsContext final
     std::vector<std::vector<wchar_t>> m_nameArenas;
     std::unordered_map<ULONGLONG, std::vector<FileRecordName>> m_parentToChildMap;
 
-    bool m_isLoaded = false;
+    std::mutex m_loadMutex;
+    std::atomic<bool> m_isLoaded = false;
+    bool m_loadAttempted = false;
+
+    static bool ResolveTarget(const std::wstring& pathLong, std::wstring& volumePath, ULONGLONG& rootIndex);
 
     std::wstring_view GetName(const FileRecordName& rec) const noexcept
     {
@@ -54,8 +58,10 @@ class FinderNtfsContext final
 public:
 
     FinderNtfsContext() = default;
+    static bool CanLoad(const CItem* item);
+    static std::wstring GetQueueKey(const CItem* item);
     bool LoadRoot(CItem* driveitem, BlockingQueue<CItem*>* queue);
-    bool IsLoaded() const { return m_isLoaded; }
+    bool IsLoaded() const noexcept { return m_isLoaded.load(std::memory_order_acquire); }
 
     static constexpr ULONGLONG NtfsRecordMask = (1ull << 48) - 1;
     static constexpr ULONGLONG NtfsNodeRoot = 5;
