@@ -415,8 +415,8 @@ static void DrawScaledButton(const HWND window, const HDC dc)
     const int glyphHeight = MulDiv(nativeSize.cy, GetFontSizePercent(), 100);
     CRect client;
     GetClientRect(window, &client);
-    const bool rtl = (exStyle & WS_EX_LAYOUTRTL) != 0;
-    CRect glyph(rtl ? client.right - glyphWidth : client.left, client.top, 0, 0);
+    const bool rightAligned = ((exStyle & WS_EX_RIGHT) != 0) != ((exStyle & WS_EX_LAYOUTRTL) != 0);
+    CRect glyph(rightAligned ? client.right - glyphWidth : client.left, client.top, 0, 0);
     glyph.top += (client.Height() - glyphHeight) / 2;
     glyph.right = glyph.left + glyphWidth;
     glyph.bottom = glyph.top + glyphHeight;
@@ -508,10 +508,10 @@ static void DrawScaledButton(const HWND window, const HDC dc)
     std::wstring text(static_cast<size_t>(GetWindowTextLengthW(window)) + 1, L'\0');
     text.resize(GetWindowTextW(window, text.data(), static_cast<int>(text.size())));
     CRect textRect = client;
-    if (rtl) textRect.right = glyph.left - ScaleForDpi(3, window);
+    if (rightAligned) textRect.right = glyph.left - ScaleForDpi(3, window);
     else textRect.left = glyph.right + ScaleForDpi(3, window);
     const UINT uiState = static_cast<UINT>(SendMessageW(window, WM_QUERYUISTATE, 0, 0));
-    const UINT flags = (rtl ? DT_RIGHT : DT_LEFT) | DT_SINGLELINE |
+    const UINT flags = (rightAligned ? DT_RIGHT : DT_LEFT) | DT_SINGLELINE |
         ((uiState & UISF_HIDEACCEL) != 0 ? DT_HIDEPREFIX : 0) |
         ((exStyle & (WS_EX_RTLREADING | WS_EX_LAYOUTRTL)) != 0 ? DT_RTLREADING : 0);
     CRect measured = textRect;
@@ -522,7 +522,7 @@ static void DrawScaledButton(const HWND window, const HDC dc)
     if ((state & BST_FOCUS) != 0 && (uiState & UISF_HIDEFOCUS) == 0)
     {
         const int width = std::min(measured.Width(), textRect.Width());
-        if (rtl) textRect.left = textRect.right - width;
+        if (rightAligned) textRect.left = textRect.right - width;
         textRect.right = textRect.left + width;
         textRect.Inflate(1, 1);
         DrawFocusRect(dc, &textRect);
@@ -533,9 +533,6 @@ static LRESULT CALLBACK ScaledButtonSubclass(const HWND window, const UINT messa
     const WPARAM wParam, const LPARAM lParam, const UINT_PTR id, DWORD_PTR)
 {
     if (message == WM_NCDESTROY) RemoveWindowSubclass(window, ScaledButtonSubclass, id);
-    if (GetFontSizePercent() == 100)
-        return DefSubclassProc(window, message, wParam, lParam);
-
     if (message == WM_ERASEBKGND) return 1;
     if (message == WM_PAINT)
     {
