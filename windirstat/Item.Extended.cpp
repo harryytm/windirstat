@@ -291,7 +291,24 @@ COLORREF CItem::GetItemTextColor() const
 
 int CItem::CompareSibling(const CTreeListItem* tlib, const int subitem) const
 {
-    const CItem* other = reinterpret_cast<const CItem*>(tlib);
+    const auto* other = reinterpret_cast<const CItem*>(tlib);
+
+    if ((COptions::GroupDriveStatsFirst || COptions::GroupFoldersBeforeFiles) && GetItemType() != other->GetItemType())
+    {
+        const auto getRank = [](const CItem* item) noexcept
+        {
+            if (COptions::GroupDriveStatsFirst && item->IsTypeOrFlag(IT_FREESPACE, IT_UNKNOWN, IT_HLINKS))
+                return std::to_underlying(item->GetItemType());
+            return COptions::GroupFoldersBeforeFiles
+                ? std::to_underlying(IT_MASK) + std::to_underlying(item->GetItemType())
+                : std::to_underlying(ITF_ANY);
+        };
+
+        if (const int diff = usignum(getRank(this), getRank(other)); diff != 0)
+        {
+            return (subitem == COL_NAME || subitem == COL_LAST_CHANGE) ? diff : -diff;
+        }
+    }
 
     switch (subitem)
     {

@@ -436,6 +436,8 @@
 #define ID_VIEW_ZOOMED_FILETYPES        32971
 #define ID_TREELIST_SELECT              32972
 #define ID_SCAN_BACKGROUND              32973
+#define ID_GROUPFOLDERSBEFOREFILES      32974
+#define ID_GROUPDRIVESTATSFIRST         32975
 #define IDS_APP_TITLE                   57344
 #define IDS_AUTHOR_EMAIL                57345
 #define IDS_FILTER_EXAMPLE_DIRS         57346
@@ -451,7 +453,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        126
-#define _APS_NEXT_COMMAND_VALUE         32974
+#define _APS_NEXT_COMMAND_VALUE         32976
 #define _APS_NEXT_CONTROL_VALUE         1207
 #define _APS_NEXT_SYMED_VALUE           126
 #endif
