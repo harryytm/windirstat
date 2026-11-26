@@ -11,6 +11,7 @@
 #include "Layout.h"
 
 inline constexpr UINT WM_WDS_SELECT_DRIVES_OK = WM_APP + 0x110;
+inline constexpr UINT WM_WDS_APPLY_BROWSE_FOLDER = WM_APP + 0x111;
 
 //
 // The dialog has these three radio buttons.
@@ -138,16 +139,20 @@ protected:
     SmartPointer<HICON, decltype(&DestroyIcon)> m_filterIcon{ &DestroyIcon };
     std::vector<std::wstring> m_selectedDrives;
     bool m_suppressItemChanged = false;
+    std::optional<std::wstring> m_browseTextBeforeDropdown;
+    std::optional<std::wstring> m_pendingBrowseText;
 
 public:
     static std::span<const RouteEntry> Routes();
 
 protected:
     bool SaveSelection();
+    bool IsBrowseFolderMultiSelect() const;
     void OnBnClickedUpdateButtons();
     void OnBnClickedFastScanCheckbox();
     void OnLvnItemChangedDrives(NMHDR* pNMHDR, LRESULT* pResult);
     LRESULT OnWmuOk(WPARAM, LPARAM);
+    LRESULT OnApplyBrowseFolder(WPARAM, LPARAM);
     void OnTimer(UINT_PTR nIDEvent);
     void OnSysColorChange();
     void OnBnClickedRadioTargetDrivesAll();
@@ -162,6 +167,9 @@ protected:
     bool PreprocessMessage(MSG* pMsg) override;
     void OnEditchangeBrowseFolder();
     void OnSelchangeBrowseFolder();
+    void OnDropdownBrowseFolder();
+    void OnSelendokBrowseFolder();
+    void OnSelendcancelBrowseFolder();
 };
 
 // Recent cloud connections and their editor keep local scan preferences independent.
@@ -227,9 +235,13 @@ inline std::span<const RouteEntry> CSelectDrivesDlg::Routes()
         Route::Control<&OnBnDoubleclickedRadio>(BN_DOUBLECLICKED, IDC_RADIO_TARGET_FOLDER),
         Route::Control<&OnEditchangeBrowseFolder>(CBN_EDITCHANGE, IDC_BROWSE_FOLDER),
         Route::Control<&OnSelchangeBrowseFolder>(CBN_SELCHANGE, IDC_BROWSE_FOLDER),
+        Route::Control<&OnDropdownBrowseFolder>(CBN_DROPDOWN, IDC_BROWSE_FOLDER),
+        Route::Control<&OnSelendokBrowseFolder>(CBN_SELENDOK, IDC_BROWSE_FOLDER),
+        Route::Control<&OnSelendcancelBrowseFolder>(CBN_SELENDCANCEL, IDC_BROWSE_FOLDER),
         Route::Notify<&OnLvnItemChangedDrives>(LVN_ITEMCHANGED, IDC_TARGET_DRIVES_LIST),
         Route::Notify<&OnNMSetfocusTargetDrivesList>(NM_SETFOCUS, IDC_TARGET_DRIVES_LIST),
         Route::Window<&OnWmuOk>(WM_WDS_SELECT_DRIVES_OK),
+        Route::Window<&OnApplyBrowseFolder>(WM_WDS_APPLY_BROWSE_FOLDER),
         Route::Window<&OnTimer>(WM_TIMER),
         Route::Window<&OnSysColorChange>(WM_SYSCOLORCHANGE),
     };

@@ -1187,6 +1187,63 @@ void CSelectDrivesDlg::OnEditchangeBrowseFolder()
     UpdateButtons();
 }
 
+bool CSelectDrivesDlg::IsBrowseFolderMultiSelect() const
+{
+    // Keep the Sticky Selection check isolated so Ctrl-click multi-select can be split out for upstream.
+    return (::GetKeyState(VK_CONTROL) < 0) || IsChecked(IDC_STICKY_SELECTION_CHECKBOX);
+}
+
+void CSelectDrivesDlg::OnDropdownBrowseFolder()
+{
+    m_browseTextBeforeDropdown = GetText(IDC_BROWSE_FOLDER);
+}
+
+void CSelectDrivesDlg::OnSelendokBrowseFolder()
+{
+    const auto previous = std::exchange(m_browseTextBeforeDropdown, std::nullopt);
+    if (!previous || previous->empty() || !IsBrowseFolderMultiSelect()) return;
+
+    const int selection = m_browseList.GetCurSel();
+    if (selection == CB_ERR) return;
+
+    const std::wstring selected = m_browseList.GetItemText(selection);
+    const auto selectedPaths = NormalizeScanPaths(selected);
+    if (selectedPaths.empty()) return;
+
+    auto existingPaths = NormalizeScanPaths(*previous);
+    const auto removed = std::erase_if(existingPaths, [&](const std::wstring& path)
+    {
+        return std::ranges::any_of(selectedPaths, [&](const std::wstring& target)
+        {
+            return _wcsicmp(path.c_str(), target.c_str()) == 0;
+        });
+    });
+
+    m_pendingBrowseText = removed > 0 ?
+        JoinString(existingPaths) :
+        JoinString(NormalizeScanPaths(*previous + wds::chrPipe + selected));
+
+    PostMessage(WM_WDS_APPLY_BROWSE_FOLDER);
+}
+
+void CSelectDrivesDlg::OnSelendcancelBrowseFolder()
+{
+    m_browseTextBeforeDropdown.reset();
+}
+
+LRESULT CSelectDrivesDlg::OnApplyBrowseFolder(WPARAM, LPARAM)
+{
+    const auto pending = std::exchange(m_pendingBrowseText, std::nullopt);
+    if (!pending) return 0;
+
+    SetText(IDC_BROWSE_FOLDER, *pending);
+    const auto end = static_cast<WORD>(std::min<size_t>(pending->size(), 0x7FFF));
+    m_browseList.SendMessage(CB_SETEDITSEL, 0, MAKELPARAM(end, end));
+    SetActiveRadio(IDC_RADIO_TARGET_FOLDER);
+    UpdateButtons();
+    return 0;
+}
+
 void CSelectDrivesDlg::OnSelchangeBrowseFolder()
 {
     SetActiveRadio(IDC_RADIO_TARGET_FOLDER);
