@@ -102,6 +102,9 @@ bool ShellExecuteWrapper(const std::wstring& lpFile, const std::wstring& lpParam
 bool ExecuteCommandInConsole(const std::wstring& command, const std::wstring& title = L"");
 std::optional<std::wstring> RemoveSelectedHistoryEntry(const MSG* pMsg, CComboBox& comboBox,
     std::vector<std::wstring>& history);
+std::wstring FormatMultiLinePaths(std::wstring_view text, WCHAR delim = wds::chrPipe);
+std::wstring ReadClipboardDropPaths(HDROP drop, bool directoriesOnly = true, WCHAR delim = wds::chrPipe);
+std::wstring ReadClipboardBrowsePaths(HWND window, bool directoriesOnly = true, WCHAR delim = wds::chrPipe);
 
 std::wstring GetLocalizedMenuText(std::wstring_view textId, std::wstring_view detail = {});
 

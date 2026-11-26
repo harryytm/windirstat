@@ -864,3 +864,87 @@ std::optional<std::wstring> RemoveSelectedHistoryEntry(const MSG* pMsg, CComboBo
     comboBox.SetCurSel(count > 0 ? std::min(selection, count - 1) : -1);
     return removed;
 }
+
+std::wstring FormatMultiLinePaths(std::wstring_view text, const WCHAR delim)
+{
+    if (text.find_first_of(L"\r\n\"") == std::wstring_view::npos) return {};
+
+    std::wstring joined;
+    joined.reserve(text.size());
+    while (!text.empty())
+    {
+        const size_t eol = text.find_first_of(L"\r\n");
+        std::wstring_view part = text.substr(0, eol);
+        text = eol == std::wstring_view::npos ? std::wstring_view{} : text.substr(eol + 1);
+
+        while (!part.empty() && part.front() == L' ') part.remove_prefix(1);
+        while (!part.empty() && part.back() == L' ') part.remove_suffix(1);
+        if (part.size() >= 2 && part.front() == L'"' && part.back() == L'"')
+        {
+            part.remove_prefix(1);
+            part.remove_suffix(1);
+        }
+        if (part.empty()) continue;
+
+        if (!joined.empty()) joined.push_back(delim);
+        joined.append(part);
+    }
+    return joined;
+}
+
+std::wstring ReadClipboardDropPaths(const HDROP drop, const bool directoriesOnly, const WCHAR delim)
+{
+    const UINT count = DragQueryFileW(drop, 0xFFFFFFFF, nullptr, 0);
+    if (count == 0) return {};
+
+    std::wstring joined;
+    std::wstring longBuf;
+    std::array<wchar_t, MAX_PATH> stackBuf{};
+    for (UINT i = 0; i < count; ++i)
+    {
+        const UINT len = DragQueryFileW(drop, i, nullptr, 0);
+        if (len == 0) continue;
+
+        std::wstring_view path;
+        DWORD attrs = INVALID_FILE_ATTRIBUTES;
+        if (len < stackBuf.size())
+        {
+            DragQueryFileW(drop, i, stackBuf.data(), static_cast<UINT>(stackBuf.size()));
+            path = { stackBuf.data(), len };
+            if (directoriesOnly) attrs = GetFileAttributesW(stackBuf.data());
+        }
+        else
+        {
+            longBuf.resize(len);
+            DragQueryFileW(drop, i, longBuf.data(), len + 1);
+            path = longBuf;
+            if (directoriesOnly) attrs = GetFileAttributesW(Finder::MakeLongPathCompatible(longBuf).c_str());
+        }
+        if (directoriesOnly && (attrs == INVALID_FILE_ATTRIBUTES || (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0)) continue;
+
+        if (!joined.empty()) joined.push_back(delim);
+        joined.append(path);
+    }
+    return joined;
+}
+
+std::wstring ReadClipboardBrowsePaths(const HWND window, const bool directoriesOnly, const WCHAR delim)
+{
+    if (!OpenClipboard(window)) return {};
+    struct ClipboardGuard final { ~ClipboardGuard() { CloseClipboard(); } } guard;
+
+    if (const HANDLE data = GetClipboardData(CF_UNICODETEXT); data != nullptr)
+    {
+        const auto* ptr = static_cast<const wchar_t*>(GlobalLock(data));
+        if (ptr == nullptr) return {};
+        struct UnlockGuard final { HANDLE h; ~UnlockGuard() { GlobalUnlock(h); } } unlock{ data };
+        return FormatMultiLinePaths(ptr, delim);
+    }
+
+    if (const auto drop = static_cast<HDROP>(GetClipboardData(CF_HDROP)); drop != nullptr)
+    {
+        return ReadClipboardDropPaths(drop, directoriesOnly, delim);
+    }
+
+    return {};
+}

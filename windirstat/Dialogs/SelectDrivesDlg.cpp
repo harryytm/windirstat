@@ -728,6 +728,19 @@ void CDrivesList::OnLvnDeleteItem(NMHDR* pNMHDR, LRESULT* pResult) const
 
 /////////////////////////////////////////////////////////////////////////////
 
+static LRESULT CALLBACK BrowseFolderPasteSubclass(const HWND window, const UINT message,
+    const WPARAM wParam, const LPARAM lParam, const UINT_PTR id, DWORD_PTR)
+{
+    if (message == WM_NCDESTROY) RemoveWindowSubclass(window, BrowseFolderPasteSubclass, id);
+    if (message != WM_PASTE) return DefSubclassProc(window, message, wParam, lParam);
+
+    const std::wstring joined = ReadClipboardBrowsePaths(window);
+    if (joined.empty()) return DefSubclassProc(window, message, wParam, lParam);
+
+    SendMessageW(window, EM_REPLACESEL, TRUE, reinterpret_cast<LPARAM>(joined.c_str()));
+    return 0;
+}
+
 CSelectDrivesDlg::CSelectDrivesDlg(CWnd* pParent) :
     MessageTarget(IDD, COptions::DriveSelectWindowRect.Ptr(), pParent)
 {
@@ -742,6 +755,8 @@ bool CSelectDrivesDlg::OnInitDialog()
     m_driveList.SubclassDlgItem(IDC_TARGET_DRIVES_LIST, this);
     m_okButton.SubclassDlgItem(IDOK, this);
     m_browseList.SubclassDlgItem(IDC_BROWSE_FOLDER, this);
+    if (COMBOBOXINFO info{ .cbSize = sizeof(info) }; GetComboBoxInfo(m_browseList.m_hWnd, &info) && info.hwndItem != nullptr)
+        SetWindowSubclass(info.hwndItem, BrowseFolderPasteSubclass, 1, 0);
     m_browseButton.SubclassDlgItem(IDC_BROWSE_BUTTON, this);
     m_addFolderButton.SubclassDlgItem(IDC_ADD_FOLDER, this);
     m_filterButton.SubclassDlgItem(IDC_FILTER_BUTTON, this);
